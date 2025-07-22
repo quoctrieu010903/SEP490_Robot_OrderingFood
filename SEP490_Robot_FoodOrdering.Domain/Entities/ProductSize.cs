@@ -1,11 +1,12 @@
 ﻿
 using SEP490_Robot_FoodOrdering.Core.Base;
+using SEP490_Robot_FoodOrdering.Domain.Enums;
 
 namespace SEP490_Robot_FoodOrdering.Domain.Entities
 {
     public class ProductSize : BaseEntity
     {
-        public string SizeName { get; set; }
+        public SizeEnums SizeName { get; set; }
         public decimal Price { get; set; }
 
         public Guid ProductId { get; set; }

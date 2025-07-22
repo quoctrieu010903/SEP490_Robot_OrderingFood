@@ -3,44 +3,16 @@
   "WorkspaceRootPath": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|d:\\dulieu\\new folder\\fpt\\semester_9\\sep490_robot\\sep490_robot_ordering_food\\sep490_robot_foodordering.application\\service\\implementation\\categoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|solutionrelative:sep490_robot_foodordering.application\\service\\implementation\\categoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{17136543-C513-4AD7-BEAA-46FDDCAC6986}|SEP490_Robot_FoodOrdering.Infrastructure\\SEP490_Robot_FoodOrdering.Infrastructure.csproj|d:\\dulieu\\new folder\\fpt\\semester_9\\sep490_robot\\sep490_robot_ordering_food\\sep490_robot_foodordering.infrastructure\\seeder\\robotfoodorderingseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{17136543-C513-4AD7-BEAA-46FDDCAC6986}|SEP490_Robot_FoodOrdering.Infrastructure\\SEP490_Robot_FoodOrdering.Infrastructure.csproj|solutionrelative:sep490_robot_foodordering.infrastructure\\seeder\\robotfoodorderingseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|d:\\dulieu\\new folder\\fpt\\semester_9\\sep490_robot\\sep490_robot_ordering_food\\sep490_robot_foodordering.application\\service\\interface\\icategoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|solutionrelative:sep490_robot_foodordering.application\\service\\interface\\icategoryservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{239BDA10-B3F7-4975-94B3-A66AD2D246B5}|SEP490_Robot_FoodOrdering.Domain\\SEP490_Robot_FoodOrdering.Domain.csproj|d:\\dulieu\\new folder\\fpt\\semester_9\\sep490_robot\\sep490_robot_ordering_food\\sep490_robot_foodordering.domain\\entities\\productsize.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{239BDA10-B3F7-4975-94B3-A66AD2D246B5}|SEP490_Robot_FoodOrdering.Domain\\SEP490_Robot_FoodOrdering.Domain.csproj|solutionrelative:sep490_robot_foodordering.domain\\entities\\productsize.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{239BDA10-B3F7-4975-94B3-A66AD2D246B5}|SEP490_Robot_FoodOrdering.Domain\\SEP490_Robot_FoodOrdering.Domain.csproj|d:\\dulieu\\new folder\\fpt\\semester_9\\sep490_robot\\sep490_robot_ordering_food\\sep490_robot_foodordering.domain\\entities\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{239BDA10-B3F7-4975-94B3-A66AD2D246B5}|SEP490_Robot_FoodOrdering.Domain\\SEP490_Robot_FoodOrdering.Domain.csproj|solutionrelative:sep490_robot_foodordering.domain\\entities\\category.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|d:\\dulieu\\new folder\\fpt\\semester_9\\sep490_robot\\sep490_robot_ordering_food\\sep490_robot_foodordering.application\\mapping\\mappingprofile.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|solutionrelative:sep490_robot_foodordering.application\\mapping\\mappingprofile.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C051635E-92E9-4D95-AF30-68A88FF59B06}|SEP490_Robot_FoodOrdering.Core\\SEP490_Robot_FoodOrdering.Core.csproj|d:\\dulieu\\new folder\\fpt\\semester_9\\sep490_robot\\sep490_robot_ordering_food\\sep490_robot_foodordering.core\\customexceptions\\coreexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C051635E-92E9-4D95-AF30-68A88FF59B06}|SEP490_Robot_FoodOrdering.Core\\SEP490_Robot_FoodOrdering.Core.csproj|solutionrelative:sep490_robot_foodordering.core\\customexceptions\\coreexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|d:\\dulieu\\new folder\\fpt\\semester_9\\sep490_robot\\sep490_robot_ordering_food\\sep490_robot_foodordering.application\\dto\\request\\pagingrequestmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|solutionrelative:sep490_robot_foodordering.application\\dto\\request\\pagingrequestmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|d:\\dulieu\\new folder\\fpt\\semester_9\\sep490_robot\\sep490_robot_ordering_food\\sep490_robot_foodordering.application\\dto\\response\\category\\categoryresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|solutionrelative:sep490_robot_foodordering.application\\dto\\response\\category\\categoryresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|d:\\dulieu\\new folder\\fpt\\semester_9\\sep490_robot\\sep490_robot_ordering_food\\sep490_robot_foodordering.application\\dto\\request\\category\\createcategoryrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|solutionrelative:sep490_robot_foodordering.application\\dto\\request\\category\\createcategoryrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|d:\\dulieu\\new folder\\fpt\\semester_9\\sep490_robot\\sep490_robot_ordering_food\\sep490_robot_foodordering.application\\utils\\utilservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}|SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj|solutionrelative:sep490_robot_foodordering.application\\utils\\utilservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{17136543-C513-4AD7-BEAA-46FDDCAC6986}|SEP490_Robot_FoodOrdering.Infrastructure\\SEP490_Robot_FoodOrdering.Infrastructure.csproj|d:\\dulieu\\new folder\\fpt\\semester_9\\sep490_robot\\sep490_robot_ordering_food\\sep490_robot_foodordering.infrastructure\\email\\emailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{17136543-C513-4AD7-BEAA-46FDDCAC6986}|SEP490_Robot_FoodOrdering.Infrastructure\\SEP490_Robot_FoodOrdering.Infrastructure.csproj|solutionrelative:sep490_robot_foodordering.infrastructure\\email\\emailservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{239BDA10-B3F7-4975-94B3-A66AD2D246B5}|SEP490_Robot_FoodOrdering.Domain\\SEP490_Robot_FoodOrdering.Domain.csproj|d:\\dulieu\\new folder\\fpt\\semester_9\\sep490_robot\\sep490_robot_ordering_food\\sep490_robot_foodordering.domain\\enums\\sizeenums.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{239BDA10-B3F7-4975-94B3-A66AD2D246B5}|SEP490_Robot_FoodOrdering.Domain\\SEP490_Robot_FoodOrdering.Domain.csproj|solutionrelative:sep490_robot_foodordering.domain\\enums\\sizeenums.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -54,132 +26,41 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "CoreException.cs",
-              "DocumentMoniker": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Core\\CustomExceptions\\CoreException.cs",
-              "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Core\\CustomExceptions\\CoreException.cs",
-              "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Core\\CustomExceptions\\CoreException.cs",
-              "RelativeToolTip": "SEP490_Robot_FoodOrdering.Core\\CustomExceptions\\CoreException.cs",
-              "ViewState": "AgIAABgAAAAAAAAAAAAswB4AAAAPAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-22T12:00:57.789Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "MappingProfile.cs",
-              "DocumentMoniker": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\Mapping\\MappingProfile.cs",
-              "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Application\\Mapping\\MappingProfile.cs",
-              "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\Mapping\\MappingProfile.cs",
-              "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\Mapping\\MappingProfile.cs",
-              "ViewState": "AgIAAAgAAAAAAAAAAIAxwBMAAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-22T11:53:19.961Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "CategoryService.cs",
-              "DocumentMoniker": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\Service\\Implementation\\CategoryService.cs",
-              "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Application\\Service\\Implementation\\CategoryService.cs",
-              "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\Service\\Implementation\\CategoryService.cs",
-              "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\Service\\Implementation\\CategoryService.cs",
-              "ViewState": "AgIAAFgAAAAAAAAAAAAkwAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-22T11:50:59.306Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "PagingRequestModel.cs",
-              "DocumentMoniker": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\DTO\\Request\\PagingRequestModel.cs",
-              "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Application\\DTO\\Request\\PagingRequestModel.cs",
-              "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\DTO\\Request\\PagingRequestModel.cs",
-              "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\DTO\\Request\\PagingRequestModel.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-22T11:49:15.57Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "CategoryResponse.cs",
-              "DocumentMoniker": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\DTO\\Response\\Category\\CategoryResponse.cs",
-              "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Application\\DTO\\Response\\Category\\CategoryResponse.cs",
-              "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\DTO\\Response\\Category\\CategoryResponse.cs",
-              "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\DTO\\Response\\Category\\CategoryResponse.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-22T11:47:04.121Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "CreateCategoryRequest.cs",
-              "DocumentMoniker": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\DTO\\Request\\Category\\CreateCategoryRequest.cs",
-              "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Application\\DTO\\Request\\Category\\CreateCategoryRequest.cs",
-              "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\DTO\\Request\\Category\\CreateCategoryRequest.cs",
-              "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\DTO\\Request\\Category\\CreateCategoryRequest.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAaAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-22T11:44:28.538Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "Category.cs",
-              "DocumentMoniker": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Domain\\Entities\\Category.cs",
-              "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Domain\\Entities\\Category.cs",
-              "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Domain\\Entities\\Category.cs",
-              "RelativeToolTip": "SEP490_Robot_FoodOrdering.Domain\\Entities\\Category.cs",
-              "ViewState": "AgIAAAEAAAAAAAAAAAAiwAkAAAARAAAAAAAAAA==",
+              "Title": "SizeEnums.cs",
+              "DocumentMoniker": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Domain\\Enums\\SizeEnums.cs",
+              "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Domain\\Enums\\SizeEnums.cs",
+              "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Domain\\Enums\\SizeEnums.cs",
+              "RelativeToolTip": "SEP490_Robot_FoodOrdering.Domain\\Enums\\SizeEnums.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-22T11:39:08.551Z",
+              "WhenOpened": "2025-07-22T15:22:29.664Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "ICategoryService.cs",
-              "DocumentMoniker": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\Service\\Interface\\ICategoryService.cs",
-              "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Application\\Service\\Interface\\ICategoryService.cs",
-              "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\Service\\Interface\\ICategoryService.cs",
-              "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\Service\\Interface\\ICategoryService.cs",
-              "ViewState": "AgIAAAEAAAAAAAAAAAAiwAwAAAAqAAAAAAAAAA==",
+              "Title": "ProductSize.cs",
+              "DocumentMoniker": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Domain\\Entities\\ProductSize.cs",
+              "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Domain\\Entities\\ProductSize.cs",
+              "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Domain\\Entities\\ProductSize.cs",
+              "RelativeToolTip": "SEP490_Robot_FoodOrdering.Domain\\Entities\\ProductSize.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAkAAAAcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-22T11:35:02.276Z",
+              "WhenOpened": "2025-07-22T15:20:21.862Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "UtilService.cs",
-              "DocumentMoniker": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\Utils\\UtilService.cs",
-              "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Application\\Utils\\UtilService.cs",
-              "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Application\\Utils\\UtilService.cs",
-              "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\Utils\\UtilService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "RobotFoodOrderingSeeder.cs",
+              "DocumentMoniker": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Infrastructure\\Seeder\\RobotFoodOrderingSeeder.cs",
+              "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Infrastructure\\Seeder\\RobotFoodOrderingSeeder.cs",
+              "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Infrastructure\\Seeder\\RobotFoodOrderingSeeder.cs",
+              "RelativeToolTip": "SEP490_Robot_FoodOrdering.Infrastructure\\Seeder\\RobotFoodOrderingSeeder.cs",
+              "ViewState": "AgIAAKQAAAAAAAAAAAAmwO4AAAAVAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-22T11:27:42.735Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "EmailService.cs",
-              "DocumentMoniker": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Infrastructure\\Email\\EmailService.cs",
-              "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Infrastructure\\Email\\EmailService.cs",
-              "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_Ordering_Food\\SEP490_Robot_FoodOrdering.Infrastructure\\Email\\EmailService.cs",
-              "RelativeToolTip": "SEP490_Robot_FoodOrdering.Infrastructure\\Email\\EmailService.cs",
-              "ViewState": "AgIAAAgAAAAAAAAAAAAmwBAAAAAmAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-22T11:27:17.916Z",
+              "WhenOpened": "2025-07-22T15:15:44.196Z",
               "EditorCaption": ""
             }
           ]

@@ -5,9 +5,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Email;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
+using SEP490_Robot_FoodOrdering.Domain.Specifications.Interface;
 using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 using SEP490_Robot_FoodOrdering.Infrastructure.Email;
 using SEP490_Robot_FoodOrdering.Infrastructure.Repository;
+using SEP490_Robot_FoodOrdering.Infrastructure.Seeder;
 
 namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extensions
 {
@@ -20,6 +22,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
             services.AddDbContext<RobotFoodOrderingDBContext>(options =>
                      options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
+            services.AddScoped<IRobotFoodOrderingSeeder,RobotFoodOrderingSeeder>();
             // Dependency Injection 
             services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
 

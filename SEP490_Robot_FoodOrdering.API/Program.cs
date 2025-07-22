@@ -1,5 +1,6 @@
 using SEP490_Robot_FoodOrdering.API.Extentions;
 using SEP490_Robot_FoodOrdering.Application.Extentions;
+using SEP490_Robot_FoodOrdering.Domain.Specifications.Interface;
 using SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,11 @@ builder.Services.AddInfrastructure(builder.Configuration)
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+var scope = app.Services.CreateScope();
+var seeder = scope.ServiceProvider.GetRequiredService<IRobotFoodOrderingSeeder>();
+await seeder.Seed();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

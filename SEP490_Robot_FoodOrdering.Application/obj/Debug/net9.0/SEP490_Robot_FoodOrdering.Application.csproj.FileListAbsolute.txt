@@ -3,3 +3,16 @@ D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP4
 D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.AssemblyInfoInputs.cache
 D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.AssemblyInfo.cs
 D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.csproj.CoreCompileInputs.cache
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.deps.json
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.dll
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.pdb
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.dll
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Domain.dll
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Domain.pdb
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.pdb
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.sourcelink.json
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_R.65B8AAF1.Up2Date
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.dll
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\refint\SEP490_Robot_FoodOrdering.Application.dll
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.pdb
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\ref\SEP490_Robot_FoodOrdering.Application.dll
