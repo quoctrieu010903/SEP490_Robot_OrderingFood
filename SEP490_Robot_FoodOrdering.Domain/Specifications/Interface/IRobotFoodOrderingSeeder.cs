@@ -8,6 +8,9 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications.Interface
 {
     public interface IRobotFoodOrderingSeeder
     {
+      
         Task Seed();
+     
+
     }
 }

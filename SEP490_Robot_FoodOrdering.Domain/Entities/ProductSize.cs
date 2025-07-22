@@ -6,7 +6,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
 {
     public class ProductSize : BaseEntity
     {
-        public SizeEnums SizeName { get; set; }
+        public SizeNums SizeName { get; set; }
         public decimal Price { get; set; }
 
         public Guid ProductId { get; set; }

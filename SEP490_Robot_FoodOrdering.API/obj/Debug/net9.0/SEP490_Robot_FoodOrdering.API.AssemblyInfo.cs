@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SEP490_Robot_FoodOrdering.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a256cffe3b80ac3ae8fab3dd8ba94c7525142153")]
 [assembly: System.Reflection.AssemblyProductAttribute("SEP490_Robot_FoodOrdering.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SEP490_Robot_FoodOrdering.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

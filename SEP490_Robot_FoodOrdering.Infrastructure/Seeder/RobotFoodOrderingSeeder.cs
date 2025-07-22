@@ -1,6 +1,5 @@
 ﻿
-using System.Runtime.ConstrainedExecution;
-using System.Security.Cryptography;
+
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Specifications.Interface;
@@ -110,7 +109,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
 
         public static List<ProductCategory> GetProductCategories()
         {
-              return new List<ProductCategory>
+            return new List<ProductCategory>
                 {
                     new()
                     {
@@ -152,7 +151,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                          CreatedTime = DateTime.Now,
                         LastUpdatedTime = DateTime.Now
                     }
-                };
+            };
         }
 
 
@@ -161,9 +160,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
         {
             return new List<ProductSize>
             {
-                new() { Id = Guid.Parse("F09A98D1-E078-4DBB-9E07-B586F29675CB"),ProductId=Guid.Parse("A1B2C3D4-E5F6-7890-1234-56789ABCDEF0"), SizeName =SizeEnums.Small, Price = 35000 , CreatedTime = DateTime.Now,LastUpdatedTime = DateTime.Now},
-                new() { Id = Guid.Parse("38D005CA-E093-4062-96E1-99C9B02CDB8D"),ProductId=Guid.Parse("A1B2C3D4-E5F6-7890-1234-56789ABCDEF0"), SizeName = SizeEnums.Medium, Price = 450000, CreatedTime = DateTime.Now,LastUpdatedTime = DateTime.Now },
-                new() { Id = Guid.Parse("936A347E-4EFF-4681-B804-A7F1DD9C6B56"),ProductId=Guid.Parse("A1B2C3D4-E5F6-7890-1234-56789ABCDEF0"), SizeName = SizeEnums.Large, Price =55000,  CreatedTime = DateTime.Now,LastUpdatedTime = DateTime.Now }
+                new() { Id = Guid.Parse("F09A98D1-E078-4DBB-9E07-B586F29675CB"),ProductId=Guid.Parse("A1B2C3D4-E5F6-7890-1234-56789ABCDEF0"), SizeName =SizeNums.Small, Price = 35000 , CreatedTime = DateTime.Now,LastUpdatedTime = DateTime.Now},
+                new() { Id = Guid.Parse("38D005CA-E093-4062-96E1-99C9B02CDB8D"),ProductId=Guid.Parse("A1B2C3D4-E5F6-7890-1234-56789ABCDEF0"), SizeName = SizeNums.Medium, Price = 450000, CreatedTime = DateTime.Now,LastUpdatedTime = DateTime.Now },
+                new() { Id = Guid.Parse("936A347E-4EFF-4681-B804-A7F1DD9C6B56"),ProductId=Guid.Parse("A1B2C3D4-E5F6-7890-1234-56789ABCDEF0"), SizeName = SizeNums.Large, Price =55000,  CreatedTime = DateTime.Now,LastUpdatedTime = DateTime.Now }
             };
 
         }
@@ -262,7 +261,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         LastUpdatedTime = DateTime.Now
                     }
                 };
-                    }
+        }
 
 
     }
