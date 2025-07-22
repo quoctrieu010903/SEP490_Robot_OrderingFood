@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35707.178 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Src", "Src", "{606C301F-EB48-4156-9190-275C89B5D6B8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SEP490_Robot_FoodOrdering.API", "SEP490_Robot_FoodOrdering.API\SEP490_Robot_FoodOrdering.API.csproj", "{400F3E49-7D6E-4C95-AF68-27B52C7F3713}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SEP490_Robot_FoodOrdering.Application", "SEP490_Robot_FoodOrdering.Application\SEP490_Robot_FoodOrdering.Application.csproj", "{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SEP490_Robot_FoodOrdering.Infrastructure", "SEP490_Robot_FoodOrdering.Infrastructure\SEP490_Robot_FoodOrdering.Infrastructure.csproj", "{17136543-C513-4AD7-BEAA-46FDDCAC6986}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SEP490_Robot_FoodOrdering.Domain", "SEP490_Robot_FoodOrdering.Domain\SEP490_Robot_FoodOrdering.Domain.csproj", "{239BDA10-B3F7-4975-94B3-A66AD2D246B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SEP490_Robot_FoodOrdering.Core", "SEP490_Robot_FoodOrdering.Core\SEP490_Robot_FoodOrdering.Core.csproj", "{C051635E-92E9-4D95-AF30-68A88FF59B06}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{400F3E49-7D6E-4C95-AF68-27B52C7F3713}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{400F3E49-7D6E-4C95-AF68-27B52C7F3713}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{400F3E49-7D6E-4C95-AF68-27B52C7F3713}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{400F3E49-7D6E-4C95-AF68-27B52C7F3713}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17136543-C513-4AD7-BEAA-46FDDCAC6986}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17136543-C513-4AD7-BEAA-46FDDCAC6986}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17136543-C513-4AD7-BEAA-46FDDCAC6986}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17136543-C513-4AD7-BEAA-46FDDCAC6986}.Release|Any CPU.Build.0 = Release|Any CPU
+		{239BDA10-B3F7-4975-94B3-A66AD2D246B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{239BDA10-B3F7-4975-94B3-A66AD2D246B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{239BDA10-B3F7-4975-94B3-A66AD2D246B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{239BDA10-B3F7-4975-94B3-A66AD2D246B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C051635E-92E9-4D95-AF30-68A88FF59B06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C051635E-92E9-4D95-AF30-68A88FF59B06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C051635E-92E9-4D95-AF30-68A88FF59B06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C051635E-92E9-4D95-AF30-68A88FF59B06}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{400F3E49-7D6E-4C95-AF68-27B52C7F3713} = {606C301F-EB48-4156-9190-275C89B5D6B8}
+		{D0EABFA5-9FF8-49F5-A95D-C099CAB55AD8} = {606C301F-EB48-4156-9190-275C89B5D6B8}
+		{17136543-C513-4AD7-BEAA-46FDDCAC6986} = {606C301F-EB48-4156-9190-275C89B5D6B8}
+		{239BDA10-B3F7-4975-94B3-A66AD2D246B5} = {606C301F-EB48-4156-9190-275C89B5D6B8}
+		{C051635E-92E9-4D95-AF30-68A88FF59B06} = {606C301F-EB48-4156-9190-275C89B5D6B8}
+	EndGlobalSection
+EndGlobal
