@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SEP490_Robot_FoodOrdering.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1119aa6649d99d03f522e77d6e6866a1c675396b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+af0837a66be300ee3a6af1155c043921a16f73d2")]
 [assembly: System.Reflection.AssemblyProductAttribute("SEP490_Robot_FoodOrdering.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SEP490_Robot_FoodOrdering.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
