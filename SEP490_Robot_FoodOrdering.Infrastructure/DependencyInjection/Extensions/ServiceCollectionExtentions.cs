@@ -18,7 +18,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
 
             var connectionString = configuration.GetConnectionString("DefaultConnection");
             services.AddDbContext<RobotFoodOrderingDBContext>(options =>
-                     options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+                     options.UseNpgsql(configuration.GetConnectionString("ConnectionStrings.DefaultConnection")));
 
             // Dependency Injection 
             services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));

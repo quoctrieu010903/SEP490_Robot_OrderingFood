@@ -3,3 +3,21 @@ D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP4
 D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.AssemblyInfoInputs.cache
 D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.AssemblyInfo.cs
 D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.csproj.CoreCompileInputs.cache
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.deps.json
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.dll
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.pdb
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.dll
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Domain.dll
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Domain.pdb
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.pdb
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.csproj.AssemblyReference.cache
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.AssemblyInfoInputs.cache
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.AssemblyInfo.cs
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.csproj.CoreCompileInputs.cache
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.sourcelink.json
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_R.65B8AAF1.Up2Date
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.dll
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\refint\SEP490_Robot_FoodOrdering.Application.dll
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.pdb
+C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\ref\SEP490_Robot_FoodOrdering.Application.dll
