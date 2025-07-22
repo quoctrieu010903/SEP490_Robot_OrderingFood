@@ -1,0 +1,5 @@
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.csproj.AssemblyReference.cache
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.AssemblyInfoInputs.cache
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.AssemblyInfo.cs
+D:\dulieu\New folder\FPT\Semester_9\SEP490_Robot\SEP490_Robot_Ordering_Food\SEP490_Robot_FoodOrdering.Application\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Application.csproj.CoreCompileInputs.cache
