@@ -82,8 +82,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\DTO\\Response\\Product\\ProductCategoryResponse.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAuwAwAAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:51:00.128Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:51:00.128Z"
             },
             {
               "$type": "Document",
@@ -95,8 +94,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.API\\Controllers\\TableController.cs",
               "ViewState": "AgIAABUAAAAAAAAAAAAjwCMAAAAnAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:48:32.958Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:48:32.958Z"
             },
             {
               "$type": "Document",
@@ -108,8 +106,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.API\\Controllers\\ProductToppingController.cs",
               "ViewState": "AgIAABYAAAAAAAAAAIAzwCQAAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:48:31.174Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:48:31.174Z"
             },
             {
               "$type": "Document",
@@ -121,8 +118,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.API\\Controllers\\ProductSizeController.cs",
               "ViewState": "AgIAABYAAAAAAAAAAIAzwCMAAAAvAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:48:22.199Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:48:22.199Z"
             },
             {
               "$type": "Document",
@@ -132,7 +128,7 @@
               "RelativeDocumentMoniker": "SEP490_Robot_FoodOrdering.Application\\Extentions\\ServiceCollectionExtentions.cs",
               "ToolTip": "D:\\dulieu\\New folder\\FPT\\Semester_9\\SEP490_Robot\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Application\\Extentions\\ServiceCollectionExtentions.cs",
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\Extentions\\ServiceCollectionExtentions.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAiwA8AAAApAAAAAAAAAA==",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAiwA8AAABPAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-07-23T13:45:01.928Z",
               "EditorCaption": ""
@@ -147,8 +143,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\Mapping\\MappingProfile.cs",
               "ViewState": "AgIAABMAAAAAAAAAAAAowCEAAABDAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:44:40.076Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:44:40.076Z"
             },
             {
               "$type": "Document",
@@ -160,8 +155,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\Service\\Implementation\\ProductCategoryService.cs",
               "ViewState": "AgIAACYAAAAAAAAAAAASwDgAAABDAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:42:59.057Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:42:59.057Z"
             },
             {
               "$type": "Document",
@@ -173,8 +167,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\Service\\Interface\\ITableService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAABNAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:42:07.783Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:42:07.783Z"
             },
             {
               "$type": "Document",
@@ -186,8 +179,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\Service\\Implementation\\TableService.cs",
               "ViewState": "AgIAAAwAAAAAAAAAAAAywBUAAAApAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:41:04.352Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:41:04.352Z"
             },
             {
               "$type": "Document",
@@ -199,8 +191,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\Service\\Interface\\IProductToppingService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAuwA4AAABWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:40:35.694Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:40:35.694Z"
             },
             {
               "$type": "Document",
@@ -212,8 +203,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\Service\\Implementation\\ProductToppingService.cs",
               "ViewState": "AgIAACcAAAAAAAAAAAAcwDUAAAC4AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:40:33.324Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:40:33.324Z"
             },
             {
               "$type": "Document",
@@ -225,8 +215,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\Service\\Interface\\IProductSizeService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAuwAoAAAAVAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:38:41.186Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:38:41.186Z"
             },
             {
               "$type": "Document",
@@ -238,8 +227,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\DTO\\Response\\Product\\ProductSizeResponse.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAuwAUAAAARAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:29:10.059Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:29:10.059Z"
             },
             {
               "$type": "Document",
@@ -251,8 +239,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\Service\\Implementation\\ProductSizeService.cs",
               "ViewState": "AgIAACMAAAAAAAAAAIA4wDMAAABGAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:28:40.008Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:28:40.008Z"
             },
             {
               "$type": "Document",
@@ -264,8 +251,7 @@
               "RelativeToolTip": "SEP490_Robot_FoodOrdering.Application\\DTO\\Response\\Product\\ProductDetailResponse.cs",
               "ViewState": "AgIAAAUAAAAAAAAAAAAswBIAAAAlAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-23T13:28:32.444Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-23T13:28:32.444Z"
             }
           ]
         }

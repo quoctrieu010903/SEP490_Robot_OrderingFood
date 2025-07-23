@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SEP490_Robot_FoodOrdering.API.Extentions;
+using SEP490_Robot_FoodOrdering.API.Middleware;
 using SEP490_Robot_FoodOrdering.Application.Extentions;
 using SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extensions;
 
@@ -33,6 +34,9 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 app.UseStaticFiles();
+
+app.UseMiddleware<CustomExceptionHandlerMiddleware>();
+
 
 app.MapControllers();
 
