@@ -5,6 +5,7 @@ using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.Category;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Category;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Table;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 
 namespace SEP490_Robot_FoodOrdering.Application.Mapping
@@ -27,6 +28,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
             CreateMap<CreateProductRequest, Product>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.ProductName))
                 .ForMember(dest => dest.ImageUrl, opt => opt.Ignore()); // Handle file upload separately
+            CreateMap<ProductSize, ProductSizeResponse>().ReverseMap();
+            CreateMap<CreateProductSizeRequest, ProductSize>().ReverseMap();
+            CreateMap<ProductTopping, ProductToppingResponse>().ReverseMap();
+            CreateMap<CreateProductToppingRequest, ProductTopping>().ReverseMap();
+            CreateMap<Table, TableResponse>().ReverseMap();
+            CreateMap<CreateTableRequest, Table>().ReverseMap();
         }
     }
 }

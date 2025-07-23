@@ -14,9 +14,9 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Product
         public string UrlImg { get; set; }
         public string Description { get; set; }
         public string Price { get; set; }
-        public List<ProductSize> Sizes { get; set; }
+        public List<ProductSizeResponses> Sizes { get; set; }
     }
-    public class ProductSize
+    public class ProductSizeResponses
     {
         public Guid Id { get; set; }
         public string SizeName { get; set; }

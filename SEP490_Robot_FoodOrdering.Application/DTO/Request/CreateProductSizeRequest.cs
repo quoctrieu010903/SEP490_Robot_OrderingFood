@@ -1,15 +1,12 @@
-﻿
-using SEP490_Robot_FoodOrdering.Core.Base;
+using System;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 
-namespace SEP490_Robot_FoodOrdering.Domain.Entities
+namespace SEP490_Robot_FoodOrdering.Application.DTO.Request
 {
-    public class ProductSize : BaseEntity
+    public class CreateProductSizeRequest
     {
         public SizeNameEnum SizeName { get; set; }
         public decimal Price { get; set; }
-
         public Guid ProductId { get; set; }
-        public virtual Product Product { get; set; }
     }
-}
+} 
