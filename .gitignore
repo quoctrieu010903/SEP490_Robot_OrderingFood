@@ -3,6 +3,16 @@
 #################################
 **/bin/
 **/obj/
+SEP490_Robot_FoodOrdering.API/bin/
+SEP490_Robot_FoodOrdering.API/obj/
+SEP490_Robot_FoodOrdering.Application/bin/
+SEP490_Robot_FoodOrdering.Application/obj/
+SEP490_Robot_FoodOrdering.Core/bin/
+SEP490_Robot_FoodOrdering.Core/obj/
+SEP490_Robot_FoodOrdering.Domain/bin/
+SEP490_Robot_FoodOrdering.Domain/obj/
+SEP490_Robot_FoodOrdering.Infrastructure/bin/
+SEP490_Robot_FoodOrdering.Infrastructure/obj/
 
 # User-specific files
 *.rsuser

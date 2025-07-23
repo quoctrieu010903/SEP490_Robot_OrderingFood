@@ -1,10 +1,9 @@
+using Microsoft.EntityFrameworkCore;
 using SEP490_Robot_FoodOrdering.API.Extentions;
 using SEP490_Robot_FoodOrdering.Application.Extentions;
 using SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
 
 
 builder.Services.AddControllers();
