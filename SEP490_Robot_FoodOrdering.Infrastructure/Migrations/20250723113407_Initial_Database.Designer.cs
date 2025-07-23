@@ -12,8 +12,8 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
-    [Migration("20250723054833_Initial")]
-    partial class Initial
+    [Migration("20250723113407_Initial_Database")]
+    partial class Initial_Database
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -88,6 +88,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<Guid?>("TableId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("TableId1")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("numeric");
 
@@ -97,6 +100,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("TableId");
+
+                    b.HasIndex("TableId1");
 
                     b.ToTable("Orders");
                 });
@@ -477,6 +482,10 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         .HasForeignKey("TableId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Table", null)
+                        .WithMany("Orders")
+                        .HasForeignKey("TableId1");
+
                     b.Navigation("Table");
                 });
 
@@ -615,6 +624,11 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Navigation("ProductCategories");
 
                     b.Navigation("Sizes");
+                });
+
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Table", b =>
+                {
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Topping", b =>

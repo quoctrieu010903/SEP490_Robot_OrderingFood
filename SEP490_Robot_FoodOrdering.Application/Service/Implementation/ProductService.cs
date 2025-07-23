@@ -1,0 +1,125 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
+using SEP490_Robot_FoodOrdering.Application.Service.Interface;
+using SEP490_Robot_FoodOrdering.Core.Response;
+using SEP490_Robot_FoodOrdering.Domain;
+using SEP490_Robot_FoodOrdering.Domain.Interface;
+using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using SEP490_Robot_FoodOrdering.Domain.Entities;
+using SEP490_Robot_FoodOrdering.Core.Constants;
+using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
+using SEP490_Robot_FoodOrdering.Application.DTO.Fillter;
+
+namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
+{
+    public class ProductService : IProductService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+
+        public ProductService(IUnitOfWork unitOfWork, IMapper mapper)
+        {
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+        }
+
+        public async Task<BaseResponseModel> Create(CreateProductRequest request)
+        {
+            var entity = _mapper.Map<Product>(request);
+            entity.CreatedBy = "";
+            entity.CreatedTime = DateTime.UtcNow;
+            entity.LastUpdatedBy = "";
+            entity.LastUpdatedTime = DateTime.UtcNow;
+            // TODO: Handle file upload for ImageUrl if needed
+            await _unitOfWork.Repository<Product, bool>().AddAsync(entity);
+            await _unitOfWork.SaveChangesAsync();
+            return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, entity);
+        }
+
+        public async Task<BaseResponseModel> Delete(Guid id)
+        {
+            var existedProduct = await _unitOfWork.Repository<Product, Guid>().GetByIdAsync(id);
+            if (existedProduct == null)
+            {
+                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Product không tìm thấy");
+            }
+            existedProduct.LastUpdatedBy = "";
+            existedProduct.LastUpdatedTime = DateTime.UtcNow;
+            existedProduct.DeletedBy = "";
+            existedProduct.DeletedTime = DateTime.UtcNow;
+            _unitOfWork.Repository<Product, Product>().Update(existedProduct);
+            await _unitOfWork.SaveChangesAsync();
+            return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Xoá thành công");
+        }
+
+        public async Task<PaginatedList<ProductResponse>> GetAll(PagingRequestModel paging, ProductFillterResquest fillter)
+        {
+            var products = await _unitOfWork.Repository<Product, Product>()
+                .GetAllWithSpecWithInclueAsync(
+                    new BaseSpecification<Product>(x => !x.DeletedTime.HasValue),
+                    true,
+                    p => p.ProductCategories
+                );
+
+            if (products == null || !products.Any())
+            {
+                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Không có sản phẩm nào");
+            }
+
+            if (!string.IsNullOrWhiteSpace(fillter.ProductName))
+            {
+                products = products
+                    .Where(x => x.Name.Contains(fillter.ProductName, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(fillter.CategoryName))
+            {
+                products = products
+                    .Where(x => x.ProductCategories.Any(pc =>
+                        pc.Category.Name.Contains(fillter.CategoryName, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
+
+            var productResponses = _mapper.Map<List<ProductResponse>>(products);
+
+            return PaginatedList<ProductResponse>.Create(productResponses, paging.PageNumber, paging.PageSize);
+        }
+
+        public async Task<BaseResponseModel<ProductDetailResponse>> GetById(Guid id)
+        {
+            var existedProduct = await _unitOfWork.Repository<Product, Guid>().GetByIdWithIncludeAsync(x=>x.Id == id , true , p=> p.Sizes , p => p.ProductCategories);
+            if (existedProduct == null)
+            {
+                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Product không tìm thấy");
+            }
+            var productDetail = _mapper.Map<ProductDetailResponse>(existedProduct);
+            return new BaseResponseModel<ProductDetailResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, productDetail);
+        }
+
+        public async Task<BaseResponseModel<ProductResponse>> Update(CreateProductRequest request, Guid id)
+        {
+            var existedProduct = await _unitOfWork.Repository<Product, Guid>().GetByIdAsync(id);
+            if (existedProduct == null)
+            {
+                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Product không tìm thấy");
+            }
+            existedProduct.Name = request.ProductName;
+            existedProduct.Description = request.Description;
+            existedProduct.DurationTime = request.DurationTime;
+            existedProduct.LastUpdatedBy = "";
+            existedProduct.LastUpdatedTime = DateTime.UtcNow;
+            // TODO: Handle file upload for ImageUrl if needed
+            await _unitOfWork.Repository<Product, Product>().UpdateAsync(existedProduct);
+            await _unitOfWork.SaveChangesAsync();
+            var productResponse = _mapper.Map<ProductResponse>(existedProduct);
+            return new BaseResponseModel<ProductResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, productResponse);
+        }
+    }
+}
