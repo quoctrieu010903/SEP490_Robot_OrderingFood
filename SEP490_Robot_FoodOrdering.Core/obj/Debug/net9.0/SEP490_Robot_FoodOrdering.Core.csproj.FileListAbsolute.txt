@@ -23,3 +23,16 @@ C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\ne
 C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\net9.0\refint\SEP490_Robot_FoodOrdering.Core.dll
 C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.pdb
 C:\Desktop\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\net9.0\ref\SEP490_Robot_FoodOrdering.Core.dll
+D:\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.deps.json
+D:\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.dll
+D:\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\bin\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.pdb
+D:\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.csproj.AssemblyReference.cache
+D:\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.AssemblyInfoInputs.cache
+D:\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.AssemblyInfo.cs
+D:\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.csproj.CoreCompileInputs.cache
+D:\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.sourcelink.json
+D:\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.dll
+D:\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\net9.0\refint\SEP490_Robot_FoodOrdering.Core.dll
+D:\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\net9.0\SEP490_Robot_FoodOrdering.Core.pdb
+D:\SEP490_Robot_OrderingFood\SEP490_Robot_FoodOrdering.Core\obj\Debug\net9.0\ref\SEP490_Robot_FoodOrdering.Core.dll

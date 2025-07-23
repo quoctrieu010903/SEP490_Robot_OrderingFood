@@ -2066,45 +2066,38 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\ASUS\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\NhatTruong\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Desktop\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Infrastructure\\SEP490_Robot_FoodOrdering.Infrastructure.csproj",
+      "projectUniqueName": "D:\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Infrastructure\\SEP490_Robot_FoodOrdering.Infrastructure.csproj",
       "projectName": "SEP490_Robot_FoodOrdering.Infrastructure",
-      "projectPath": "C:\\Desktop\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Infrastructure\\SEP490_Robot_FoodOrdering.Infrastructure.csproj",
-      "packagesPath": "C:\\Users\\ASUS\\.nuget\\packages\\",
-      "outputPath": "C:\\Desktop\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Infrastructure\\obj\\",
+      "projectPath": "D:\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Infrastructure\\SEP490_Robot_FoodOrdering.Infrastructure.csproj",
+      "packagesPath": "C:\\Users\\NhatTruong\\.nuget\\packages\\",
+      "outputPath": "D:\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Infrastructure\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\ASUS\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\NhatTruong\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "C:\\Desktop\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj": {
-              "projectPath": "C:\\Desktop\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj"
+            "D:\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj": {
+              "projectPath": "D:\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Application\\SEP490_Robot_FoodOrdering.Application.csproj"
             },
-            "C:\\Desktop\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Core\\SEP490_Robot_FoodOrdering.Core.csproj": {
-              "projectPath": "C:\\Desktop\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Core\\SEP490_Robot_FoodOrdering.Core.csproj"
+            "D:\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Core\\SEP490_Robot_FoodOrdering.Core.csproj": {
+              "projectPath": "D:\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Core\\SEP490_Robot_FoodOrdering.Core.csproj"
             },
-            "C:\\Desktop\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Domain\\SEP490_Robot_FoodOrdering.Domain.csproj": {
-              "projectPath": "C:\\Desktop\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Domain\\SEP490_Robot_FoodOrdering.Domain.csproj"
+            "D:\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Domain\\SEP490_Robot_FoodOrdering.Domain.csproj": {
+              "projectPath": "D:\\SEP490_Robot_OrderingFood\\SEP490_Robot_FoodOrdering.Domain\\SEP490_Robot_FoodOrdering.Domain.csproj"
             }
           }
         }
@@ -2119,7 +2112,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.200"
+      "SdkAnalysisLevel": "9.0.300"
     },
     "frameworks": {
       "net9.0": {
@@ -2158,7 +2151,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Users\\NhatTruong\\.dotnet\\sdk\\9.0.303/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
