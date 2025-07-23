@@ -1,6 +1,4 @@
-﻿
-
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Email;
@@ -15,12 +13,12 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
 {
     public static class ServiceCollectionExtentions
     {
-        public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddInfrastructure(this IServiceCollection services,
+            IConfiguration configuration)
         {
-
             var connectionString = configuration.GetConnectionString("DefaultConnection");
             services.AddDbContext<RobotFoodOrderingDBContext>(options =>
-                     options.UseNpgsql(configuration.GetConnectionString("ConnectionStrings.DefaultConnection")));
+                options.UseNpgsql(configuration.GetConnectionString("ConnectionStrings.DefaultConnection")));
 
             // Dependency Injection 
             services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
@@ -30,17 +28,11 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
 
             services.AddScoped<IUtilsService, UtilService>();
 
-            services.AddScoped<IEmailService , EmailService>();
-
-
-
+            services.AddScoped<IEmailService, EmailService>();
+            
             // Add Auto Mapper
 
-
-
-
             return services;
-
         }
     }
 }
