@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -17,11 +18,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ILogger<OrderService> _logger;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<OrderService> logger)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
@@ -89,11 +92,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var item = order.OrderItems.FirstOrDefault(i => i.Id == orderItemId);
             if (item == null)
                 return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status404NotFound, "ITEM_NOT_FOUND", "Order item not found.");
+            var oldStatus = item.Status;
             item.Status = request.Status;
             item.LastUpdatedTime = DateTime.UtcNow;
+            _logger.LogInformation($"OrderItem {item.Id} status changed from {oldStatus} to {item.Status} in Order {orderId}");
             // Update order status automatically
+            var oldOrderStatus = order.Status;
             order.Status = CalculateOrderStatus(order.OrderItems);
             order.LastUpdatedTime = DateTime.UtcNow;
+            if (oldOrderStatus != order.Status)
+            {
+                _logger.LogInformation($"Order {orderId} status changed from {oldOrderStatus} to {order.Status}");
+            }
             await _unitOfWork.Repository<Order, Order>().UpdateAsync(order);
             await _unitOfWork.SaveChangesAsync();
             var response = _mapper.Map<OrderItemResponse>(item);
@@ -114,6 +124,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var order = await _unitOfWork.Repository<Order, Guid>().GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment);
             if (order == null)
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found.");
+            _logger.LogInformation($"Initiating payment for Order {orderId} with method {request.PaymentMethod}");
             // Simulate payment logic
             if (request.PaymentMethod == PaymentMethodEnums.COD)
             {
