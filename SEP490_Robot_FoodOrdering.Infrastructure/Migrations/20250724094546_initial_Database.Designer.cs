@@ -12,8 +12,8 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
-    [Migration("20250724070145_initialDatabase")]
-    partial class initialDatabase
+    [Migration("20250724094546_initial_Database")]
+    partial class initial_Database
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -451,6 +451,10 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
                     b.Property<DateTime?>("DeletedTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text");
