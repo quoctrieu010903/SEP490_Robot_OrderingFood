@@ -8,9 +8,10 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
     {
         public Guid? TableId { get; set; } // nếu đặt tại quán
         public virtual Table? Table { get; set; } // nếu đặt tại quán
-        public OrderStatus Status { get; set; }  // 0: Pending, 1: InProgress, 2: Completed, 3: Cancelled
+        public OrderStatus Status { get; set; }  // Automatically derived from order items' statuses
         public decimal TotalPrice { get; set; }
         public PaymentMethodEnums paymentMethod { get; set; }  // 0: Cash, 1: Card, 2: Online
+        public PaymentStatusEnums PaymentStatus { get; set; } // Track payment status at order level
         public virtual ICollection<OrderItem> OrderItems { get; set; }
         public virtual Payment Payment { get; set; }
 
