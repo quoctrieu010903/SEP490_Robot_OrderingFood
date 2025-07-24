@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial_Database : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -124,7 +124,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    SizeName = table.Column<string>(type: "text", nullable: false),
+                    SizeName = table.Column<int>(type: "integer", nullable: false),
                     Price = table.Column<decimal>(type: "numeric", nullable: false),
                     ProductId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
@@ -311,6 +311,41 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.InsertData(
+                table: "Categories",
+                columns: new[] { "Id", "CreatedBy", "CreatedTime", "DeletedBy", "DeletedTime", "LastUpdatedBy", "LastUpdatedTime", "Name" },
+                values: new object[] { new Guid("b4fd8cfa-051b-43d3-915f-518617b3035f"), null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(2348), null, null, null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(2349), "Beverages" });
+
+            migrationBuilder.InsertData(
+                table: "Products",
+                columns: new[] { "Id", "CreatedBy", "CreatedTime", "DeletedBy", "DeletedTime", "Description", "DurationTime", "ImageUrl", "LastUpdatedBy", "LastUpdatedTime", "Name" },
+                values: new object[] { new Guid("a1864dc3-e6b3-4f06-b04e-8b4fb5833062"), null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(6635), null, null, "Refreshing soft drink", 1, "cocacola.jpg", null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(6636), "Coca Cola" });
+
+            migrationBuilder.InsertData(
+                table: "Tables",
+                columns: new[] { "Id", "CreatedBy", "CreatedTime", "DeletedBy", "DeletedTime", "LastUpdatedBy", "LastUpdatedTime", "Name", "Status" },
+                values: new object[] { new Guid("d334b7d3-d6fc-4f87-bb73-79550ab3542e"), null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(9541), null, null, null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(9542), new Guid("d334b7d3-d6fc-4f87-bb73-79550ab3542e"), 0 });
+
+            migrationBuilder.InsertData(
+                table: "Toppings",
+                columns: new[] { "Id", "CreatedBy", "CreatedTime", "DeletedBy", "DeletedTime", "LastUpdatedBy", "LastUpdatedTime", "Name", "Price" },
+                values: new object[] { new Guid("18ffc532-d26d-4e99-9698-29d0ee11f968"), null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(8142), null, null, null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(8143), "Ice", 0m });
+
+            migrationBuilder.InsertData(
+                table: "ProductCategories",
+                columns: new[] { "Id", "CategoryId", "CreatedBy", "CreatedTime", "DeletedBy", "DeletedTime", "LastUpdatedBy", "LastUpdatedTime", "ProductId" },
+                values: new object[] { new Guid("894f7654-f7b4-4f74-bfe6-6b502d3201b2"), new Guid("b4fd8cfa-051b-43d3-915f-518617b3035f"), null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(6871), null, null, null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(6871), new Guid("a1864dc3-e6b3-4f06-b04e-8b4fb5833062") });
+
+            migrationBuilder.InsertData(
+                table: "ProductSizes",
+                columns: new[] { "Id", "CreatedBy", "CreatedTime", "DeletedBy", "DeletedTime", "LastUpdatedBy", "LastUpdatedTime", "Price", "ProductId", "SizeName" },
+                values: new object[] { new Guid("a6647c49-6a04-4323-b0a2-8cdec3f6614d"), null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(7831), null, null, null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(7831), 1.99m, new Guid("a1864dc3-e6b3-4f06-b04e-8b4fb5833062"), 2 });
+
+            migrationBuilder.InsertData(
+                table: "ProductToppings",
+                columns: new[] { "Id", "CreatedBy", "CreatedTime", "DeletedBy", "DeletedTime", "LastUpdatedBy", "LastUpdatedTime", "ProductId", "ToppingId" },
+                values: new object[] { new Guid("97bcf6a6-3474-40b2-ac9c-360aa4bb3e6d"), null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(8520), null, null, null, new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(8521), new Guid("a1864dc3-e6b3-4f06-b04e-8b4fb5833062"), new Guid("18ffc532-d26d-4e99-9698-29d0ee11f968") });
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderItems_OrderId",

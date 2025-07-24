@@ -1,6 +1,4 @@
-﻿
-
-using AutoMapper;
+﻿using AutoMapper;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.Category;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Category;
@@ -34,6 +32,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
             CreateMap<CreateProductToppingRequest, ProductTopping>().ReverseMap();
             CreateMap<Table, TableResponse>().ReverseMap();
             CreateMap<CreateTableRequest, Table>().ReverseMap();
+            CreateMap<CategoryResponse, Category>();
         }
     }
 }
