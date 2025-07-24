@@ -41,6 +41,7 @@ app.UseCors(x => x
     .AllowAnyMethod()
     .AllowAnyHeader()
     .SetIsOriginAllowed(origin => true)
+    .WithOrigins("http://192.168.110.46:3000")
     .AllowCredentials());
 
 app.UseAuthorization();

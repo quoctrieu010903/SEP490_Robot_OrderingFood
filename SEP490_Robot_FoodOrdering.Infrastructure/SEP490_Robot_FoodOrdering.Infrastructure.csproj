@@ -19,4 +19,8 @@
     <ProjectReference Include="..\SEP490_Robot_FoodOrdering.Domain\SEP490_Robot_FoodOrdering.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Migrations\" />
+  </ItemGroup>
+
 </Project>

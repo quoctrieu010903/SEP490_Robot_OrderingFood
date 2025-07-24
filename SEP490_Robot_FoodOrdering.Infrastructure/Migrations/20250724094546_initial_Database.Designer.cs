@@ -12,6 +12,7 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
+
     [Migration("20250724094546_initial_Database")]
     partial class initial_Database
     {
@@ -56,6 +57,15 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Categories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("b4fd8cfa-051b-43d3-915f-518617b3035f"),
+                            CreatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(2348),
+                            LastUpdatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(2349),
+                            Name = "Beverages"
+                        });
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Order", b =>
@@ -278,6 +288,18 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Products");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a1864dc3-e6b3-4f06-b04e-8b4fb5833062"),
+                            CreatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(6635),
+                            Description = "Refreshing soft drink",
+                            DurationTime = 1,
+                            ImageUrl = "cocacola.jpg",
+                            LastUpdatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(6636),
+                            Name = "Coca Cola"
+                        });
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.ProductCategory", b =>
@@ -317,6 +339,16 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("ProductCategories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("894f7654-f7b4-4f74-bfe6-6b502d3201b2"),
+                            CategoryId = new Guid("b4fd8cfa-051b-43d3-915f-518617b3035f"),
+                            CreatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(6871),
+                            LastUpdatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(6871),
+                            ProductId = new Guid("a1864dc3-e6b3-4f06-b04e-8b4fb5833062")
+                        });
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.ProductSize", b =>
@@ -357,6 +389,17 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("ProductSizes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a6647c49-6a04-4323-b0a2-8cdec3f6614d"),
+                            CreatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(7831),
+                            LastUpdatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(7831),
+                            Price = 1.99m,
+                            ProductId = new Guid("a1864dc3-e6b3-4f06-b04e-8b4fb5833062"),
+                            SizeName = 2
+                        });
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.ProductTopping", b =>
@@ -396,6 +439,16 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasIndex("ToppingId");
 
                     b.ToTable("ProductToppings");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("97bcf6a6-3474-40b2-ac9c-360aa4bb3e6d"),
+                            CreatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(8520),
+                            LastUpdatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(8521),
+                            ProductId = new Guid("a1864dc3-e6b3-4f06-b04e-8b4fb5833062"),
+                            ToppingId = new Guid("18ffc532-d26d-4e99-9698-29d0ee11f968")
+                        });
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Table", b =>
@@ -432,6 +485,16 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Tables");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("d334b7d3-d6fc-4f87-bb73-79550ab3542e"),
+                            CreatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(9541),
+                            LastUpdatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(9542),
+                            Name = new Guid("d334b7d3-d6fc-4f87-bb73-79550ab3542e"),
+                            Status = 0
+                        });
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Topping", b =>
@@ -472,6 +535,16 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Toppings");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("18ffc532-d26d-4e99-9698-29d0ee11f968"),
+                            CreatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(8142),
+                            LastUpdatedTime = new DateTime(2025, 7, 24, 6, 51, 46, 78, DateTimeKind.Utc).AddTicks(8143),
+                            Name = "Ice",
+                            Price = 0m
+                        });
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Order", b =>
