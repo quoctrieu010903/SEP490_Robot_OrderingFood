@@ -4,6 +4,7 @@ using Org.BouncyCastle.Security;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.Category;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Category;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain;
@@ -22,7 +23,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<PaginatedList<CategoryResponse>>> GetAll([FromQuery] PagingRequestModel paging)
+        public async Task<ActionResult<PaginatedList<ProductCategoryResponse>>> GetAll([FromQuery] PagingRequestModel paging)
         {
             var result = await _service.GetAllCategory(paging);
             return Ok(result);
