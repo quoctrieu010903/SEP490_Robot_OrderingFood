@@ -65,6 +65,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
             CreateMap<CreateToppingRequest, Topping>()
                 .ForMember(dest => dest.ImageUrl, opt => opt.Ignore()) 
                 .ReverseMap();
+            
+            
         }
     }
 }

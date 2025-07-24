@@ -12,15 +12,10 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
-<<<<<<<< HEAD:SEP490_Robot_FoodOrdering.Infrastructure/Migrations/20250724065147_Initial.Designer.cs
 
-    [Migration("20250724070145_initialDatabase")]
-    partial class initialDatabase {
-========
     [Migration("20250724094546_initial_Database")]
     partial class initial_Database
     {
->>>>>>>> 8700cb0c4a873d481245117e8225b0b69b631900:SEP490_Robot_FoodOrdering.Infrastructure/Migrations/20250724094546_initial_Database.Designer.cs
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
