@@ -6,6 +6,7 @@ using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain;
+using SEP490_Robot_FoodOrdering.Domain.Specifications.Params;
 
 namespace SEP490_Robot_FoodOrdering.API.Controllers
 {
@@ -20,7 +21,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             _service = service;
         }
         [HttpGet]
-        public async Task<ActionResult<PaginatedList<ProductResponse>>> GetAll([FromQuery] PagingRequestModel paging, [FromQuery] ProductFillterResquest fillter)
+        public async Task<ActionResult<PaginatedList<ProductResponse>>> GetAll([FromQuery] PagingRequestModel paging, [FromQuery] ProductSpecParams fillter)
         {
             var result = await _service.GetAll(paging, fillter);
             return Ok(result);

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SEP490_Robot_FoodOrdering.Application.DTO.Fillter
+namespace SEP490_Robot_FoodOrdering.Domain.Specifications.Params
 {
-    public class ProductFillterResquest
+    public class ProductSpecParams
     {
         public string? Search { get; set; }
         public string? CategoryName { get; set; }

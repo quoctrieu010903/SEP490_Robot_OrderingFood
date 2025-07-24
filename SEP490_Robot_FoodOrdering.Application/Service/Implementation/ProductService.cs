@@ -15,6 +15,8 @@ using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Core.Constants;
 using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
 using SEP490_Robot_FoodOrdering.Application.DTO.Fillter;
+using SEP490_Robot_FoodOrdering.Domain.Specifications;
+using SEP490_Robot_FoodOrdering.Domain.Specifications.Params;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -58,35 +60,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Xoá thành công");
         }
 
-        public async Task<PaginatedList<ProductResponse>> GetAll(PagingRequestModel paging, ProductFillterResquest fillter)
+        public async Task<PaginatedList<ProductResponse>> GetAll(PagingRequestModel paging, ProductSpecParams fillter)
         {
             var products = await _unitOfWork.Repository<Product, Product>()
-                .GetAllWithSpecWithInclueAsync(
-                    new BaseSpecification<Product>(x => !x.DeletedTime.HasValue),
-                    true,
-                    p => p.ProductCategories
+                .GetAllWithSpecAsync(
+                 new ProductSpecification(fillter,paging.PageNumber, paging.PageSize),
+                    true
                 );
-
-            if (products == null || !products.Any())
-            {
-                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Không có sản phẩm nào");
-            }
-
-            if (!string.IsNullOrWhiteSpace(fillter.ProductName))
-            {
-                products = products
-                    .Where(x => x.Name.Contains(fillter.ProductName, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-            }
-
-            if (!string.IsNullOrWhiteSpace(fillter.CategoryName))
-            {
-                products = products
-                    .Where(x => x.ProductCategories.Any(pc =>
-                        pc.Category.Name.Contains(fillter.CategoryName, StringComparison.OrdinalIgnoreCase)))
-                    .ToList();
-            }
-
             var productResponses = _mapper.Map<List<ProductResponse>>(products);
 
             return PaginatedList<ProductResponse>.Create(productResponses, paging.PageNumber, paging.PageSize);
