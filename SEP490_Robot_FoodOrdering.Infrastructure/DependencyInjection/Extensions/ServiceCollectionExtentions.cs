@@ -10,6 +10,7 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
 using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 using SEP490_Robot_FoodOrdering.Infrastructure.Email;
 using SEP490_Robot_FoodOrdering.Infrastructure.Repository;
+using SEP490_Robot_FoodOrdering.Infrastructure.Seeder;
 
 namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extensions
 {
@@ -27,6 +28,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             // Add Scope for the third 's  Service
+            services.AddScoped<IRobotFoodSeeder, RobotFoodSeeder>();
 
             services.AddScoped<IUtilsService, UtilService>();
 

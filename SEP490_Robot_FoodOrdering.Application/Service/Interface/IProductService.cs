@@ -8,6 +8,7 @@ using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
 using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain;
+using SEP490_Robot_FoodOrdering.Domain.Specifications.Params;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
 {
@@ -16,7 +17,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
         Task<BaseResponseModel> Create(CreateProductRequest request);
         Task<BaseResponseModel<ProductResponse>> Update(CreateProductRequest request, Guid id);
         Task<BaseResponseModel<ProductDetailResponse>> GetById(Guid id);
-        Task<PaginatedList<ProductResponse>> GetAll(PagingRequestModel paging, ProductFillterResquest fillter);
+        Task<PaginatedList<ProductResponse>> GetAll(PagingRequestModel paging, ProductSpecParams fillter);
         Task<BaseResponseModel> Delete(Guid id);
     
     }

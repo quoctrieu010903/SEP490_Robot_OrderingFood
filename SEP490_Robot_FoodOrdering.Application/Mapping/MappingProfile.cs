@@ -18,16 +18,34 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ReverseMap();
             CreateMap<CreateCategoryRequest, Category>()
                 .ReverseMap();
+
+            #region Product Mapping
             CreateMap<Product, ProductResponse>()
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Name))
                 .ReverseMap();
+
+
+            CreateMap<ProductSize, ProductSizeResponse>();
+                
             CreateMap<Product, ProductDetailResponse>()
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-                .ForMember(dest => dest.UrlImg, opt => opt.MapFrom(src => src.ImageUrl))
-                .ReverseMap();
+       .ForMember(dest => dest.Price, opt =>
+           opt.MapFrom(src => src.Sizes != null && src.Sizes.Any()
+               ? src.Sizes.Min(size => size.Price)
+               : 0)) // fallback nếu không có size
+           .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+           .ForMember(dest => dest.UrlImg, opt => opt.MapFrom(src => src.ImageUrl))
+           .ForMember(dest => dest.Sizes, opt => opt.MapFrom(src => src.Sizes));
+          
+
+
+
+
             CreateMap<CreateProductRequest, Product>()
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.ProductName))
                 .ForMember(dest => dest.ImageUrl, opt => opt.Ignore()); // Handle file upload separately
+            #endregion  
+
+
             CreateMap<ProductSize, ProductSizeResponse>().ReverseMap();
             CreateMap<CreateProductSizeRequest, ProductSize>().ReverseMap();
             CreateMap<ProductTopping, ProductToppingResponse>().ReverseMap();
