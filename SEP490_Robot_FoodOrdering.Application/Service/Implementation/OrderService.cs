@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SEP490_Robot_FoodOrdering.Application.Service.Interface;
+using SEP490_Robot_FoodOrdering.Application.Mapping;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -181,7 +183,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (items.All(i => i.Status == OrderItemStatus.Cancelled))
                 return OrderStatus.Cancelled;
             if (items.Any(i => i.Status == OrderItemStatus.Ready || i.Status == OrderItemStatus.Preparing || i.Status == OrderItemStatus.Served))
-                return OrderStatus.InProgress;
+                return OrderStatus.Delivering;
             return OrderStatus.Pending;
         }
 
