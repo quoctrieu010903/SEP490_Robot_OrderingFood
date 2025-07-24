@@ -42,15 +42,15 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     await _dbContext.ProductSizes.AddRangeAsync(productSizes);
                 }
 
-                if(!_dbContext.ProductToppings.Any())
+                if (!_dbContext.ProductToppings.Any())
                 {
                     var productToppings = GetProductToppings();
                     await _dbContext.ProductToppings.AddRangeAsync(productToppings);
                 }
                 if (!_dbContext.ProductCategories.Any())
                 {
-                    var productCategory = GetProductCategories();   
-                     await _dbContext.ProductCategories.AddRangeAsync(productCategory);
+                    var productCategory = GetProductCategories();
+                    await _dbContext.ProductCategories.AddRangeAsync(productCategory);
                 }
 
 
@@ -95,6 +95,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     Id = Guid.Parse("BBFBC305-2508-47F2-807F-2037BBE656A7"),
                     Name = "Thêm Đá",
                     Price = 0, // Giá thêm đá là miễn phí
+                    ImageUrl = "https://mayda.com.vn/wp-content/uploads/2022/03/da-vien-mini.jpeg",
                     CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 },
@@ -102,6 +103,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                 {
                     Id = Guid.Parse("6039B485-D82A-45B1-AA06-37F53FEF7C19"),
                     Name = "Thêm Sữa",
+                    ImageUrl = "https://sanday.com.vn/images/photo/news/cach-pha-bot-san-day-voi-sua-ong-tho.jpg",
                     Price = 15000,
                     CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
@@ -110,6 +112,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                 {
                     Id = Guid.Parse("F7ED898C-02AC-462C-AD46-314223800993"),
                     Name = "Thêm Đường",
+                    ImageUrl = "https://vcdn1-suckhoe.vnecdn.net/2022/05/13/duong-1399-1652438133.jpg?w=0&h=0&q=100&dpr=2&fit=crop&s=isWw2RyX-fsTtBdw4l00rg",
                     Price = 5000,
                     CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
@@ -118,6 +121,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     {
                         Id = Guid.Parse("E1A7BCF1-9873-4E64-A9EF-5C9C154097A1"),
                         Name = "Thêm Trân Châu",
+                        ImageUrl ="https://www.pizzaexpress.vn/wp-content/uploads/2023/07/removal.ai_tmp-64a7a9974e2a2.png",
                         Price = 10000,
                     CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow

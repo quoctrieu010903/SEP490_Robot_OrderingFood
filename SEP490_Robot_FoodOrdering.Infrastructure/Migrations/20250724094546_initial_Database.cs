@@ -5,7 +5,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
+<<<<<<<< HEAD:SEP490_Robot_FoodOrdering.Infrastructure/Migrations/20250724065147_Initial.cs
     public partial class initialDatabase : Migration
+========
+    /// <inheritdoc />
+    public partial class initial_Database : Migration
+>>>>>>>> 8700cb0c4a873d481245117e8225b0b69b631900:SEP490_Robot_FoodOrdering.Infrastructure/Migrations/20250724094546_initial_Database.cs
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -74,6 +79,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Price = table.Column<decimal>(type: "numeric", nullable: false),
+                    ImageUrl = table.Column<string>(type: "text", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
                     DeletedBy = table.Column<string>(type: "text", nullable: true),

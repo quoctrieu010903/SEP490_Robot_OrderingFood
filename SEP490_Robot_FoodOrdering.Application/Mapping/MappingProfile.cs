@@ -1,9 +1,12 @@
-﻿using AutoMapper;
+﻿
+
+using AutoMapper;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.Category;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Category;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Table;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Topping;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 
 namespace SEP490_Robot_FoodOrdering.Application.Mapping
@@ -43,6 +46,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.ImageUrl, opt => opt.Ignore()); // Handle file upload separately
             #endregion  
 
+            CreateMap<ProductCategory, ProductCategoryResponse>()
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Product.Description))
+                .ForMember(dest => dest.UrlImg, opt => opt.MapFrom(src => src.Product.ImageUrl))
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+                .ReverseMap();
 
             CreateMap<ProductSize, ProductSizeResponse>().ReverseMap();
             CreateMap<CreateProductSizeRequest, ProductSize>().ReverseMap();
@@ -50,7 +59,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
             CreateMap<CreateProductToppingRequest, ProductTopping>().ReverseMap();
             CreateMap<Table, TableResponse>().ReverseMap();
             CreateMap<CreateTableRequest, Table>().ReverseMap();
-            CreateMap<CategoryResponse, Category>();
+
+
+            CreateMap<Topping,ToppingResponse>().ReverseMap();
+            CreateMap<CreateToppingRequest, Topping>()
+                .ForMember(dest => dest.ImageUrl, opt => opt.Ignore()) 
+                .ReverseMap();
         }
     }
 }

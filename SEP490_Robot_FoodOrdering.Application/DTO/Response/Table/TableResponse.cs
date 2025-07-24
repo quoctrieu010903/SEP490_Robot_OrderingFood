@@ -6,7 +6,7 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Table
     public class TableResponse
     {
         public Guid Id { get; set; }
-        public Guid Name { get; set; }
+        public string Name { get; set; }
         public TableEnums Status { get; set; }
     }
 } 

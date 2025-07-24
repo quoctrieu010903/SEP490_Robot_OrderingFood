@@ -16,10 +16,10 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
         public int PageSize { get; set; }
 
         public ProductSpecification(ProductSpecParams specParams, int pageIndex, int pageSize)
-            : base(p =>
+            : base(p => 
                 string.IsNullOrEmpty(specParams.Search) ||
                 p.Name.Contains(specParams.Search) ||
-                (!string.IsNullOrEmpty(p.Description) && p.Description.Contains(specParams.Search)))
+                (!string.IsNullOrEmpty(p.Description) && p.Description.Contains(specParams.Search))&& !p.DeletedTime.HasValue)
         {
             PageIndex = pageIndex;
             PageSize = pageSize;

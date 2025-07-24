@@ -12,6 +12,7 @@ using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using SEP490_Robot_FoodOrdering.Domain;
+using SEP490_Robot_FoodOrdering.Domain.Specifications;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -52,7 +53,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<PaginatedList<ProductCategoryResponse>> GetAllProductCategoriesAsync(PagingRequestModel paging)
         {
             var list = await _unitOfWork.Repository<ProductCategory, ProductCategory>()
-                .GetAllWithSpecWithInclueAsync( new BaseSpecification<ProductCategory>(x => !x.DeletedTime.HasValue), true, pc => pc.Product, pc => pc.Category);
+                .GetAllWithSpecAsync(new ProductCategorySpecification(paging.PageNumber , paging.PageSize),true);
             var mapped = _mapper.Map<List<ProductCategoryResponse>>(list);
             return PaginatedList<ProductCategoryResponse>.Create(mapped, paging.PageNumber, paging.PageSize);
         }
@@ -72,5 +73,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, "SUCCESS", "Deleted successfully");
         }
+
     }
 }
