@@ -5,14 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
-    /// <inheritdoc />
-<<<<<<<< HEAD:SEP490_Robot_FoodOrdering.Infrastructure/Migrations/20250724065147_Initial.cs
-    public partial class Initial : Migration
-========
     public partial class initialDatabase : Migration
->>>>>>>> ab0d22cbb2beea988f91862dbc1ef2fe4974f1a1:SEP490_Robot_FoodOrdering.Infrastructure/Migrations/20250724070145_initialDatabase.cs
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
