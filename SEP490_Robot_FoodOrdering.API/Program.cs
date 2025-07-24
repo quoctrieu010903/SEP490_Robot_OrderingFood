@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SEP490_Robot_FoodOrdering.API.Extentions;
 using SEP490_Robot_FoodOrdering.API.Middleware;
 using SEP490_Robot_FoodOrdering.Application.Extentions;
+using SEP490_Robot_FoodOrdering.Domain.Interface;
 using SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,8 +20,12 @@ builder.Services.AddInfrastructure(builder.Configuration)
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-var app = builder.Build();
 
+     var app = builder.Build();
+
+    var scope = app.Services.CreateScope();
+    var seeder = scope.ServiceProvider.GetRequiredService<IRobotFoodSeeder>();
+    await seeder.Seed();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -31,6 +36,12 @@ if (app.Environment.IsDevelopment())
 
 
 app.UseHttpsRedirection();
+
+app.UseCors(x => x
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+    .SetIsOriginAllowed(origin => true)
+    .AllowCredentials());
 
 app.UseAuthorization();
 app.UseStaticFiles();

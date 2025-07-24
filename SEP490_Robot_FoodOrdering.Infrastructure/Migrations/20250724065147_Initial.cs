@@ -6,7 +6,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     /// <inheritdoc />
+<<<<<<<< HEAD:SEP490_Robot_FoodOrdering.Infrastructure/Migrations/20250724065147_Initial.cs
     public partial class Initial : Migration
+========
+    public partial class initialDatabase : Migration
+>>>>>>>> ab0d22cbb2beea988f91862dbc1ef2fe4974f1a1:SEP490_Robot_FoodOrdering.Infrastructure/Migrations/20250724070145_initialDatabase.cs
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -55,7 +59,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
@@ -154,7 +158,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     Status = table.Column<int>(type: "integer", nullable: false),
                     TotalPrice = table.Column<decimal>(type: "numeric", nullable: false),
                     paymentMethod = table.Column<int>(type: "integer", nullable: false),
-                    TableId1 = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
                     DeletedBy = table.Column<string>(type: "text", nullable: true),
@@ -171,11 +174,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         principalTable: "Tables",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_Orders_Tables_TableId1",
-                        column: x => x.TableId1,
-                        principalTable: "Tables",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -381,11 +379,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 name: "IX_Orders_TableId",
                 table: "Orders",
                 column: "TableId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Orders_TableId1",
-                table: "Orders",
-                column: "TableId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Payments_OrderId",

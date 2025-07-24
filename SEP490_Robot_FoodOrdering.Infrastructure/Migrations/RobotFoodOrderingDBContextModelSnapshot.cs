@@ -94,9 +94,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<Guid?>("TableId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("TableId1")
-                        .HasColumnType("uuid");
-
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("numeric");
 
@@ -106,8 +103,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("TableId");
-
-                    b.HasIndex("TableId1");
 
                     b.ToTable("Orders");
                 });
@@ -476,8 +471,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<DateTime>("LastUpdatedTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("Name")
-                        .HasColumnType("uuid");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -546,13 +542,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Order", b =>
                 {
                     b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Table", "Table")
-                        .WithMany()
+                        .WithMany("Orders")
                         .HasForeignKey("TableId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Table", null)
-                        .WithMany("Orders")
-                        .HasForeignKey("TableId1");
 
                     b.Navigation("Table");
                 });

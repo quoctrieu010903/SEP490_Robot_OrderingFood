@@ -25,80 +25,10 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(RobotFoodOrderingDBContext).Assembly);
-            Seed(modelBuilder);
+         
             base.OnModelCreating(modelBuilder);
         }
 
-        public static void Seed(ModelBuilder modelBuilder)
-        {
-            // Example seed data
-            var categoryId = Guid.NewGuid();
-            var productId = Guid.NewGuid();
-            var sizeId = Guid.NewGuid();
-            var toppingId = Guid.NewGuid();
-            var tableId = Guid.NewGuid();
-
-            modelBuilder.Entity<Category>().HasData(new Category
-            {
-                Id = categoryId,
-                Name = "Beverages",
-                CreatedTime = DateTime.UtcNow,
-                LastUpdatedTime = DateTime.UtcNow
-            });
-
-            modelBuilder.Entity<Product>().HasData(new Product
-            {
-                Id = productId,
-                Name = "Coca Cola",
-                Description = "Refreshing soft drink",
-                DurationTime = 1,
-                ImageUrl = "cocacola.jpg",
-                CreatedTime = DateTime.UtcNow,
-                LastUpdatedTime = DateTime.UtcNow
-            });
-
-            modelBuilder.Entity<ProductCategory>().HasData(new ProductCategory
-            {
-                Id = Guid.NewGuid(),
-                ProductId = productId,
-                CategoryId = categoryId
-            });
-
-            modelBuilder.Entity<ProductSize>().HasData(new ProductSize
-            {
-                Id = sizeId,
-                SizeName = SEP490_Robot_FoodOrdering.Domain.Enums.SizeNameEnum.Medium,
-                Price = 1.99m,
-                ProductId = productId,
-                CreatedTime = DateTime.UtcNow,
-                LastUpdatedTime = DateTime.UtcNow
-            });
-
-            modelBuilder.Entity<Topping>().HasData(new Topping
-            {
-                Id = toppingId,
-                Name = "Ice",
-                CreatedTime = DateTime.UtcNow,
-                LastUpdatedTime = DateTime.UtcNow
-            });
-
-            modelBuilder.Entity<ProductTopping>().HasData(new ProductTopping
-            {
-                Id = Guid.NewGuid(),
-                ProductId = productId,
-                ToppingId = toppingId,
-                CreatedTime = DateTime.UtcNow,
-                LastUpdatedTime = DateTime.UtcNow
-            });
-
-            modelBuilder.Entity<Table>().HasData(new Table
-            {
-                Id = tableId,
-                Name = tableId,
-                Status = SEP490_Robot_FoodOrdering.Domain.Enums.TableEnums.Available,
-                CreatedTime = DateTime.UtcNow,
-                LastUpdatedTime = DateTime.UtcNow
-            });
-        }
+       
     }
 }

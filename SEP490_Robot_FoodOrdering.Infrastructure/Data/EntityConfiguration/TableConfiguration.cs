@@ -12,7 +12,12 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
         {
             builder.Property(t => t.Status)
                   .IsRequired()
-                  .HasConversion<int>(); 
+                  .HasConversion<int>();
+
+            builder.HasMany(t => t.Orders)
+                 .WithOne(o => o.Table)
+                 .HasForeignKey(o => o.TableId)
+                 .OnDelete(DeleteBehavior.SetNull); // Nếu xóa bàn, order giữ lại
         }
     }
 }

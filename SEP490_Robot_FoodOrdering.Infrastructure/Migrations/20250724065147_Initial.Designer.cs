@@ -12,8 +12,13 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
+<<<<<<<< HEAD:SEP490_Robot_FoodOrdering.Infrastructure/Migrations/20250724065147_Initial.Designer.cs
     [Migration("20250724065147_Initial")]
     partial class Initial
+========
+    [Migration("20250724070145_initialDatabase")]
+    partial class initialDatabase
+>>>>>>>> ab0d22cbb2beea988f91862dbc1ef2fe4974f1a1:SEP490_Robot_FoodOrdering.Infrastructure/Migrations/20250724070145_initialDatabase.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -97,9 +102,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<Guid?>("TableId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("TableId1")
-                        .HasColumnType("uuid");
-
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("numeric");
 
@@ -109,8 +111,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("TableId");
-
-                    b.HasIndex("TableId1");
 
                     b.ToTable("Orders");
                 });
@@ -479,8 +479,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<DateTime>("LastUpdatedTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("Name")
-                        .HasColumnType("uuid");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -549,13 +550,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Order", b =>
                 {
                     b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Table", "Table")
-                        .WithMany()
+                        .WithMany("Orders")
                         .HasForeignKey("TableId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Table", null)
-                        .WithMany("Orders")
-                        .HasForeignKey("TableId1");
 
                     b.Navigation("Table");
                 });
