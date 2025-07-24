@@ -66,6 +66,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.ImageUrl, opt => opt.Ignore()) 
                 .ReverseMap();
             
+            // Order Mappings
+            CreateMap<CreateOrderRequest, Order>()
+                .ForMember(dest => dest.OrderItems, opt => opt.Ignore()) // handled in service
+                .ForMember(dest => dest.TableId, opt => opt.MapFrom(src => src.TableId));
+            CreateMap<CreateOrderItemRequest, OrderItem>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => SEP490_Robot_FoodOrdering.Domain.Enums.OrderItemStatus.Pending));
+            CreateMap<Order, OrderResponse>()
+                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.OrderItems));
+            CreateMap<OrderItem, OrderItemResponse>()
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.SizeName, opt => opt.MapFrom(src => src.ProductSize.SizeName.ToString()));
             
         }
     }
