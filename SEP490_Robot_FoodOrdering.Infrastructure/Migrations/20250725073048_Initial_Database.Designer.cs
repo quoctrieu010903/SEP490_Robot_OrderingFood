@@ -12,8 +12,8 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
-    [Migration("20250724162542_initialDatabase")]
-    partial class initialDatabase
+    [Migration("20250725073048_Initial_Database")]
+    partial class Initial_Database
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -178,9 +178,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<Guid>("OrderItemId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("OrderItemId1")
-                        .HasColumnType("uuid");
-
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
@@ -190,8 +187,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderItemId");
-
-                    b.HasIndex("OrderItemId1");
 
                     b.HasIndex("ToppingId");
 
@@ -520,19 +515,15 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.OrderItemTopping", b =>
                 {
                     b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.OrderItem", "OrderItem")
-                        .WithMany()
+                        .WithMany("OrderItemTopping")
                         .HasForeignKey("OrderItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.OrderItem", null)
-                        .WithMany("OrderItemTopping")
-                        .HasForeignKey("OrderItemId1");
-
                     b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Topping", "Topping")
                         .WithMany()
                         .HasForeignKey("ToppingId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("OrderItem");

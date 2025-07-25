@@ -14,12 +14,15 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
         public void Configure(EntityTypeBuilder<OrderItemTopping> builder)
         {
             builder.HasOne(oit => oit.OrderItem)
-              .WithMany()
-              .HasForeignKey(oit => oit.OrderItemId);
+                   .WithMany(oi => oi.OrderItemTopping) 
+                   .HasForeignKey(oit => oit.OrderItemId)
+                   .OnDelete(DeleteBehavior.Cascade);   
 
+            // Topping -> OrderItemTopping (1-n)
             builder.HasOne(oit => oit.Topping)
                    .WithMany()
-                   .HasForeignKey(oit => oit.ToppingId);
+                   .HasForeignKey(oit => oit.ToppingId)
+                   .OnDelete(DeleteBehavior.Restrict);  // optional: tránh xóa topping nếu bị dùng
         }
     }
 }
