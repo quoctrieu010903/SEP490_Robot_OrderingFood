@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SEP490_Robot_FoodOrdering.Application.Abstractions.Email;
 using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 
@@ -23,6 +18,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Extentions
             services.AddScoped<IProductCategoryService, ProductCategoryService>();
 
             services.AddScoped<IProductToppingService, ProductToppingService>();
+            services.AddScoped<IOrderService, OrderService>();
             
              services.AddScoped<IProductSizeService, ProductSizeService>();
             services.AddScoped<IToppingService, ToppingService>();
