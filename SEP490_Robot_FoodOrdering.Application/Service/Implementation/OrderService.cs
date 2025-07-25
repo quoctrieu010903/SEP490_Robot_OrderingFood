@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Application.Mapping;
+using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -46,7 +47,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 var product = await _unitOfWork.Repository<Product, Guid>().GetByIdAsync(itemReq.ProductId);
                 var productSize = await _unitOfWork.Repository<ProductSize, Guid>().GetByIdAsync(itemReq.ProductSizeId);
                 if (product == null || productSize == null)
-                    return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "INVALID_PRODUCT_OR_SIZE", "Invalid product or size.");
+                   throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_PRODUCT_OR_SIZE", "Invalid product or size.");
                 for (int i = 0; i < itemReq.Quantity; i++)
                 {
                     var orderItem = new OrderItem
