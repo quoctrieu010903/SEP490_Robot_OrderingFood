@@ -14,6 +14,8 @@ using Microsoft.Extensions.Logging;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Application.Mapping;
 using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
+using SEP490_Robot_FoodOrdering.Domain;
+using SEP490_Robot_FoodOrdering.Domain.Specifications;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -48,8 +50,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 var productSize = await _unitOfWork.Repository<ProductSize, Guid>().GetByIdAsync(itemReq.ProductSizeId);
                 if (product == null || productSize == null)
                    throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_PRODUCT_OR_SIZE", "Invalid product or size.");
-                for (int i = 0; i < itemReq.Quantity; i++)
-                {
+               
                     var orderItem = new OrderItem
                     {
                         ProductId = itemReq.ProductId,
@@ -58,10 +59,34 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         ProductSize = productSize,
                         Status = OrderItemStatus.Pending,
                         CreatedTime = DateTime.UtcNow,
-                        LastUpdatedTime = DateTime.UtcNow
+                        LastUpdatedTime = DateTime.UtcNow,
+                        OrderItemTopping = new List<OrderItemTopping>()
                     };
                     order.OrderItems.Add(orderItem);
+                     
                     total += productSize.Price;
+
+                foreach (var toppingId in itemReq.ToppingIds)
+                {
+                    var productTopping = await _unitOfWork.Repository<ProductTopping, Guid>()
+                        .GetWithSpecAsync(new BaseSpecification<ProductTopping>(pt => pt.ProductId == itemReq.ProductId && pt.ToppingId == toppingId), true);
+
+                    if (productTopping == null)
+                        throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_TOPPING", $"Topping {toppingId} is not valid for Product {itemReq.ProductId}");
+
+                    var topping = await _unitOfWork.Repository<Topping, Guid>().GetByIdAsync(toppingId);
+                    if (topping == null)
+                        throw new ErrorException(StatusCodes.Status400BadRequest, "TOPPING_NOT_FOUND", "Topping not found.");
+
+                    orderItem.OrderItemTopping.Add(new OrderItemTopping
+                    {
+                        ToppingId = topping.Id,
+                        Price = topping.Price,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    });
+
+                    total += topping.Price;
                 }
             }
             order.TotalPrice = total;
@@ -71,9 +96,82 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status201Created, "ORDER_CREATED", response);
         }
 
+        public async Task<BaseResponseModel<OrderResponse>> HandleOrderAsync(CreateOrderRequest request)
+        {
+            if (request.Items == null || !request.Items.Any())
+                return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS", "Order must have at least one item.");
+
+            // 1. Tìm order đang pending của bàn này
+            var existingOrder = await _unitOfWork.Repository<Order, Guid>()
+                .GetWithSpecAsync( new OrderSpecification(request.TableId), true);
+
+            // 2. Nếu có order -> thêm item vào và cập nhật lại giá
+            if (existingOrder != null)
+            {
+                decimal addedTotal = 0;
+
+                foreach (var itemReq in request.Items)
+                {
+                    var product = await _unitOfWork.Repository<Product, Guid>().GetByIdAsync(itemReq.ProductId);
+                    var productSize = await _unitOfWork.Repository<ProductSize, Guid>().GetByIdAsync(itemReq.ProductSizeId);
+                    if (product == null || productSize == null)
+                        throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_PRODUCT_OR_SIZE", "Invalid product or size.");
+
+                    //for (int i = 0; i < itemReq.Quantity; i++)
+                    //{
+                        var orderItem = new OrderItem
+                        {
+                            OrderId = existingOrder.Id,
+                            ProductId = itemReq.ProductId,
+                            ProductSizeId = itemReq.ProductSizeId,
+                            Status = OrderItemStatus.Pending,
+                            CreatedTime = DateTime.UtcNow,
+                            LastUpdatedTime = DateTime.UtcNow
+                        };
+                        existingOrder.OrderItems.Add(orderItem);
+                        addedTotal += productSize.Price;
+                    foreach (var toppingId in itemReq.ToppingIds)
+                    {
+                        var productTopping = await _unitOfWork.Repository<ProductTopping, Guid>()
+                            .GetWithSpecAsync(new BaseSpecification<ProductTopping>(pt => pt.ProductId == itemReq.ProductId && pt.ToppingId == toppingId),true);
+
+                        if (productTopping == null)
+                            throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_TOPPING", $"Topping {toppingId} is not valid for Product {itemReq.ProductId}");
+
+                        var topping = await _unitOfWork.Repository<Topping, Guid>().GetByIdAsync(toppingId);
+                        if (topping == null)
+                            throw new ErrorException(StatusCodes.Status400BadRequest, "TOPPING_NOT_FOUND", "Topping not found.");
+
+                        orderItem.OrderItemTopping.Add(new OrderItemTopping
+                        {
+                            ToppingId = topping.Id,
+                            Price = topping.Price,
+                            CreatedTime = DateTime.UtcNow,
+                            LastUpdatedTime = DateTime.UtcNow
+                        });
+
+                        addedTotal += topping.Price;
+                    }
+                }
+
+                existingOrder.TotalPrice += addedTotal;
+                existingOrder.LastUpdatedTime = DateTime.UtcNow;
+
+                _unitOfWork.Repository<Order, Guid>().Update(existingOrder);
+                await _unitOfWork.SaveChangesAsync();
+
+                var response = _mapper.Map<OrderResponse>(existingOrder);
+                return new BaseResponseModel<OrderResponse>(StatusCodes.Status200OK, "ORDER_UPDATED", response);
+            }
+
+            // 3. Nếu chưa có order pending -> tạo mới
+            return await CreateOrderAsync(request);
+        }
+
+
         public async Task<BaseResponseModel<OrderResponse>> GetOrderByIdAsync(Guid orderId)
         {
-            var order = await _unitOfWork.Repository<Order, Guid>().GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.OrderItems, o => o.Table, o => o.Payment);
+            var order = await _unitOfWork.Repository<Order, Guid>().GetWithSpecAsync(new OrderSpecification(orderId, true),  true);
             if (order == null)
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status404NotFound, "NOT_FOUND", "Order not found.");
             var response = _mapper.Map<OrderResponse>(order);
@@ -82,14 +180,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersAsync()
         {
-            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithIncludeAsync(true, o => o.OrderItems, o => o.Table, o => o.Payment);
+            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync( new OrderSpecification(), true);
             var response = _mapper.Map<List<OrderResponse>>(orders.ToList());
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
         public async Task<BaseResponseModel<OrderItemResponse>> UpdateOrderItemStatusAsync(Guid orderId, Guid orderItemId, UpdateOrderItemStatusRequest request)
         {
-            var order = await _unitOfWork.Repository<Order, Guid>().GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.OrderItems);
+            var order = await _unitOfWork.Repository<Order, Guid>().GetWithSpecAsync( new OrderSpecification(orderId,true), true );
             if (order == null)
                 return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found.");
             var item = order.OrderItems.FirstOrDefault(i => i.Id == orderItemId);
