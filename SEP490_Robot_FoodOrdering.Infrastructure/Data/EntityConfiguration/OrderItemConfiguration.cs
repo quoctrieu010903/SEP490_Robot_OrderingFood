@@ -9,6 +9,11 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
     {
         public void Configure(EntityTypeBuilder<OrderItem> builder)
         {
+
+            builder.Property(o => o.Status)
+                 .IsRequired()
+                 .HasConversion<int>();
+
             builder.HasOne(oi => oi.Order)
                .WithMany(o => o.OrderItems)
                .HasForeignKey(oi => oi.OrderId)
