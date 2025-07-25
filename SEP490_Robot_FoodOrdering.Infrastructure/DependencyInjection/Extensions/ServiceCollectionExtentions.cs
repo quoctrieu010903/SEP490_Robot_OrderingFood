@@ -26,6 +26,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
             // Dependency Injection 
             services.AddScoped(typeof(IGenericRepository<,>), typeof(GenericRepository<,>));
 
+            services.AddScoped<IToppingRepository, ToppingRepository>();
+
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             // Add Scope for the third 's  Service
             services.AddScoped<IRobotFoodSeeder, RobotFoodSeeder>();

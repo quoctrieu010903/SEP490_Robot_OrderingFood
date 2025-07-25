@@ -1,5 +1,4 @@
-﻿
-using SEP490_Robot_FoodOrdering.Application.DTO.Request;
+﻿using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Topping;
 using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain;
@@ -14,5 +13,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
         Task<BaseResponseModel> Update(CreateToppingRequest request, Guid id);
         Task<BaseResponseModel<ToppingResponse>> GetByIdAsync(Guid id);
 
+        Task<BaseResponseModel<List<ToppingResponse>>> GetByIdProduction(Guid id);
     }
 }
