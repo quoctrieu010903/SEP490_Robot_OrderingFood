@@ -22,17 +22,25 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
      // Lấy theo orderId
     public OrderSpecification(Guid orderId, bool byOrderId)
         : base(o => o.Id == orderId && !o.DeletedTime.HasValue)
-        {
+        {   
             AddIncludes();
         }
 
+    public OrderSpecification(Guid orderId, Guid tableId, bool byOrderId) :base(o=> o.Id == orderId && o.TableId == tableId && !o.DeletedTime.HasValue  ) {
+            AddIncludes();
+        }
         private void AddIncludes()
         {
             ApplyInclude(q => q
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
+                        .ThenInclude(oi => oi.Sizes)
                 .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.ProductSize)
+                    .ThenInclude(oi => oi.OrderItemTopping)
+                        .ThenInclude(oi => oi.Topping)
+                    
+                        
+
                 .Include(o => o.Table)
                 .Include(o => o.Payment));
         }

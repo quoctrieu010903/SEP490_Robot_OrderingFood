@@ -46,10 +46,10 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// </summary>
         /// <returns>List of orders</returns>
         [HttpGet]
-        public async Task<ActionResult<BaseResponseModel>> GetOrders()
+        public async Task<ActionResult<BaseResponseModel>> GetOrders([FromQuery] PagingRequestModel paging)
         {
-            var result = await _orderService.GetOrdersAsync();
-            return StatusCode(result.StatusCode, result);
+            var result = await _orderService.GetOrdersAsync(paging);
+            return Ok(result);
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         public async Task<ActionResult<BaseResponseModel>> GetOrderItems(Guid orderId)
         {
             var result = await _orderService.GetOrderItemsAsync(orderId);
-            return StatusCode(result.StatusCode, result);
+            return Ok(result);
         }
 
         /// <summary>
@@ -76,6 +76,12 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         {
             var result = await _orderService.UpdateOrderItemStatusAsync(orderId, itemId, request);
             return StatusCode(result.StatusCode, result);
+        }
+        [HttpGet("{orderId}/table/{tableId}")]
+        public async Task<ActionResult<BaseResponseModel>> GetOrdersByTableId(Guid orderId, Guid tableId )
+        {
+            var result = await _orderService.GetOrdersbyTableiDAsync(orderId, tableId);
+            return Ok(result);
         }
 
         /// <summary>

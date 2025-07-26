@@ -96,16 +96,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
             CreateMap<CreateOrderItemRequest, OrderItem>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => SEP490_Robot_FoodOrdering.Domain.Enums.OrderItemStatus.Pending));
             CreateMap<Order, OrderResponse>()
-                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.OrderItems));
+             .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.Table.Name))
+             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.OrderItems)); // Items instead of OrderItems
+
             CreateMap<OrderItem, OrderItemResponse>()
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
-                .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.Order.Table.Name))
-                .ForMember(dest => dest.ToppingName, opt => opt.MapFrom(src =>
+                .ForMember(dest => dest.SizeName, opt => opt.MapFrom(src => src.ProductSize.SizeName.ToString()))
+                .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src =>
                     src.OrderItemTopping != null && src.OrderItemTopping.Count > 0
-                        ? string.Join(", ", src.OrderItemTopping.Select(t => t.Topping.Name))
-                        : ""))
-                .ForMember(dest => dest.SizeName, opt => opt.MapFrom(src => src.ProductSize.SizeName.ToString()));
-            
+                        ? src.OrderItemTopping.Select(oit => oit.Topping).ToList()
+                        : new List<Topping>())); // Direct Topping entities
+
         }
     }
 }

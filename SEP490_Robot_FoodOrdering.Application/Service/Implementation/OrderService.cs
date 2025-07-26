@@ -16,6 +16,8 @@ using SEP490_Robot_FoodOrdering.Application.Mapping;
 using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
 using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Specifications;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
+using System.Net.NetworkInformation;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -38,8 +40,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS", "Order must have at least one item.");
 
             var order = _mapper.Map<Order>(request);
+           
             order.Status = OrderStatus.Pending;
             order.PaymentStatus = PaymentStatusEnums.Pending;
+            order.Table.Status = TableEnums.Occupied; 
             order.CreatedTime = DateTime.UtcNow;
             order.LastUpdatedTime = DateTime.UtcNow;
             order.OrderItems = new List<OrderItem>();
@@ -169,7 +173,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
 
 
-        public async Task<BaseResponseModel<OrderResponse>> GetOrderByIdAsync(Guid orderId)
+        public async Task<BaseResponseModel<OrderResponse>> GetOrderByIdAsync(Guid orderId
+            )
         {
             var order = await _unitOfWork.Repository<Order, Guid>().GetWithSpecAsync(new OrderSpecification(orderId, true),  true);
             if (order == null)
@@ -178,10 +183,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
-        public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersAsync()
+        public async Task<PaginatedList<OrderResponse>> GetOrdersAsync(PagingRequestModel paging)
         {
             var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync( new OrderSpecification(), true);
-            var response = _mapper.Map<List<OrderResponse>>(orders.ToList());
+            var response = _mapper.Map<List<OrderResponse>>(orders);
+            return  PaginatedList<OrderResponse>.Create(response, paging.PageNumber, paging.PageSize);
+        }
+        public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersbyTableiDAsync(Guid Orderid,Guid TableId)
+        {
+            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(Orderid, TableId, true), true);
+            var response = _mapper.Map<List<OrderResponse>>(orders);
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
@@ -286,12 +297,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return OrderStatus.Pending;
         }
 
-        protected async void updateStatus(Order order, PaymentStatusEnums status)
+        protected async void updateStatus(Order order, PaymentStatusEnums status )
         {
             if (order.Payment != null)
             {
                 order.Payment.PaymentStatus = status;
             }
+          
             order.PaymentStatus = status;
             _unitOfWork.Repository<Order, Guid>().Update(order);
             await _unitOfWork.SaveChangesAsync();
