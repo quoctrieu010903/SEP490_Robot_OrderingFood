@@ -77,6 +77,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.OrderItems));
             CreateMap<OrderItem, OrderItemResponse>()
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.Order.Table.Name))
+                .ForMember(dest => dest.ToppingName, opt => opt.MapFrom(src =>
+                    src.OrderItemTopping != null && src.OrderItemTopping.Count > 0
+                        ? string.Join(", ", src.OrderItemTopping.Select(t => t.Topping.Name))
+                        : ""))
                 .ForMember(dest => dest.SizeName, opt => opt.MapFrom(src => src.ProductSize.SizeName.ToString()));
             
         }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class initialDatabase : Migration
+    public partial class Initial_Database : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -279,7 +279,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     OrderItemId = table.Column<Guid>(type: "uuid", nullable: false),
                     ToppingId = table.Column<Guid>(type: "uuid", nullable: false),
                     Price = table.Column<decimal>(type: "numeric", nullable: false),
-                    OrderItemId1 = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
                     DeletedBy = table.Column<string>(type: "text", nullable: true),
@@ -297,16 +296,11 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_OrderItemToppings_OrderItems_OrderItemId1",
-                        column: x => x.OrderItemId1,
-                        principalTable: "OrderItems",
-                        principalColumn: "Id");
-                    table.ForeignKey(
                         name: "FK_OrderItemToppings_Toppings_ToppingId",
                         column: x => x.ToppingId,
                         principalTable: "Toppings",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
@@ -328,11 +322,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 name: "IX_OrderItemToppings_OrderItemId",
                 table: "OrderItemToppings",
                 column: "OrderItemId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OrderItemToppings_OrderItemId1",
-                table: "OrderItemToppings",
-                column: "OrderItemId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderItemToppings_ToppingId",
