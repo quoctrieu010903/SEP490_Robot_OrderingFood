@@ -13,6 +13,7 @@ using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
+using SEP490_Robot_FoodOrdering.Domain.Specifications;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -49,18 +50,38 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Xoá thành công");
         }
-        public async Task<PaginatedList<ProductToppingResponse>> GetAll(PagingRequestModel paging)
-        {
-            var list = await _unitOfWork.Repository<ProductTopping, ProductTopping>().GetAllWithSpecWithInclueAsync( new BaseSpecification<ProductTopping>(x => !x.DeletedTime.HasValue), true, t => t.Product, t => t.Topping);
-            var mapped = _mapper.Map<List<ProductToppingResponse>>(list);
-            return PaginatedList<ProductToppingResponse>.Create(mapped, paging.PageNumber, paging.PageSize);
-        }
+            public async Task<PaginatedList<ProductToppingResponse>> GetAll(PagingRequestModel paging)
+            {
+                var list = await _unitOfWork.Repository<ProductTopping, ProductTopping>().GetAllWithSpecAsync( new ProductToppingSpecification() , true);
+                var mapped = _mapper.Map<List<ProductToppingResponse>>(list);
+                return PaginatedList<ProductToppingResponse>.Create(mapped, paging.PageNumber, paging.PageSize);
+            }
         public async Task<ProductToppingResponse> GetById(Guid id)
         {
-            var existed = await _unitOfWork.Repository<ProductTopping, Guid>().GetByIdAsync(id);
+            var existed = await _unitOfWork.Repository<ProductTopping, Guid>().GetWithSpecAsync(new ProductToppingSpecification(id),true);
             if (existed == null)
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "ProductTopping không tìm thấy");
             return _mapper.Map<ProductToppingResponse>(existed);
+        }
+
+        public async Task<BaseResponseModel<ProductWithToppingsResponse>> GetProductWithToppingsAsync(Guid ProductId)
+        {
+            var specification = new ProductToppingSpecification(ProductId, true);
+
+            var product = await _unitOfWork.Repository<ProductTopping, ProductTopping>().GetWithSpecAsync(specification, true);
+
+            if (product == null)
+            {
+                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, $"Product with ID {ProductId} not found");
+            }
+
+            var response = _mapper.Map<ProductWithToppingsResponse>(product); 
+
+            return new BaseResponseModel<ProductWithToppingsResponse>(
+                StatusCodes.Status200OK,
+                ResponseCodeConstants.SUCCESS,
+                response
+            );
         }
         public async Task<BaseResponseModel> Update(CreateProductToppingRequest request, Guid id)
         {

@@ -12,5 +12,5 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public virtual ICollection<ProductTopping>? ProductToppings { get; set; }
     }
 
-}
+}   
 
