@@ -13,6 +13,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
         Task<BaseResponseModel> Create(CreateProductToppingRequest request);
         Task<BaseResponseModel> Delete(Guid id);
         Task<PaginatedList<ProductToppingResponse>> GetAll(PagingRequestModel paging);
+        Task<BaseResponseModel<ProductWithToppingsResponse>> GetProductWithToppingsAsync(Guid ProductId);
         Task<ProductToppingResponse> GetById(Guid id);
         Task<BaseResponseModel> Update(CreateProductToppingRequest request, Guid id);
     }
