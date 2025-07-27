@@ -9,6 +9,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
     public interface IOrderService
     {
         Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request);
+        Task<BaseResponseModel<OrderResponse>> HandleOrderAsync(CreateOrderRequest request);
         Task<BaseResponseModel<OrderResponse>> GetOrderByIdAsync(Guid orderId);
         Task<PaginatedList<OrderResponse>> GetOrdersAsync(PagingRequestModel paging);
         Task<BaseResponseModel<OrderItemResponse>> UpdateOrderItemStatusAsync(Guid orderId, Guid orderItemId, UpdateOrderItemStatusRequest request);
