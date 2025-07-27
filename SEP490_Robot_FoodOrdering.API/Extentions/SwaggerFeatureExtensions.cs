@@ -1,4 +1,5 @@
-﻿using Microsoft.OpenApi.Models;
+﻿using System.Reflection;
+using Microsoft.OpenApi.Models;
 
 namespace SEP490_Robot_FoodOrdering.API.Extentions
 {
@@ -38,9 +39,16 @@ namespace SEP490_Robot_FoodOrdering.API.Extentions
                     }
 
                 });
-               
-                
 
+                // Include XML comments safely
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
+                // Only include if file exists
+                if (File.Exists(xmlPath))
+                {
+                    c.IncludeXmlComments(xmlPath);
+                }
             });
 
             return services;

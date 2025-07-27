@@ -56,7 +56,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
 
             CreateMap<ProductSize, ProductSizeResponse>().ReverseMap();
             CreateMap<CreateProductSizeRequest, ProductSize>().ReverseMap();
-            CreateMap<ProductTopping, ProductToppingResponse>().ReverseMap();
+            CreateMap<ProductTopping, ProductToppingResponse>()
+                .ForMember(dest => dest.ProductName , opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.ToppingName , opt => opt.MapFrom(src => src.Topping.Name))
+                .ForMember(dest => dest.Price , opt => opt.MapFrom(src => src.Topping.Price))
+                .ReverseMap();
             CreateMap<CreateProductToppingRequest, ProductTopping>().ReverseMap();
             CreateMap<Table, TableResponse>().ReverseMap();
             CreateMap<CreateTableRequest, Table>().ReverseMap();
@@ -66,7 +70,25 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
             CreateMap<CreateToppingRequest, Topping>()
                 .ForMember(dest => dest.ImageUrl, opt => opt.Ignore()) 
                 .ReverseMap();
-            
+
+            //CreateMap<Product, ProductWithToppingsResponse>()
+            //    .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Id))
+            //    .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Name))
+            //    .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src =>
+            //        src.AvailableToppings.Select(pt => pt.Topping)
+            //    )).ReverseMap();
+            CreateMap<ProductTopping, ProductWithToppingsResponse>()
+                    .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Product.Id))
+                    .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                    .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src =>
+                        src.Product != null && src.Product.AvailableToppings != null
+                            ? src.Product.AvailableToppings
+                                .Where(pt => pt.Topping != null)
+                                .Select(pt => pt.Topping)
+                            : new List<Topping>()
+                    ));
+
+
             // Order Mappings
             CreateMap<CreateOrderRequest, Order>()
                 .ForMember(dest => dest.OrderItems, opt => opt.Ignore()) // handled in service
