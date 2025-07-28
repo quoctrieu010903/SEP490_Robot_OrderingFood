@@ -120,6 +120,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // 2. Nếu có order -> thêm item vào và cập nhật lại giá
             if (existingOrder != null)
             {
+                // Ensure table is marked as occupied when adding items to existing order
+                var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
+                if (table != null && table.Status != TableEnums.Occupied)
+                {
+                    table.Status = TableEnums.Occupied;
+                    _unitOfWork.Repository<Table, Guid>().Update(table);
+                }
+                
                 decimal addedTotal = 0;
 
                 foreach (var itemReq in request.Items)
@@ -201,6 +209,34 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersbyTableiDAsync(Guid Orderid,Guid TableId)
         {
             var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(Orderid, TableId, true), true);
+            var response = _mapper.Map<List<OrderResponse>>(orders);
+            return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
+        }
+
+        public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdOnlyAsync(Guid tableId)
+        {
+            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(true, tableId), true);
+            var response = _mapper.Map<List<OrderResponse>>(orders);
+            return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
+        }
+
+        public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdWithStatusAsync(Guid tableId, OrderStatus status)
+        {
+            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(tableId, status), true);
+            
+            // Debug: Log the orders to see what data is being returned
+            foreach (var order in orders)
+            {
+                _logger.LogInformation($"Order {order.Id} has {order.OrderItems?.Count ?? 0} items");
+                if (order.OrderItems != null)
+                {
+                    foreach (var item in order.OrderItems)
+                    {
+                        _logger.LogInformation($"OrderItem {item.Id}: ProductSize={item.ProductSize?.Id}, Price={item.ProductSize?.Price}, Product={item.Product?.Name}");
+                    }
+                }
+            }
+            
             var response = _mapper.Map<List<OrderResponse>>(orders);
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
