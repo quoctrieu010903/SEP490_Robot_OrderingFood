@@ -191,7 +191,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     Name = "Trà Sữa Thạch Dừa",
                     Description = "Trà sữa thạch dừa là một loại thức uống giải khát phổ biến, kết hợp giữa vị ngọt của trà sữa và vị thanh mát, giòn sần sật của thạch dừa",
                     DurationTime = 10,
-                    ImageUrl = "https://trungnguyenecoffee.com/wp-content/uploads/2020/08/H%C3%ACnh-App_3006021-Tr%C3%A0-S%E1%BB%AFa-Th%E1%BA%A1ch-C%C3%A0-Ph%C3%AA-768x768.jpg",
+                    ImageUrl = "https://maycha.com.vn/wp-content/uploads/2023/10/tra-sua-thach-dua.png",
                     CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 },
@@ -439,8 +439,200 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     ProductId = Guid.Parse("56B31EDA-6E96-41B4-A7D6-0C1284A13E8B"),
                     SizeName = SizeNameEnum.Large,
                     Price = 24000
-                }
-            };
+                },
+
+                new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("9757A503-E801-469E-980C-5FBEE99AACCE"),
+                        SizeName = SizeNameEnum.Small,
+                        Price = 35000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("9757A503-E801-469E-980C-5FBEE99AACCE"),
+                        SizeName = SizeNameEnum.Medium,
+                        Price = 45000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("9757A503-E801-469E-980C-5FBEE99AACCE"),
+                        SizeName = SizeNameEnum.Large,
+                        Price = 55000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+
+                    // Bún bò Huế
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("3198FC44-CE8C-49B9-BC54-86915BED805C"),
+                        SizeName = SizeNameEnum.Small,
+                        Price = 35000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("3198FC44-CE8C-49B9-BC54-86915BED805C"),
+                        SizeName = SizeNameEnum.Medium,
+                        Price = 45000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("3198FC44-CE8C-49B9-BC54-86915BED805C"),
+                        SizeName = SizeNameEnum.Large,
+                        Price = 55000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+
+                    // Cơm bò lúc lắc
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("BA3DE89B-1FC4-4156-A259-79B977731CF2"),
+                        SizeName = SizeNameEnum.Small,
+                        Price = 35000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("BA3DE89B-1FC4-4156-A259-79B977731CF2"),
+                        SizeName = SizeNameEnum.Medium,
+                        Price = 45000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("BA3DE89B-1FC4-4156-A259-79B977731CF2"),
+                        SizeName = SizeNameEnum.Large,
+                        Price = 55000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+
+                    // Cơm gà sốt Teriyaki
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("1DEBE98E-C358-4729-A44E-A3442455733B"),
+                        SizeName = SizeNameEnum.Small,
+                        Price = 35000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("1DEBE98E-C358-4729-A44E-A3442455733B"),
+                        SizeName = SizeNameEnum.Medium,
+                        Price = 45000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("1DEBE98E-C358-4729-A44E-A3442455733B"),
+                        SizeName = SizeNameEnum.Large,
+                        Price = 55000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+
+                    // Cơm sườn sốt chua ngọt
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("3B8EBE7C-8948-4D9A-AC47-BE85EE7CF085"),
+                        SizeName = SizeNameEnum.Small,
+                        Price = 35000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("3B8EBE7C-8948-4D9A-AC47-BE85EE7CF085"),
+                        SizeName = SizeNameEnum.Medium,
+                        Price = 45000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+                    new ProductSize
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = Guid.Parse("3B8EBE7C-8948-4D9A-AC47-BE85EE7CF085"),
+                        SizeName = SizeNameEnum.Large,
+                        Price = 55000,
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    },
+
+                    // Tráng miệng
+                    new ProductSize
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = Guid.Parse("8F69CBB1-817D-4192-8ED0-B284FE4B1297"), // Chè đậu đỏ
+                            SizeName = SizeNameEnum.Small,
+                            Price = 25000,
+                            CreatedTime = DateTime.UtcNow,
+                            LastUpdatedTime = DateTime.UtcNow
+                        },
+                        new ProductSize
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = Guid.Parse("F3E3697B-757D-4E64-BB82-3F5EBC7F3E6F"), // Bánh flan
+                            SizeName = SizeNameEnum.Small,
+                            Price = 25000,
+                            CreatedTime = DateTime.UtcNow,
+                            LastUpdatedTime = DateTime.UtcNow
+                        },
+                        new ProductSize
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = Guid.Parse("CF21F6AA-1215-4EC2-BACD-C601FF76D26B"), // Chè sương sáo
+                            SizeName = SizeNameEnum.Small,
+                            Price = 25000,
+                            CreatedTime = DateTime.UtcNow,
+                            LastUpdatedTime = DateTime.UtcNow
+                        },
+                        new ProductSize
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = Guid.Parse("25084817-29F4-42FD-BD60-081ECC90931C"), // Chè bưởi
+                            SizeName = SizeNameEnum.Small,
+                            Price = 25000,
+                            CreatedTime = DateTime.UtcNow,
+                            LastUpdatedTime = DateTime.UtcNow
+                        },
+                        new ProductSize
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = Guid.Parse("35014A99-5664-4063-8BEB-83B80B2EEADB"), // Rau câu dừa
+                            SizeName = SizeNameEnum.Small,
+                            Price = 25000,
+                            CreatedTime = DateTime.UtcNow,
+                            LastUpdatedTime = DateTime.UtcNow
+                        },
+
+                                };
         }
         public static List<ProductTopping> GetProductToppings()
         {
