@@ -254,7 +254,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 {
                     order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
                 }
-                await _unitOfWork.Repository<Order, Order>().UpdateAsync(order);
+                await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
                 await _unitOfWork.SaveChangesAsync();
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAID", new OrderPaymentResponse { OrderId = orderId, PaymentStatus = PaymentStatusEnums.Paid, Message = "Payment successful (COD)" });
             }
