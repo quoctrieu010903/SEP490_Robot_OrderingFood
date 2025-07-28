@@ -29,12 +29,25 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
     public OrderSpecification(Guid orderId, Guid tableId, bool byOrderId) :base(o=> o.Id == orderId && o.TableId == tableId && !o.DeletedTime.HasValue  ) {
             AddIncludes();
         }
+
+    // Get all orders by table ID for payment (not filtered by status)
+    public OrderSpecification(bool forPayment, Guid tableId) : base(o => !o.DeletedTime.HasValue && o.TableId == tableId)
+    {
+        AddIncludes();
+    }
+
+    // Get orders by table ID with Delivering status for payment
+    public OrderSpecification(Guid tableId, OrderStatus status) : base(o => !o.DeletedTime.HasValue && o.TableId == tableId && o.Status == status)
+    {
+        AddIncludes();
+    }
         private void AddIncludes()
         {
             ApplyInclude(q => q
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
-                        .ThenInclude(oi => oi.Sizes)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.ProductSize) // Ensure ProductSize is included
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.OrderItemTopping)
                         .ThenInclude(oi => oi.Topping)
