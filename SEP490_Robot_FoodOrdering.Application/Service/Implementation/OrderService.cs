@@ -22,12 +22,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<OrderService> _logger;
+        private readonly IOrderItemReposotory _orderItemReposotory;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<OrderService> logger)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper,IOrderItemReposotory orderItemReposotory, ILogger<OrderService> logger)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
+            _orderItemReposotory = orderItemReposotory;
         }
 
         public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
@@ -268,6 +270,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status400BadRequest, "UNSUPPORTED_PAYMENT", "Unsupported payment method.");
             }
         }
+        
+
 
         public async Task<BaseResponseModel<InforBill>> CreateBill(Guid idOrder)
         {

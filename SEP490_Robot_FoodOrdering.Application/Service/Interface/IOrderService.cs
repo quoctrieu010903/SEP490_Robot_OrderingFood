@@ -18,6 +18,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
 
         Task<BaseResponseModel<List<OrderItemResponse>>> GetOrderItemsAsync(Guid orderId);
         Task<BaseResponseModel<OrderPaymentResponse>> InitiatePaymentAsync(Guid orderId, OrderPaymentRequest request);
+        // Task<BaseResponseModel<OrderPaymentResponse>> Payment(Guid orderId,List<Guid> orderItems, OrderPaymentRequest request);
         Task<BaseResponseModel<InforBill>> CreateBill(Guid idOrder);
         Task<BaseResponseModel<List<OrderResponse>>> GetOrdersbyTableiDAsync(Guid Orderid, Guid TableId);
 
