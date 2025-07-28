@@ -12,7 +12,7 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
-    [Migration("20250725073048_Initial_Database")]
+    [Migration("20250728194245_Initial_Database")]
     partial class Initial_Database
     {
         /// <inheritdoc />
