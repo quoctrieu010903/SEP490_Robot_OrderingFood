@@ -225,7 +225,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
                 _logger.LogInformation($"Order {orderId} status changed from {oldOrderStatus} to {order.Status}");
             }
-            await _unitOfWork.Repository<Order, Order>().UpdateAsync(order);
+            await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
             await _unitOfWork.SaveChangesAsync();
             var response = _mapper.Map<OrderItemResponse>(item);
             return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status200OK, "ITEM_STATUS_UPDATED", response);
@@ -233,7 +233,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<List<OrderItemResponse>>> GetOrderItemsAsync(Guid orderId)
         {
-            var order = await _unitOfWork.Repository<Order, Guid>().GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.OrderItems);
+            var order = await _unitOfWork.Repository<Order, Guid>().GetWithSpecAsync(new OrderSpecification(orderId, true),  true);
             if (order == null)
                 return new BaseResponseModel<List<OrderItemResponse>>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found.");
             var response = _mapper.Map<List<OrderItemResponse>>(order.OrderItems.ToList());
