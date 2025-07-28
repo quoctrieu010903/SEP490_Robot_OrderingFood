@@ -225,7 +225,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
                 _logger.LogInformation($"Order {orderId} status changed from {oldOrderStatus} to {order.Status}");
             }
-            await _unitOfWork.Repository<Order, Order>().UpdateAsync(order);
+            await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
             await _unitOfWork.SaveChangesAsync();
             var response = _mapper.Map<OrderItemResponse>(item);
             return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status200OK, "ITEM_STATUS_UPDATED", response);
@@ -254,7 +254,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 {
                     order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
                 }
-                await _unitOfWork.Repository<Order, Order>().UpdateAsync(order);
+                await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
                 await _unitOfWork.SaveChangesAsync();
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAID", new OrderPaymentResponse { OrderId = orderId, PaymentStatus = PaymentStatusEnums.Paid, Message = "Payment successful (COD)" });
             }
@@ -263,7 +263,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 // Simulate VNPay payment URL
                 string paymentUrl = $"https://sandbox.vnpayment.vn/payment/{orderId}";
                 order.PaymentStatus = PaymentStatusEnums.Pending;
-                await _unitOfWork.Repository<Order, Order>().UpdateAsync(order);
+                await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
                 await _unitOfWork.SaveChangesAsync();
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAYMENT_INITIATED", new OrderPaymentResponse { OrderId = orderId, PaymentStatus = PaymentStatusEnums.Pending, PaymentUrl = paymentUrl, Message = "Redirect to VNPay for payment." });
             }
