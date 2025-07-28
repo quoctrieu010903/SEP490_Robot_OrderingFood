@@ -39,7 +39,15 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
            
             order.Status = OrderStatus.Pending;
             order.PaymentStatus = PaymentStatusEnums.Pending;
-            order.Table.Status = TableEnums.Occupied; 
+            
+            // Load the table entity to avoid null reference exception
+            var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
+            if (table == null)
+                throw new ErrorException(StatusCodes.Status400BadRequest, "TABLE_NOT_FOUND", "Table not found.");
+            
+            table.Status = TableEnums.Occupied;
+            _unitOfWork.Repository<Table, Guid>().Update(table);
+            
             order.CreatedTime = DateTime.UtcNow;
             order.LastUpdatedTime = DateTime.UtcNow;
             order.OrderItems = new List<OrderItem>();
@@ -126,7 +134,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                             ProductSizeId = itemReq.ProductSizeId,
                             Status = OrderItemStatus.Pending,
                             CreatedTime = DateTime.UtcNow,
-                            LastUpdatedTime = DateTime.UtcNow
+                            LastUpdatedTime = DateTime.UtcNow,
+                            OrderItemTopping = new List<OrderItemTopping>()
                         };
                         existingOrder.OrderItems.Add(orderItem);
                         addedTotal += productSize.Price;
