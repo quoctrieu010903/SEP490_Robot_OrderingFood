@@ -263,7 +263,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 // Simulate VNPay payment URL
                 string paymentUrl = $"https://sandbox.vnpayment.vn/payment/{orderId}";
                 order.PaymentStatus = PaymentStatusEnums.Pending;
-                await _unitOfWork.Repository<Order, Order>().UpdateAsync(order);
+                await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
                 await _unitOfWork.SaveChangesAsync();
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAYMENT_INITIATED", new OrderPaymentResponse { OrderId = orderId, PaymentStatus = PaymentStatusEnums.Pending, PaymentUrl = paymentUrl, Message = "Redirect to VNPay for payment." });
             }
