@@ -13,6 +13,7 @@ using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
+using SEP490_Robot_FoodOrdering.Domain.Specifications;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -51,7 +52,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
         public async Task<PaginatedList<TableResponse>> GetAll(PagingRequestModel paging)
         {
-            var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecWithInclueAsync( new BaseSpecification<Table>(x=>!x.DeletedTime.HasValue), true, t => t.Orders);
+            var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecAsync( new TableSpecification(paging.PageNumber , paging.PageSize));
             var mapped = _mapper.Map<List<TableResponse>>(list);
             return PaginatedList<TableResponse>.Create(mapped, paging.PageNumber, paging.PageSize);
         }
