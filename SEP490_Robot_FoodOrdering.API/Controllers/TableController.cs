@@ -31,8 +31,6 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             return Ok(result);
         }
 
-        
-        [HttpGet]
         /// <summary>
         /// Retrieve a paginated list of tables with optional status filtering.
         /// </summary>
@@ -61,6 +59,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// <response code="200">List of tables retrieved successfully</response>
         /// <response code="400">Invalid query parameters</response>
         /// <response code="500">Internal server error</response>
+        [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] PagingRequestModel paging, [FromQuery] TableEnums? status)
         {
             var result = await _service.GetAll(paging, status);
@@ -68,6 +67,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         }
 
 
+       
         [HttpGet("{id}")]
     
         public async Task<IActionResult> GetById(Guid id)
