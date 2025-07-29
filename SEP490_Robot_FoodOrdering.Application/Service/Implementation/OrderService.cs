@@ -199,13 +199,42 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var response = _mapper.Map<OrderResponse>(order);
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status200OK, "SUCCESS", response);
         }
-
-        public async Task<PaginatedList<OrderResponse>> GetOrdersAsync(PagingRequestModel paging)
+        public async Task<PaginatedList<OrderResponse>> GetOrdersAsync(PagingRequestModel paging , string? ProductName)
         {
-            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync( new OrderSpecification(), true);
+            
+            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(ProductName), true);
             var response = _mapper.Map<List<OrderResponse>>(orders);
-            return  PaginatedList<OrderResponse>.Create(response, paging.PageNumber, paging.PageSize);
+
+
+            // Group OrderItems by ProductName or Status for the UI grouping
+            foreach (var order in response)
+            {
+                order.Items = order.Items
+                    .GroupBy(item => new { item.ProductName, item.Status }) // Group by ProductName and Status
+                    .Select(g => new OrderItemResponse
+                    {
+                        Id = g.First().Id,
+                        ProductId = g.First().ProductId,
+                        ProductName = g.Key.ProductName,
+                        ProductSizeId = g.First().ProductSizeId,
+                        SizeName = g.First().SizeName,
+                        Quantity = g.Sum(x => 1), // Count items in the group
+                        Price = g.First().Price * g.Count(), // Total price for the group
+                        Status = g.Key.Status,
+                        CreatedTime = g.Min(x => x.CreatedTime),
+                        Toppings = g.SelectMany(x => x.Toppings).Distinct().ToList() // Combine toppings
+                    }).ToList();
+            }
+
+            return PaginatedList<OrderResponse>.Create(response, paging.PageNumber, paging.PageSize);
         }
+
+        //public async Task<PaginatedList<OrderResponse>> GetOrdersAsync(PagingRequestModel paging)
+        //{
+        //    var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync( new OrderSpecification(), true);
+        //    var response = _mapper.Map<List<OrderResponse>>(orders);
+        //    return  PaginatedList<OrderResponse>.Create(response, paging.PageNumber, paging.PageSize);      
+        //}
         public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersbyTableiDAsync(Guid Orderid,Guid TableId)
         {
             var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(Orderid, TableId, true), true);

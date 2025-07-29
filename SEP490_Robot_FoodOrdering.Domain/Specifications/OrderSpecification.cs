@@ -12,15 +12,27 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
             AddIncludes();
         }
         public OrderSpecification()
-        : base(o => !o.DeletedTime.HasValue)
+        : base(o => !o.DeletedTime.HasValue &&  o.CreatedTime.Date == DateTime.UtcNow.Date)
         {
 
             AddIncludes();
         }
+        public OrderSpecification(string? productName)
+      : base(o =>
+          !o.DeletedTime.HasValue &&
+          o.CreatedTime.Date == DateTime.UtcNow.Date &&
+          (string.IsNullOrEmpty(productName) ||
+           o.OrderItems.Any(oi => oi.Product != null &&
+                                  oi.Product.Name != null &&
+                                  oi.Product.Name.ToLower().Contains(productName.ToLower()))))
+        {
+            AddIncludes();
+        }
 
-   
-     // Lấy theo orderId
-    public OrderSpecification(Guid orderId, bool byOrderId)
+
+
+        // Lấy theo orderId
+        public OrderSpecification(Guid orderId, bool byOrderId)
         : base(o => o.Id == orderId && !o.DeletedTime.HasValue)
         {   
             AddIncludes();
@@ -56,7 +68,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
 
                 .Include(o => o.Table)
                 .Include(o => o.Payment));
-        }
+        }   
     }
 
 }
