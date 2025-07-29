@@ -17,11 +17,18 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
 
             AddIncludes();
         }
-        public OrderSpecification(string productName)
-        : base(o => !o.DeletedTime.HasValue && o.OrderItems.Any(oi => oi.Product.Name.ToLower().Contains(productName.ToLower())))
+        public OrderSpecification(string? productName)
+      : base(o =>
+          !o.DeletedTime.HasValue &&
+          o.CreatedTime.Date == DateTime.UtcNow.Date &&
+          (string.IsNullOrEmpty(productName) ||
+           o.OrderItems.Any(oi => oi.Product != null &&
+                                  oi.Product.Name != null &&
+                                  oi.Product.Name.ToLower().Contains(productName.ToLower()))))
         {
             AddIncludes();
         }
+
 
 
         // Lấy theo orderId

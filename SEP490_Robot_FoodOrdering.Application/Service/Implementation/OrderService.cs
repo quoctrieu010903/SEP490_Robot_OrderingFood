@@ -201,8 +201,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
         public async Task<PaginatedList<OrderResponse>> GetOrdersAsync(PagingRequestModel paging , string? ProductName)
         {
+            
             var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(ProductName), true);
-                var response = _mapper.Map<List<OrderResponse>>(orders);
+            var response = _mapper.Map<List<OrderResponse>>(orders);
+
 
             // Group OrderItems by ProductName or Status for the UI grouping
             foreach (var order in response)
