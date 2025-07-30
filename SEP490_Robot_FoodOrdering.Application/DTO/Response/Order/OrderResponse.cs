@@ -29,6 +29,7 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Order
         public int Quantity { get; set; } = 1; // Default to 1 as per business rule
         public decimal Price { get; set; } // Add price field
         public string Status { get; set; }
+        public string? ImageUrl { get; set; }
         public DateTime CreatedTime { get; set; }
         public List<ToppingResponse> Toppings { get; set; }
 
