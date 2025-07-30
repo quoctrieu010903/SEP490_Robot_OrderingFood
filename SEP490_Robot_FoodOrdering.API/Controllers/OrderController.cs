@@ -171,9 +171,9 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         [ProducesResponseType(typeof(PaginatedList<OrderResponse>), 200)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 400)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 500)]
-        public async Task<ActionResult<BaseResponseModel>> GetOrders([FromQuery] PagingRequestModel paging)
+        public async Task<ActionResult<BaseResponseModel>> GetOrders([FromQuery] PagingRequestModel paging , [FromQuery] string? ProductName)
         {
-            var result = await _orderService.GetOrdersAsync(paging);
+            var result = await _orderService.GetOrdersAsync(paging,ProductName);
             return StatusCode(200, result);
         }
 
@@ -368,7 +368,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// <response code="200">Payment initiated successfully</response>
         /// <response code="400">Invalid payment method or request data</response>
         /// <response code="404">Order not found</response>
-        /// <response code="500">Internal server error</response>
+        /// <response code="500">Internal server error</response>   
         [HttpPost("{orderId}/pay")]
         [ProducesResponseType(typeof(BaseResponseModel<OrderPaymentResponse>), 200)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 400)]

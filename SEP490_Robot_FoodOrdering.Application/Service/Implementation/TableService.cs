@@ -12,6 +12,7 @@ using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
 using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
+using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 using SEP490_Robot_FoodOrdering.Domain.Specifications;
 
@@ -50,9 +51,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Xoá thành công");
         }
-        public async Task<PaginatedList<TableResponse>> GetAll(PagingRequestModel paging)
+        public async Task<PaginatedList<TableResponse>> GetAll(PagingRequestModel paging , TableEnums? status)
         {
-            var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecAsync( new TableSpecification(paging.PageNumber , paging.PageSize));
+            var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecAsync( new TableSpecification(paging.PageNumber , paging.PageSize,status));
             var mapped = _mapper.Map<List<TableResponse>>(list);
             return PaginatedList<TableResponse>.Create(mapped, paging.PageNumber, paging.PageSize);
         }

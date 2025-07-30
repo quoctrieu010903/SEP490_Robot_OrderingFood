@@ -1,4 +1,4 @@
-﻿using SEP490_Robot_FoodOrdering.Application.DTO.Request;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
 using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
@@ -197,13 +197,42 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var response = _mapper.Map<OrderResponse>(order);
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status200OK, "SUCCESS", response);
         }
-
-        public async Task<PaginatedList<OrderResponse>> GetOrdersAsync(PagingRequestModel paging)
+        public async Task<PaginatedList<OrderResponse>> GetOrdersAsync(PagingRequestModel paging , string? ProductName)
         {
-            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync( new OrderSpecification(), true);
+            
+            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(ProductName), true);
             var response = _mapper.Map<List<OrderResponse>>(orders);
-            return  PaginatedList<OrderResponse>.Create(response, paging.PageNumber, paging.PageSize);
+
+
+            // Group OrderItems by ProductName or Status for the UI grouping
+            foreach (var order in response)
+            {
+                order.Items = order.Items
+                    .GroupBy(item => new { item.ProductName, item.Status }) // Group by ProductName and Status
+                    .Select(g => new OrderItemResponse
+                    {
+                        Id = g.First().Id,
+                        ProductId = g.First().ProductId,
+                        ProductName = g.Key.ProductName,
+                        ProductSizeId = g.First().ProductSizeId,
+                        SizeName = g.First().SizeName,
+                        Quantity = g.Sum(x => 1), // Count items in the group
+                        Price = g.First().Price * g.Count(), // Total price for the group
+                        Status = g.Key.Status,
+                        CreatedTime = g.Min(x => x.CreatedTime),
+                        Toppings = g.SelectMany(x => x.Toppings).Distinct().ToList() // Combine toppings
+                    }).ToList();
+            }
+
+            return PaginatedList<OrderResponse>.Create(response, paging.PageNumber, paging.PageSize);
         }
+
+        //public async Task<PaginatedList<OrderResponse>> GetOrdersAsync(PagingRequestModel paging)
+        //{
+        //    var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync( new OrderSpecification(), true);
+        //    var response = _mapper.Map<List<OrderResponse>>(orders);
+        //    return  PaginatedList<OrderResponse>.Create(response, paging.PageNumber, paging.PageSize);      
+        //}
         public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersbyTableiDAsync(Guid Orderid,Guid TableId)
         {
             var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(Orderid, TableId, true), true);
@@ -267,7 +296,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<List<OrderItemResponse>>> GetOrderItemsAsync(Guid orderId)
         {
-            var order = await _unitOfWork.Repository<Order, Guid>().GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.OrderItems);
+            var order = await _unitOfWork.Repository<Order, Guid>().GetWithSpecAsync(new OrderSpecification(orderId, true),  true);
             if (order == null)
                 return new BaseResponseModel<List<OrderItemResponse>>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found.");
             var response = _mapper.Map<List<OrderItemResponse>>(order.OrderItems.ToList());
@@ -276,7 +305,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<OrderPaymentResponse>> InitiatePaymentAsync(Guid orderId, OrderPaymentRequest request)
         {
-            var order = await _unitOfWork.Repository<Order, Guid>().GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment);
+            var order = await _unitOfWork.Repository<Order, Guid>().GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.Table);
             if (order == null)
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found.");
             _logger.LogInformation($"Initiating payment for Order {orderId} with method {request.PaymentMethod}");
@@ -284,9 +313,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (request.PaymentMethod == PaymentMethodEnums.COD)
             {
                 order.PaymentStatus = PaymentStatusEnums.Paid;
+                order.Status = OrderStatus.Completed; // Update order status to Completed
+                order.LastUpdatedTime = DateTime.UtcNow;
                 if (order.Payment != null)
                 {
                     order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
+                }
+                // Update table status to Available when payment is completed
+                if (order.Table != null)
+                {
+                    order.Table.Status = TableEnums.Available;
+                    await _unitOfWork.Repository<Table, Guid>().UpdateAsync(order.Table);
                 }
                 await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
                 await _unitOfWork.SaveChangesAsync();
@@ -297,6 +334,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 // Simulate VNPay payment URL
                 string paymentUrl = $"https://sandbox.vnpayment.vn/payment/{orderId}";
                 order.PaymentStatus = PaymentStatusEnums.Pending;
+                order.LastUpdatedTime = DateTime.UtcNow;
                 await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
                 await _unitOfWork.SaveChangesAsync();
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAYMENT_INITIATED", new OrderPaymentResponse { OrderId = orderId, PaymentStatus = PaymentStatusEnums.Pending, PaymentUrl = paymentUrl, Message = "Redirect to VNPay for payment." });
