@@ -221,6 +221,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         Quantity = g.Sum(x => 1), // Count items in the group
                         Price = g.First().Price * g.Count(), // Total price for the group
                         Status = g.Key.Status,
+                        ImageUrl = g.First().ImageUrl,
                         CreatedTime = g.Min(x => x.CreatedTime),
                         Toppings = g.SelectMany(x => x.Toppings).Distinct().ToList() // Combine toppings
                     }).ToList();
