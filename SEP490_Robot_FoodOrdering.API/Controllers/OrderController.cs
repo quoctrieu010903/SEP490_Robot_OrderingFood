@@ -7,6 +7,7 @@ using SEP490_Robot_FoodOrdering.Domain;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using SEP490_Robot_FoodOrdering.Domain.Enums;
 
 namespace SEP490_Robot_FoodOrdering.API.Controllers
 {
@@ -277,6 +278,65 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         public async Task<ActionResult<BaseResponseModel>> GetOrdersByTableId(Guid orderId, Guid tableId )
         {
             var result = await _orderService.GetOrdersbyTableiDAsync(orderId, tableId);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        /// <summary>
+        /// Get all orders for a specific table (for payment).
+        /// </summary>
+        /// <remarks>
+        /// Retrieves all orders associated with a specific table for payment processing.
+        /// 
+        /// Sample request:
+        /// GET /api/Order/table/{tableId}
+        /// 
+        /// This endpoint supports:
+        /// * Table-specific order retrieval for payment
+        /// * Multiple orders per table
+        /// * Complete order details with items and prices
+        /// </remarks>
+        /// <param name="tableId">Unique identifier of the table</param>
+        /// <returns>List of orders for the specified table</returns>
+        /// <response code="200">Orders retrieved successfully</response>
+        /// <response code="404">Table not found</response>
+        /// <response code="500">Internal server error</response>
+        [HttpGet("table/{tableId}")]
+        [ProducesResponseType(typeof(BaseResponseModel<List<OrderResponse>>), 200)]
+        [ProducesResponseType(typeof(BaseResponseModel<object>), 404)]
+        [ProducesResponseType(typeof(BaseResponseModel<object>), 500)]
+        public async Task<ActionResult<BaseResponseModel>> GetOrdersByTableIdOnly(Guid tableId)
+        {
+            var result = await _orderService.GetOrdersByTableIdOnlyAsync(tableId);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        /// <summary>
+        /// Get orders by table ID with specific status (for payment).
+        /// </summary>
+        /// <remarks>
+        /// Retrieves orders associated with a specific table and status for payment processing.
+        /// 
+        /// Sample request:
+        /// GET /api/Order/table/{tableId}/status/{status}
+        /// 
+        /// This endpoint supports:
+        /// * Table-specific order retrieval with status filtering
+        /// * Status-based filtering (e.g., Delivering orders only)
+        /// * Complete order details with items and prices
+        /// </remarks>
+        /// <param name="tableId">Unique identifier of the table</param>
+        /// <param name="status">Order status to filter by</param>
+        /// <returns>List of orders for the specified table and status</returns>
+        /// <response code="200">Orders retrieved successfully</response>
+        /// <response code="404">Table not found</response>
+        /// <response code="500">Internal server error</response>
+        [HttpGet("table/{tableId}/status/{status}")]
+        [ProducesResponseType(typeof(BaseResponseModel<List<OrderResponse>>), 200)]
+        [ProducesResponseType(typeof(BaseResponseModel<object>), 404)]
+        [ProducesResponseType(typeof(BaseResponseModel<object>), 500)]
+        public async Task<ActionResult<BaseResponseModel>> GetOrdersByTableIdWithStatus(Guid tableId, OrderStatus status)
+        {
+            var result = await _orderService.GetOrdersByTableIdWithStatusAsync(tableId, status);
             return StatusCode(result.StatusCode, result);
         }
 

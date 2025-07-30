@@ -118,6 +118,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // 2. Nếu có order -> thêm item vào và cập nhật lại giá
             if (existingOrder != null)
             {
+                // Ensure table is marked as occupied when adding items to existing order
+                var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
+                if (table != null && table.Status != TableEnums.Occupied)
+                {
+                    table.Status = TableEnums.Occupied;
+                    _unitOfWork.Repository<Table, Guid>().Update(table);
+                }
+                
                 decimal addedTotal = 0;
 
                 foreach (var itemReq in request.Items)
@@ -203,6 +211,34 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
+        public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdOnlyAsync(Guid tableId)
+        {
+            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(true, tableId), true);
+            var response = _mapper.Map<List<OrderResponse>>(orders);
+            return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
+        }
+
+        public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdWithStatusAsync(Guid tableId, OrderStatus status)
+        {
+            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(tableId, status), true);
+            
+            // Debug: Log the orders to see what data is being returned
+            foreach (var order in orders)
+            {
+                _logger.LogInformation($"Order {order.Id} has {order.OrderItems?.Count ?? 0} items");
+                if (order.OrderItems != null)
+                {
+                    foreach (var item in order.OrderItems)
+                    {
+                        _logger.LogInformation($"OrderItem {item.Id}: ProductSize={item.ProductSize?.Id}, Price={item.ProductSize?.Price}, Product={item.Product?.Name}");
+                    }
+                }
+            }
+            
+            var response = _mapper.Map<List<OrderResponse>>(orders);
+            return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
+        }
+
         public async Task<BaseResponseModel<OrderItemResponse>> UpdateOrderItemStatusAsync(Guid orderId, Guid orderItemId, UpdateOrderItemStatusRequest request)
         {
             var order = await _unitOfWork.Repository<Order, Guid>().GetWithSpecAsync( new OrderSpecification(orderId,true), true );
@@ -223,7 +259,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
                 _logger.LogInformation($"Order {orderId} status changed from {oldOrderStatus} to {order.Status}");
             }
-            await _unitOfWork.Repository<Order, Order>().UpdateAsync(order);
+            await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
             await _unitOfWork.SaveChangesAsync();
             var response = _mapper.Map<OrderItemResponse>(item);
             return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status200OK, "ITEM_STATUS_UPDATED", response);
@@ -252,7 +288,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 {
                     order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
                 }
-                await _unitOfWork.Repository<Order, Order>().UpdateAsync(order);
+                await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
                 await _unitOfWork.SaveChangesAsync();
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAID", new OrderPaymentResponse { OrderId = orderId, PaymentStatus = PaymentStatusEnums.Paid, Message = "Payment successful (COD)" });
             }
@@ -261,7 +297,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 // Simulate VNPay payment URL
                 string paymentUrl = $"https://sandbox.vnpayment.vn/payment/{orderId}";
                 order.PaymentStatus = PaymentStatusEnums.Pending;
-                await _unitOfWork.Repository<Order, Order>().UpdateAsync(order);
+                await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
                 await _unitOfWork.SaveChangesAsync();
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAYMENT_INITIATED", new OrderPaymentResponse { OrderId = orderId, PaymentStatus = PaymentStatusEnums.Pending, PaymentUrl = paymentUrl, Message = "Redirect to VNPay for payment." });
             }

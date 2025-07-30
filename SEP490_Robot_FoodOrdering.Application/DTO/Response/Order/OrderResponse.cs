@@ -25,7 +25,9 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Order
         
         public Guid ProductSizeId { get; set; }
         public string SizeName { get; set; }
-        public int Quantity { get; set; }
+        
+        public int Quantity { get; set; } = 1; // Default to 1 as per business rule
+        public decimal Price { get; set; } // Add price field
         public string Status { get; set; }
         public List<ToppingResponse> Toppings { get; set; }
 
