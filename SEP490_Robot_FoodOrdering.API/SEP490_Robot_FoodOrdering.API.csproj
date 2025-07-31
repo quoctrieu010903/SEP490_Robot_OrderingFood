@@ -27,7 +27,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\EmailTemplates\" />
     <Folder Include="wwwroot\image\" />
   </ItemGroup>
 

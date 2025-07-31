@@ -199,8 +199,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
         public async Task<PaginatedList<OrderResponse>> GetOrdersAsync(PagingRequestModel paging , string? ProductName)
         {
-            
-            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(ProductName), true);
+            // Tính start và end theo múi giờ Việt Nam
+            var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            var todayVN = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone).Date;
+            var startUtc = TimeZoneInfo.ConvertTimeToUtc(todayVN, vnTimeZone);
+            var endUtc = startUtc.AddDays(1);
+            var specification = new OrderSpecification(ProductName, startUtc, endUtc);
+          
+            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync( specification, true);
             var response = _mapper.Map<List<OrderResponse>>(orders);
 
 

@@ -1,6 +1,7 @@
 ﻿
 
 using Microsoft.EntityFrameworkCore;
+using SEP490_Robot_FoodOrdering.Core.Base;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence
@@ -25,10 +26,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(RobotFoodOrderingDBContext).Assembly);
-         
+
             base.OnModelCreating(modelBuilder);
         }
-
-       
+   
     }
 }

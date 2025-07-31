@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SEP490_Robot_FoodOrdering.API.Extentions;
 using SEP490_Robot_FoodOrdering.API.Middleware;
 using SEP490_Robot_FoodOrdering.Application.Extentions;
@@ -14,7 +16,7 @@ builder.Services.AddControllers();
 builder.Services.AddInfrastructure(builder.Configuration)
                 .AddApplication(builder.Configuration)
                 .AddSwagger();
-
+builder.Services.AddSingleton<IConfigureOptions<JsonOptions>, JsonOptionsConfigurator>();
 
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

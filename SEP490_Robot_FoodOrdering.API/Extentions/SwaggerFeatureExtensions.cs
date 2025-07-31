@@ -60,7 +60,7 @@ namespace SEP490_Robot_FoodOrdering.API.Extentions
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json",
-                    "FPTU_SmokingCessation API V1");
+                    "FPTU_Robot_FoodOrdering_API API V1");
                 c.RoutePrefix = "swagger";
             });
 
