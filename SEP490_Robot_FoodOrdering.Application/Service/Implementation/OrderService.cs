@@ -6,10 +6,6 @@ using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Application.Mapping;
@@ -26,12 +22,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<OrderService> _logger;
+        private readonly IOrderItemReposotory _orderItemReposotory;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<OrderService> logger)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper,IOrderItemReposotory orderItemReposotory, ILogger<OrderService> logger)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
+            _orderItemReposotory = orderItemReposotory;
         }
 
         public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
@@ -347,6 +345,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status400BadRequest, "UNSUPPORTED_PAYMENT", "Unsupported payment method.");
             }
         }
+        
+
 
         public async Task<BaseResponseModel<InforBill>> CreateBill(Guid idOrder)
         {
@@ -391,6 +391,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             order.PaymentStatus = status;
             _unitOfWork.Repository<Order, Guid>().Update(order);
             await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task<BaseResponseModel<List<OrderResponse>>> GetALLOrderByIdTabeleWihPending(Guid idTable)
+        {
+            // var res = await _unitOfWork.Repository<Order,Guid>().GetAllAsync()
+            
+            throw new NotImplementedException();
         }
     }
 }
