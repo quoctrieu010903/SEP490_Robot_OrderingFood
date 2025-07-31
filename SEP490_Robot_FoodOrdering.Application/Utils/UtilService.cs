@@ -1,4 +1,5 @@
 ﻿
+using Microsoft.Extensions.Hosting;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 
@@ -7,9 +8,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Utils
     public class UtilService : IUtilsService
     {
         private readonly IUnitOfWork _unitOfWork;
-        public UtilService(IUnitOfWork unitOfWork)
+        private readonly IHostEnvironment _env;
+        public UtilService(IUnitOfWork unitOfWork , IHostEnvironment env)
         {
             _unitOfWork = unitOfWork;
+            _env = env;
         }
 
 
@@ -20,9 +23,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Utils
                 .ToArray());
         }
 
-        public string GetEmailTemplate(string templateName, string folder)
+        public async Task<string> GetEmailTemplateAsync(string templateName, string folder)
         {
-            throw new NotImplementedException();
+            var contentRoot = _env.ContentRootPath; // root của project (nơi chứa Program.cs)
+            var wwwrootPath = Path.Combine(contentRoot, "wwwroot");
+            var filePath = Path.Combine(wwwrootPath, folder, templateName);
+           
+
+            if (!File.Exists(filePath))
+                throw new FileNotFoundException($"Template not found: {filePath}");
+
+            return await File.ReadAllTextAsync(filePath);
         }
 
         public string HashPassword(string content)

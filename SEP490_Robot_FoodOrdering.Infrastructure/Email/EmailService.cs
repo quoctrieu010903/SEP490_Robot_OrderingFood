@@ -1,5 +1,5 @@
 ﻿
-using System.Net.Mail;
+
 using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -24,11 +24,12 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Email
         public async Task SendPasswordResetEmailAsync(string to, string token)
         {
             var subject = "Cấp lại mật khẩu";
-            string template = _utils.GetEmailTemplate("NewPassTemplate.html", "MailTemplates");
+            string template = await _utils.GetEmailTemplateAsync("ResetPasswordpage.html", "EmailTemplates");
             string body = ReplaceTemplatePlaceholders(template, new Dictionary<string, string>
             {
-                { "0", to },
-                { "1", token }
+                { "UserName", "Luongquoc Trieu" },
+                { "1", token },
+                {"Year" , DateTime.Now.Year.ToString() }
             });
             await SendEmailAsync(to, subject, body);
         }
@@ -36,7 +37,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Email
         public async Task SendVerificationEmailAsync(string to, string token)
         {
             var subject = "Xác thực tài khoản";
-            string template = _utils.GetEmailTemplate("VerifyAccountTemplate.html", "MailTemplates");
+            string template = await _utils.GetEmailTemplateAsync("VerifyAccountTemplate.html", "MailTemplates");
             string body = ReplaceTemplatePlaceholders(template, new Dictionary<string, string>
             {
                 { "0", to },

@@ -7,6 +7,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
 {
     public class OrderSpecification : BaseSpecification<Order>
     {
+
         public OrderSpecification(Guid tableId) : base(o => !o.DeletedTime.HasValue && o.TableId == tableId && o.Status == OrderStatus.Pending)
         {
             AddIncludes();
@@ -17,17 +18,22 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
 
             AddIncludes();
         }
-        public OrderSpecification(string? productName)
-      : base(o =>
-          !o.DeletedTime.HasValue &&
-          o.CreatedTime.Date == DateTime.UtcNow.Date &&
-          (string.IsNullOrEmpty(productName) ||
-           o.OrderItems.Any(oi => oi.Product != null &&
-                                  oi.Product.Name != null &&
-                                  oi.Product.Name.ToLower().Contains(productName.ToLower()))))
+        public OrderSpecification(string? productName, DateTime startUtc, DateTime endUtc)
+     : base(o =>
+         !o.DeletedTime.HasValue &&
+        o.CreatedTime >= startUtc &&
+        o.CreatedTime < endUtc &&
+        (string.IsNullOrEmpty(productName) ||
+         o.OrderItems.Any(oi =>
+            oi.Product != null &&
+            !string.IsNullOrEmpty(oi.Product.Name) &&
+            oi.Product.Name.ToLower().Contains(productName.ToLower()))
+        ))
         {
             AddIncludes();
         }
+
+
 
 
 

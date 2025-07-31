@@ -8,9 +8,11 @@ using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.Utils;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
+using SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Options;
 using SEP490_Robot_FoodOrdering.Infrastructure.Email;
 using SEP490_Robot_FoodOrdering.Infrastructure.Repository;
 using SEP490_Robot_FoodOrdering.Infrastructure.Seeder;
+
 
 namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extensions
 {
@@ -33,6 +35,10 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
             services.AddScoped<IUtilsService, UtilService>();
 
             services.AddScoped<IEmailService , EmailService>();
+            services.Configure<CloudinaryOptions>(configuration.GetSection(nameof(CloudinaryOptions)));
+            services.Configure<EmailOptions>(configuration.GetSection(nameof(EmailOptions)));
+           
+
 
 
 

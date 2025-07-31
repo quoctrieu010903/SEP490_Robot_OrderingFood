@@ -10,5 +10,6 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Category
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
+    
     }
 }
