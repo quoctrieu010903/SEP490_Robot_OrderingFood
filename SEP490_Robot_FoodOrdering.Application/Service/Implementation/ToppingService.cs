@@ -1,6 +1,4 @@
-﻿
-
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Category;
@@ -18,12 +16,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
     public class ToppingService : IToppingService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IToppingRepository _toppingRepository;
         private readonly IMapper _mapper;
-        public ToppingService(IUnitOfWork unitOfWork, IMapper mapper)
+
+        public ToppingService(IUnitOfWork unitOfWork, IMapper mapper, IToppingRepository toppingRepository)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _toppingRepository = toppingRepository;
         }
+
         public async Task<BaseResponseModel> Create(CreateToppingRequest request)
         {
             var entity = _mapper.Map<Topping>(request);
@@ -33,34 +35,41 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             entity.LastUpdatedTime = DateTime.UtcNow;
             await _unitOfWork.Repository<Topping, bool>().AddAsync(entity);
             await _unitOfWork.SaveChangesAsync();
-            return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Create Topping successfully");
+            return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS,
+                "Create Topping successfully");
         }
 
-     
 
         public async Task<BaseResponseModel> Delete(Guid id)
         {
-          var existedEntity = await _unitOfWork.Repository<Topping, Guid>().GetByIdAsync(id);
+            var existedEntity = await _unitOfWork.Repository<Topping, Guid>().GetByIdAsync(id);
             if (existedEntity == null)
             {
-                return new BaseResponseModel(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Topping not found");
+                return new BaseResponseModel(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND,
+                    "Topping not found");
             }
+
             existedEntity.LastUpdatedBy = "";
             existedEntity.LastUpdatedTime = DateTime.UtcNow;
             existedEntity.DeletedBy = "";
             existedEntity.DeletedTime = DateTime.UtcNow;
             _unitOfWork.Repository<Topping, bool>().Update(existedEntity);
             await _unitOfWork.SaveChangesAsync();
-            return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Delete Topping successfully");
+            return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS,
+                "Delete Topping successfully");
         }
 
         public async Task<PaginatedList<ToppingResponse>> GetAllToppingsAsync(PagingRequestModel paging)
         {
-            var Topping = await _unitOfWork.Repository<Topping, Guid>().GetAllWithSpecWithInclueAsync(new BaseSpecification<Topping>(x => !x.DeletedTime.HasValue), true, c => c.ProductToppings);
+            var Topping = await _unitOfWork.Repository<Topping, Guid>()
+                .GetAllWithSpecWithInclueAsync(new BaseSpecification<Topping>(x => !x.DeletedTime.HasValue), true,
+                    c => c.ProductToppings);
             if (Topping == null || !Topping.Any())
             {
-                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Không có danh mục nào");
+                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND,
+                    "Không có danh mục nào");
             }
+
             var ToppingResponse = _mapper.Map<List<ToppingResponse>>(Topping);
 
             return PaginatedList<ToppingResponse>.Create(ToppingResponse, paging.PageNumber, paging.PageSize);
@@ -68,13 +77,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<ToppingResponse>> GetByIdAsync(Guid id)
         {
-           var toppingExisted = await _unitOfWork.Repository<Topping, Guid>().GetByIdAsync(id);
+            var toppingExisted = await _unitOfWork.Repository<Topping, Guid>().GetByIdAsync(id);
             if (toppingExisted == null)
             {
-                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Topping not found");
+                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND,
+                    "Topping not found");
             }
+
             var toppingResponse = _mapper.Map<ToppingResponse>(toppingExisted);
-            return new BaseResponseModel<ToppingResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, toppingResponse);
+            return new BaseResponseModel<ToppingResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS,
+                toppingResponse);
         }
 
         public async Task<BaseResponseModel> Update(CreateToppingRequest request, Guid id)
@@ -82,14 +94,26 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var existedEntity = await _unitOfWork.Repository<Topping, Guid>().GetByIdAsync(id);
             if (existedEntity == null)
             {
-                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Topping not found");
+                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND,
+                    "Topping not found");
             }
+
             _mapper.Map(request, existedEntity);
             existedEntity.LastUpdatedBy = "";
             existedEntity.LastUpdatedTime = DateTime.UtcNow;
             _unitOfWork.Repository<Topping, bool>().Update(existedEntity);
             await _unitOfWork.SaveChangesAsync();
-            return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Update Topping successfully");
+            return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS,
+                "Update Topping successfully");
+        }
+
+        public async Task<BaseResponseModel<List<ToppingResponse>>> GetByIdProduction(Guid id)
+        {
+            var temp = await _toppingRepository.getToppingbyProductionId(id);
+            var toppingResponse = _mapper.Map<List<ToppingResponse>>(temp);
+            return new BaseResponseModel<List<ToppingResponse>>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS,
+                toppingResponse);
         }
     }
+    
 }
