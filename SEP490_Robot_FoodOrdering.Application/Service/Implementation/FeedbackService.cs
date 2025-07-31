@@ -27,13 +27,22 @@ public class FeedbackService : IFeedbackService
     private async Task EnsureStoreInitialized()
     {
         if (_storeInitialized) return;
-
-        var allTables = await _unitOfWork.Repository<Table, Guid>().GetAllAsync();
-        foreach (var table in allTables)
+        if (_memoryStore.Tables == null || !_memoryStore.Tables.Any())
         {
-            if (!_memoryStore.Store.ContainsKey(table.Id.ToString()))
+            _memoryStore.Tables = new Dictionary<string, string>();
+
+            var allTables = await _unitOfWork.Repository<Table, Guid>().GetAllAsync();
+            foreach (var allTable in allTables)
             {
-                _memoryStore.Store[table.Id.ToString()] = new List<object>();
+                _memoryStore.Tables[allTable.Id.ToString()] = allTable.Name;
+            }
+        }
+
+        foreach (var table in _memoryStore.Tables)
+        {
+            if (!_memoryStore.Store.ContainsKey(table.Key))
+            {
+                _memoryStore.Store[table.Key] = new List<object>();
             }
         }
 
@@ -96,40 +105,53 @@ public class FeedbackService : IFeedbackService
 
     public async Task<BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>> GetAllFeedbackIsPeeding()
     {
-        Dictionary<string, FeedbackPeedingInfo> feedbackList = new Dictionary<string, FeedbackPeedingInfo>();
-        var tableList = await _unitOfWork.Repository<Table, Guid>().GetAllAsync();
+        Dictionary<string, FeedbackPeedingInfo> feedbackList = new();
 
-        foreach (var table in tableList)
+        foreach (var table in _memoryStore.Tables)
         {
-            var key = table.Id.ToString();
+            _memoryStore.Store.TryGetValue(table.Key, out var feedbacks);
 
-            _memoryStore.Store.TryGetValue(key, out var feedback);
-            int counter = feedback?.Count ?? 0;
+            int counter = feedbacks?.Count(f =>
+                f is FeedbackModole fb && fb.IsPeeding
+            ) ?? 0;
 
-            feedbackList[key] = new FeedbackPeedingInfo(Counter: counter, TableName: table.Name);
+            feedbackList[table.Key] = new FeedbackPeedingInfo(table.Value, counter);
         }
 
+        var sorted = feedbackList
+            .OrderBy(x => x.Value.TableName)
+            .ToDictionary(x => x.Key, x => x.Value);
+
         return new BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>(StatusCodes.Status200OK,
-            ResponseCodeConstants.SUCCESS, feedbackList);
+            ResponseCodeConstants.SUCCESS, sorted);
     }
 
-    public async Task<BaseResponseModel<FeedbackCreate>> ConfirmFeedback(Guid idTable, Guid IDFeedback, bool isPeeding)
+
+    public async Task<BaseResponseModel<List<FeedbackCreate>>> ConfirmFeedback(Guid idTable, List<Guid> IDFeedback,
+        bool isPeeding)
     {
-        List<object> feedbackList = await getStore(idTable);
+        var feedbackList = await getStore(idTable) ?? new List<object>();
+
+        var updatedFeedbacks = new List<FeedbackCreate>();
+        bool found = false;
 
         foreach (var o in feedbackList)
         {
-            if (o is FeedbackModole feedback && feedback.IDFeedback == IDFeedback)
+            if (o is FeedbackModole feedback && IDFeedback.Contains(feedback.IDFeedback))
             {
                 feedback.IsPeeding = isPeeding;
-                return new BaseResponseModel<FeedbackCreate>(
-                    StatusCodes.Status200OK,
-                    ResponseCodeConstants.SUCCESS,
-                    new FeedbackCreate(feedback.CreatedTime, feedback.IsPeeding, feedback.Feedback)
-                );
+                updatedFeedbacks.Add(new FeedbackCreate(feedback.CreatedTime, feedback.IsPeeding, feedback.Feedback));
+                found = true;
             }
         }
 
-        throw new ErrorException(404, "Feedback not found");
+        if (!found)
+            throw new ErrorException(404, "No feedbacks found with given IDs");
+
+        return new BaseResponseModel<List<FeedbackCreate>>(
+            StatusCodes.Status200OK,
+            ResponseCodeConstants.SUCCESS,
+            updatedFeedbacks
+        );
     }
 }

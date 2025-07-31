@@ -3,4 +3,5 @@
 public class FeedbackMemoryStore
 {
     public Dictionary<string, List<object>> Store { get; set; } = new();
+    public Dictionary<string, string> Tables { get; set; } = new();
 }

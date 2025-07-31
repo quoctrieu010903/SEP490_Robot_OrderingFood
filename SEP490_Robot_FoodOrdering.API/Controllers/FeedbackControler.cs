@@ -26,8 +26,10 @@ public class FeedbackControler
     public Task<BaseResponseModel<List<FeedbackGet>>> GetFeedbackTable(Guid idTable)
         => FeedbackService.GetFeedbackTable(idTable);
 
-    [HttpPut("{idTable}/{idFeedback}")]
-    public Task<BaseResponseModel<FeedbackCreate>> ConfirmFeedback(Guid idTable, Guid idFeedback,
+    [HttpPut("{idTable}")]
+    public Task<BaseResponseModel<List<FeedbackCreate>>> ConfirmFeedback(
+        Guid idTable,
+        [FromQuery] List<Guid> idFeedback,
         [FromQuery] bool isPeeding)
         => FeedbackService.ConfirmFeedback(idTable, idFeedback, isPeeding);
 
