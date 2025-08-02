@@ -52,7 +52,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Xoá thành công");
         }
         public async Task<PaginatedList<TableResponse>> GetAll(PagingRequestModel paging , TableEnums? status)
-        {
+            {
             var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecAsync( new TableSpecification(paging.PageNumber , paging.PageSize,status));
             var mapped = _mapper.Map<List<TableResponse>>(list);
             return PaginatedList<TableResponse>.Create(mapped, paging.PageNumber, paging.PageSize);

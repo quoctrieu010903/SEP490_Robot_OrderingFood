@@ -12,8 +12,8 @@ using SEP490_Robot_FoodOrdering.Application.Mapping;
 using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
 using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Specifications;
-using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
-using System.Net.NetworkInformation;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response;
+
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -404,6 +404,42 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // var res = await _unitOfWork.Repository<Order,Guid>().GetAllAsync()
             
             throw new NotImplementedException();
+        }
+
+        public async Task<OrderStaticsResponse> GetOrderStatsByTableId(Guid tableId)
+        {
+            var orders = await _unitOfWork.Repository<Order, Guid>().GetAllWithSpecAsync(new OrderSpecification(tableId), true);
+
+           
+            int deliveredCount = 0;
+            int paidCount = 0;
+            int totalOrderItems = 0;
+
+            foreach (var order in orders)
+            {
+                if (order.OrderItems == null)
+                    continue;
+
+                foreach (var item in order.OrderItems)
+                {
+                    totalOrderItems++;
+
+                    if (item.Status == OrderItemStatus.Served)
+                        deliveredCount++;
+                }
+
+                if (order.PaymentStatus == PaymentStatusEnums.Paid) // hoặc order.IsPaid == true tùy theo field bạn có
+                    paidCount++;
+            }
+            
+            return new OrderStaticsResponse
+            {
+                DeliveredCount = deliveredCount,
+                TotalOrderItems = totalOrderItems,
+                PaidCount = paidCount,
+               
+               
+            };
         }
     }
 }
