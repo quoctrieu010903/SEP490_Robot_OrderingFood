@@ -21,6 +21,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
         Task<BaseResponseModel<List<OrderResponse>>> GetOrdersbyTableiDAsync(Guid Orderid, Guid TableId);
         Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdOnlyAsync(Guid tableId);
         Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdWithStatusAsync(Guid tableId, OrderStatus status);
-        Task<OrderStaticsResponse> GetOrderStatsByTableId(Guid tableId);
+        Task<Dictionary<Guid, OrderStaticsResponse>> GetOrderStatsByTableIds(IEnumerable<Guid> tableIds);
     }
 }

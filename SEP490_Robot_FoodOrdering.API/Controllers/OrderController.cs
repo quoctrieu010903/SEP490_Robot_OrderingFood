@@ -379,12 +379,6 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             var result = await _orderService.InitiatePaymentAsync(orderId, request);
             return StatusCode(result.StatusCode, result);
         }
-        [HttpGet("getstatic{tableId}")]
-  
-        public async Task<ActionResult<BaseResponseModel>> GetOrderStatsByTableId(Guid tableId)
-        {
-            var result = await _orderService.GetOrderStatsByTableId(tableId);
-            return Ok(result);
-        }
+        
     }
 } 
