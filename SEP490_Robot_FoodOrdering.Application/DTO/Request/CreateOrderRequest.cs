@@ -13,6 +13,7 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Request
     {
         public Guid ProductId { get; set; }
         public Guid ProductSizeId { get; set; }
-       public List<Guid> ToppingIds { get; set; } 
+        public List<Guid> ToppingIds { get; set; }
+        public string? Note { get; set; }
     }
 } 

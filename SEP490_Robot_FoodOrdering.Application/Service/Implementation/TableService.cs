@@ -55,6 +55,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
             var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecAsync( new TableSpecification(paging.PageNumber , paging.PageSize,status));
             var mapped = _mapper.Map<List<TableResponse>>(list);
+
             return PaginatedList<TableResponse>.Create(mapped, paging.PageNumber, paging.PageSize);
         }
         public async Task<TableResponse> GetById(Guid id)
