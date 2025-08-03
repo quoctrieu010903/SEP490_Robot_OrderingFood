@@ -15,7 +15,8 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public Guid ProductSizeId { get; set; }
         public virtual ProductSize ProductSize { get; set; }
 
-        public OrderItemStatus Status { get; set; } // Pending, Preparing, Ready, Served, Completed, Cancelled
+        public OrderItemStatus Status { get; set; } // Pending, Preparing, Ready, Served, Completed, Cancelled , Returned
+        public string? Note { get; set; }
 
         public virtual ICollection<OrderItemTopping> OrderItemTopping { get; set; } 
        

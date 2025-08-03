@@ -7,6 +7,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
         Ready = 3,
         Served = 4,
         Completed = 5,
-        Cancelled = 6
+        Cancelled = 6,
+        Returned = 7
     }
 } 
