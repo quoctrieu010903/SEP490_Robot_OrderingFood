@@ -143,6 +143,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                             OrderId = existingOrder.Id,
                             ProductId = itemReq.ProductId,
                             ProductSizeId = itemReq.ProductSizeId,
+                            Note = itemReq.Note,
                             Status = OrderItemStatus.Pending,
                             CreatedTime = DateTime.UtcNow,
                             LastUpdatedTime = DateTime.UtcNow,
