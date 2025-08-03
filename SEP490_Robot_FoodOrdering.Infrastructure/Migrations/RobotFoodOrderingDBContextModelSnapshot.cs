@@ -125,6 +125,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<DateTime>("LastUpdatedTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Note")
+                        .HasColumnType("text");
+
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
 

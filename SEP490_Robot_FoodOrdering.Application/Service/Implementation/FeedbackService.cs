@@ -16,11 +16,14 @@ public class FeedbackService : IFeedbackService
     private readonly FeedbackMemoryStore _memoryStore;
     private bool _storeInitialized = false;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IOrderService _orderService;
 
-    public FeedbackService(IUnitOfWork unitOfWork, FeedbackMemoryStore memoryStore)
+
+    public FeedbackService(IUnitOfWork unitOfWork, FeedbackMemoryStore memoryStore, IOrderService orderService)
     {
         _unitOfWork = unitOfWork;
         _memoryStore = memoryStore;
+        _orderService = orderService;
     }
 
 
@@ -115,7 +118,15 @@ public class FeedbackService : IFeedbackService
                 f is FeedbackModole fb && fb.IsPeeding
             ) ?? 0;
 
-            feedbackList[table.Key] = new FeedbackPeedingInfo(table.Value, counter);
+
+            var orderStats = await _orderService.GetOrderStatsByTableId(Guid.Parse(table.Key));
+
+            feedbackList[table.Key] = new FeedbackPeedingInfo(
+                table.Value,
+                counter,
+                orderStats.DeliveredCount,       // Delivered
+            orderStats.PaidCount,            // Paid
+            orderStats.TotalOrderItems);       // Total items);
         }
 
         var sorted = feedbackList

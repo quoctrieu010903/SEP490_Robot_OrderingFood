@@ -12,8 +12,8 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
-    [Migration("20250728194245_Initial_Database")]
-    partial class Initial_Database
+    [Migration("20250803054318_initialDatabase")]
+    partial class initialDatabase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -127,6 +127,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
                     b.Property<DateTime>("LastUpdatedTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text");
 
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
