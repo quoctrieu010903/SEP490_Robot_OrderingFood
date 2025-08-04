@@ -23,7 +23,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IMapper _mapper;
         private readonly ILogger<OrderService> _logger;
         private readonly IOrderItemReposotory _orderItemReposotory;
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IOrderItemReposotory orderItemReposotory, ILogger<OrderService> logger )
+
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IOrderItemReposotory orderItemReposotory,
+            ILogger<OrderService> logger)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -33,17 +35,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
         {
-
             if (request.Items == null || !request.Items.Any())
-                return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS", "Order must have at least one item.");
+                return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS",
+                    "Order must have at least one item.");
 
-            
 
             var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
             if (table == null)
                 throw new ErrorException(StatusCodes.Status400BadRequest, "TABLE_NOT_FOUND", "Table not found.");
-            
-            if (table.Status != TableEnums.Available)
+
+            if (!table.Status.Equals(TableEnums.Available))
             {
                 throw new ErrorException(
                     StatusCodes.Status409Conflict,
@@ -53,12 +54,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
 
             var hasOrderFromDevice = await _unitOfWork.Repository<Order, Guid>()
-                     .AnyAsync(o => o.TableId == request.TableId && o.CreatedBy == request.deviceToken);
+                .AnyAsync(o => o.TableId == request.TableId && o.CreatedBy == request.deviceToken);
 
             if (hasOrderFromDevice)
             {
-                throw new ErrorException(StatusCodes.Status409Conflict, "DEVICE_ALREADY_ORDERED", "Bàn này đang được sử dụng bởi người dùng khác.");
+                throw new ErrorException(StatusCodes.Status409Conflict, "DEVICE_ALREADY_ORDERED",
+                    "Bàn này đang được sử dụng bởi người dùng khác.");
             }
+
             table.Status = TableEnums.Occupied;
             _unitOfWork.Repository<Table, Guid>().Update(table);
 
@@ -78,7 +81,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 var product = await _unitOfWork.Repository<Product, Guid>().GetByIdAsync(itemReq.ProductId);
                 var productSize = await _unitOfWork.Repository<ProductSize, Guid>().GetByIdAsync(itemReq.ProductSizeId);
                 if (product == null || productSize == null)
-                    throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_PRODUCT_OR_SIZE", "Invalid product or size.");
+                    throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_PRODUCT_OR_SIZE",
+                        "Invalid product or size.");
 
                 var orderItem = new OrderItem
                 {
@@ -99,14 +103,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 foreach (var toppingId in itemReq.ToppingIds)
                 {
                     var productTopping = await _unitOfWork.Repository<ProductTopping, Guid>()
-                        .GetWithSpecAsync(new BaseSpecification<ProductTopping>(pt => pt.ProductId == itemReq.ProductId && pt.ToppingId == toppingId), true);
+                        .GetWithSpecAsync(
+                            new BaseSpecification<ProductTopping>(pt =>
+                                pt.ProductId == itemReq.ProductId && pt.ToppingId == toppingId), true);
 
                     if (productTopping == null)
-                        throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_TOPPING", $"Topping {toppingId} is not valid for Product {itemReq.ProductId}");
+                        throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_TOPPING",
+                            $"Topping {toppingId} is not valid for Product {itemReq.ProductId}");
 
                     var topping = await _unitOfWork.Repository<Topping, Guid>().GetByIdAsync(toppingId);
                     if (topping == null)
-                        throw new ErrorException(StatusCodes.Status400BadRequest, "TOPPING_NOT_FOUND", "Topping not found.");
+                        throw new ErrorException(StatusCodes.Status400BadRequest, "TOPPING_NOT_FOUND",
+                            "Topping not found.");
 
                     orderItem.OrderItemTopping.Add(new OrderItemTopping
                     {
@@ -119,6 +127,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     total += topping.Price;
                 }
             }
+
             order.TotalPrice = total;
             await _unitOfWork.Repository<Order, Guid>().AddAsync(order);
             await _unitOfWork.SaveChangesAsync();
@@ -129,7 +138,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<BaseResponseModel<OrderResponse>> HandleOrderAsync(CreateOrderRequest request)
         {
             if (request.Items == null || !request.Items.Any())
-                return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS", "Order must have at least one item.");
+                return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS",
+                    "Order must have at least one item.");
 
             // 1. Tìm order đang pending của bàn này
             var existingOrder = await _unitOfWork.Repository<Order, Guid>()
@@ -138,7 +148,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // 2. Nếu có order -> thêm item vào và cập nhật lại giá
             if (existingOrder != null)
             {
-                // Ensure table is marked as occupied when adding items to existing order
+                if (!existingOrder.LastUpdatedBy.Equals(request.deviceToken))
+                {
+                    return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "",
+                        "Thiết bị không có quyền đặt hàng");
+                }
+
+                // Ensure table is marked as occupi ed when adding items to existing order
                 var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
                 if (table != null && table.Status != TableEnums.Occupied)
                 {
@@ -151,9 +167,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 foreach (var itemReq in request.Items)
                 {
                     var product = await _unitOfWork.Repository<Product, Guid>().GetByIdAsync(itemReq.ProductId);
-                    var productSize = await _unitOfWork.Repository<ProductSize, Guid>().GetByIdAsync(itemReq.ProductSizeId);
+                    var productSize = await _unitOfWork.Repository<ProductSize, Guid>()
+                        .GetByIdAsync(itemReq.ProductSizeId);
                     if (product == null || productSize == null)
-                        throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_PRODUCT_OR_SIZE", "Invalid product or size.");
+                        throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_PRODUCT_OR_SIZE",
+                            "Invalid product or size.");
 
                     //for (int i = 0; i < itemReq.Quantity; i++)
                     //{
@@ -173,14 +191,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     foreach (var toppingId in itemReq.ToppingIds)
                     {
                         var productTopping = await _unitOfWork.Repository<ProductTopping, Guid>()
-                            .GetWithSpecAsync(new BaseSpecification<ProductTopping>(pt => pt.ProductId == itemReq.ProductId && pt.ToppingId == toppingId), true);
+                            .GetWithSpecAsync(
+                                new BaseSpecification<ProductTopping>(pt =>
+                                    pt.ProductId == itemReq.ProductId && pt.ToppingId == toppingId), true);
 
                         if (productTopping == null)
-                            throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_TOPPING", $"Topping {toppingId} is not valid for Product {itemReq.ProductId}");
+                            throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_TOPPING",
+                                $"Topping {toppingId} is not valid for Product {itemReq.ProductId}");
 
                         var topping = await _unitOfWork.Repository<Topping, Guid>().GetByIdAsync(toppingId);
                         if (topping == null)
-                            throw new ErrorException(StatusCodes.Status400BadRequest, "TOPPING_NOT_FOUND", "Topping not found.");
+                            throw new ErrorException(StatusCodes.Status400BadRequest, "TOPPING_NOT_FOUND",
+                                "Topping not found.");
 
                         orderItem.OrderItemTopping.Add(new OrderItemTopping
                         {
@@ -210,14 +232,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
         public async Task<BaseResponseModel<OrderResponse>> GetOrderByIdAsync(Guid orderId
-            )
+        )
         {
-            var order = await _unitOfWork.Repository<Order, Guid>().GetWithSpecAsync(new OrderSpecification(orderId, true), true);
+            var order = await _unitOfWork.Repository<Order, Guid>()
+                .GetWithSpecAsync(new OrderSpecification(orderId, true), true);
             if (order == null)
-                return new BaseResponseModel<OrderResponse>(StatusCodes.Status404NotFound, "NOT_FOUND", "Order not found.");
+                return new BaseResponseModel<OrderResponse>(StatusCodes.Status404NotFound, "NOT_FOUND",
+                    "Order not found.");
             var response = _mapper.Map<OrderResponse>(order);
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status200OK, "SUCCESS", response);
         }
+
         public async Task<PaginatedList<OrderResponse>> GetOrdersAsync(PagingRequestModel paging, string? ProductName)
         {
             // Tính start và end theo múi giờ Việt Nam
@@ -263,21 +288,25 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         //}
         public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersbyTableiDAsync(Guid Orderid, Guid TableId)
         {
-            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(Orderid, TableId, true), true);
+            var orders = await _unitOfWork.Repository<Order, Order>()
+                .GetAllWithSpecAsync(new OrderSpecification(Orderid, TableId, true), true);
             var response = _mapper.Map<List<OrderResponse>>(orders);
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
         public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdOnlyAsync(Guid tableId)
         {
-            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(true, tableId), true);
+            var orders = await _unitOfWork.Repository<Order, Order>()
+                .GetAllWithSpecAsync(new OrderSpecification(true, tableId), true);
             var response = _mapper.Map<List<OrderResponse>>(orders);
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
-        public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdWithStatusAsync(Guid tableId, OrderStatus status)
+        public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdWithStatusAsync(Guid tableId,
+            OrderStatus status)
         {
-            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(new OrderSpecification(tableId, status), true);
+            var orders = await _unitOfWork.Repository<Order, Order>()
+                .GetAllWithSpecAsync(new OrderSpecification(tableId, status), true);
 
             // Debug: Log the orders to see what data is being returned
             foreach (var order in orders)
@@ -287,7 +316,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 {
                     foreach (var item in order.OrderItems)
                     {
-                        _logger.LogInformation($"OrderItem {item.Id}: ProductSize={item.ProductSize?.Id}, Price={item.ProductSize?.Price}, Product={item.Product?.Name}");
+                        _logger.LogInformation(
+                            $"OrderItem {item.Id}: ProductSize={item.ProductSize?.Id}, Price={item.ProductSize?.Price}, Product={item.Product?.Name}");
                     }
                 }
             }
@@ -296,18 +326,23 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
-        public async Task<BaseResponseModel<OrderItemResponse>> UpdateOrderItemStatusAsync(Guid orderId, Guid orderItemId, UpdateOrderItemStatusRequest request)
+        public async Task<BaseResponseModel<OrderItemResponse>> UpdateOrderItemStatusAsync(Guid orderId,
+            Guid orderItemId, UpdateOrderItemStatusRequest request)
         {
-            var order = await _unitOfWork.Repository<Order, Guid>().GetWithSpecAsync(new OrderSpecification(orderId, true), true);
+            var order = await _unitOfWork.Repository<Order, Guid>()
+                .GetWithSpecAsync(new OrderSpecification(orderId, true), true);
             if (order == null)
-                return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found.");
+                return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND",
+                    "Order not found.");
             var item = order.OrderItems.FirstOrDefault(i => i.Id == orderItemId);
             if (item == null)
-                return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status404NotFound, "ITEM_NOT_FOUND", "Order item not found.");
+                return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status404NotFound, "ITEM_NOT_FOUND",
+                    "Order item not found.");
             var oldStatus = item.Status;
             item.Status = request.Status;
             item.LastUpdatedTime = DateTime.UtcNow;
-            _logger.LogInformation($"OrderItem {item.Id} status changed from {oldStatus} to {item.Status} in Order {orderId}");
+            _logger.LogInformation(
+                $"OrderItem {item.Id} status changed from {oldStatus} to {item.Status} in Order {orderId}");
             // Update order status automatically
             var oldOrderStatus = order.Status;
             order.Status = CalculateOrderStatus(order.OrderItems);
@@ -316,6 +351,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
                 _logger.LogInformation($"Order {orderId} status changed from {oldOrderStatus} to {order.Status}");
             }
+
             await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
             await _unitOfWork.SaveChangesAsync();
             var response = _mapper.Map<OrderItemResponse>(item);
@@ -324,18 +360,23 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<List<OrderItemResponse>>> GetOrderItemsAsync(Guid orderId)
         {
-            var order = await _unitOfWork.Repository<Order, Guid>().GetWithSpecAsync(new OrderSpecification(orderId, true), true);
+            var order = await _unitOfWork.Repository<Order, Guid>()
+                .GetWithSpecAsync(new OrderSpecification(orderId, true), true);
             if (order == null)
-                return new BaseResponseModel<List<OrderItemResponse>>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found.");
+                return new BaseResponseModel<List<OrderItemResponse>>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND",
+                    "Order not found.");
             var response = _mapper.Map<List<OrderItemResponse>>(order.OrderItems.ToList());
             return new BaseResponseModel<List<OrderItemResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
-        public async Task<BaseResponseModel<OrderPaymentResponse>> InitiatePaymentAsync(Guid orderId, OrderPaymentRequest request)
+        public async Task<BaseResponseModel<OrderPaymentResponse>> InitiatePaymentAsync(Guid orderId,
+            OrderPaymentRequest request)
         {
-            var order = await _unitOfWork.Repository<Order, Guid>().GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.Table);
+            var order = await _unitOfWork.Repository<Order, Guid>()
+                .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.Table);
             if (order == null)
-                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found.");
+                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND",
+                    "Order not found.");
             _logger.LogInformation($"Initiating payment for Order {orderId} with method {request.PaymentMethod}");
             // Simulate payment logic
             if (request.PaymentMethod == PaymentMethodEnums.COD)
@@ -347,15 +388,21 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 {
                     order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
                 }
+
                 // Update table status to Available when payment is completed
                 if (order.Table != null)
                 {
                     order.Table.Status = TableEnums.Available;
                     await _unitOfWork.Repository<Table, Guid>().UpdateAsync(order.Table);
                 }
+
                 await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
                 await _unitOfWork.SaveChangesAsync();
-                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAID", new OrderPaymentResponse { OrderId = orderId, PaymentStatus = PaymentStatusEnums.Paid, Message = "Payment successful (COD)" });
+                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAID",
+                    new OrderPaymentResponse
+                    {
+                        OrderId = orderId, PaymentStatus = PaymentStatusEnums.Paid, Message = "Payment successful (COD)"
+                    });
             }
             else if (request.PaymentMethod == PaymentMethodEnums.VNPay)
             {
@@ -365,14 +412,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 order.LastUpdatedTime = DateTime.UtcNow;
                 await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
                 await _unitOfWork.SaveChangesAsync();
-                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAYMENT_INITIATED", new OrderPaymentResponse { OrderId = orderId, PaymentStatus = PaymentStatusEnums.Pending, PaymentUrl = paymentUrl, Message = "Redirect to VNPay for payment." });
+                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAYMENT_INITIATED",
+                    new OrderPaymentResponse
+                    {
+                        OrderId = orderId, PaymentStatus = PaymentStatusEnums.Pending, PaymentUrl = paymentUrl,
+                        Message = "Redirect to VNPay for payment."
+                    });
             }
             else
             {
-                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status400BadRequest, "UNSUPPORTED_PAYMENT", "Unsupported payment method.");
+                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status400BadRequest,
+                    "UNSUPPORTED_PAYMENT", "Unsupported payment method.");
             }
         }
-
 
 
         public async Task<BaseResponseModel<InforBill>> CreateBill(Guid idOrder)
@@ -387,6 +439,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     sum += tempOrderItem.ProductSize.Price;
                     sum += tempOrderItem.OrderItemTopping.Sum(topping => topping.Price);
                 }
+
                 var res = MapOrder.MapBill(temp, sum);
                 updateStatus(temp, PaymentStatusEnums.Pending);
                 return new BaseResponseModel<InforBill>(StatusCodes.Status200OK, "SUCCESS", res);
@@ -403,7 +456,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 return OrderStatus.Completed;
             if (items.All(i => i.Status == OrderItemStatus.Cancelled))
                 return OrderStatus.Cancelled;
-            if (items.Any(i => i.Status == OrderItemStatus.Ready || i.Status == OrderItemStatus.Preparing || i.Status == OrderItemStatus.Served))
+            if (items.Any(i =>
+                    i.Status == OrderItemStatus.Ready || i.Status == OrderItemStatus.Preparing ||
+                    i.Status == OrderItemStatus.Served))
                 return OrderStatus.Delivering;
             return OrderStatus.Pending;
         }
@@ -484,5 +539,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             };
         }
 
+        public async Task<BaseResponseModel<List<OrderResponse>>> GetOrderByDeviceToken(string idTable, string token)
+        {
+            // var temp = await _unitOfWork.Repository<Order, Guid>()
+            //     .GetAllWithSpecWithInclueAsync(new OrderWithDetailsSpecification(token), true);
+
+            var listas = await _unitOfWork.Repository<Order, Guid>()
+                .GetAllWithSpecWithInclueAsync(new OrderWithDetailsSpecification(token, idTable),
+                    true);
+
+            var response = _mapper.Map<List<OrderResponse>>(listas);
+            return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
+        }
     }
 }

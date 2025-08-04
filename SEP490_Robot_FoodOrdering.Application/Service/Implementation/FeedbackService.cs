@@ -106,7 +106,6 @@ public class FeedbackService : IFeedbackService
     }
 
 
-
     public async Task<BaseResponseModel<List<FeedbackCreate>>> ConfirmFeedback(Guid idTable, List<Guid> IDFeedback,
         bool isPeeding)
     {
@@ -142,6 +141,7 @@ public class FeedbackService : IFeedbackService
 
         var tableIds = _memoryStore.Tables.Keys.Select(Guid.Parse).ToArray();
         var orderStatsDict = await _orderService.GetOrderStatsByTableIds(tableIds); 
+
 
         foreach (var table in _memoryStore.Tables)
         {
@@ -180,5 +180,4 @@ public class FeedbackService : IFeedbackService
             sorted
         );
     }
-
 }
