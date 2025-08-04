@@ -39,13 +39,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS",
                     "Order must have at least one item.");
 
-            
 
             var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
             if (table == null)
                 throw new ErrorException(StatusCodes.Status400BadRequest, "TABLE_NOT_FOUND", "Table not found.");
-            
-            if (table.Status != TableEnums.Available)
+
+            if (!table.Status.Equals(TableEnums.Available))
             {
                 throw new ErrorException(
                     StatusCodes.Status409Conflict,
@@ -55,12 +54,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
 
             var hasOrderFromDevice = await _unitOfWork.Repository<Order, Guid>()
-                     .AnyAsync(o => o.TableId == request.TableId && o.CreatedBy == request.deviceToken);
+                .AnyAsync(o => o.TableId == request.TableId && o.CreatedBy == request.deviceToken);
 
             if (hasOrderFromDevice)
             {
-                throw new ErrorException(StatusCodes.Status409Conflict, "DEVICE_ALREADY_ORDERED", "Bàn này đang được sử dụng bởi người dùng khác.");
+                throw new ErrorException(StatusCodes.Status409Conflict, "DEVICE_ALREADY_ORDERED",
+                    "Bàn này đang được sử dụng bởi người dùng khác.");
             }
+
             table.Status = TableEnums.Occupied;
             _unitOfWork.Repository<Table, Guid>().Update(table);
 
@@ -147,7 +148,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // 2. Nếu có order -> thêm item vào và cập nhật lại giá
             if (existingOrder != null)
             {
-                // Ensure table is marked as occupied when adding items to existing order
+                if (!existingOrder.LastUpdatedBy.Equals(request.deviceToken))
+                {
+                    return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "",
+                        "Thiết bị không có quyền đặt hàng");
+                }
+
+                // Ensure table is marked as occupi ed when adding items to existing order
                 var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
                 if (table != null && table.Status != TableEnums.Occupied)
                 {
@@ -422,6 +429,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<InforBill>> CreateBill(Guid idOrder)
         {
+            // Existing logic retained
             try
             {
                 var temp = await _unitOfWork.Repository<Order, Guid>().GetByIdAsync(idOrder);
@@ -469,6 +477,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<List<OrderResponse>>> GetALLOrderByIdTabeleWihPending(Guid idTable)
         {
+            // var res = await _unitOfWork.Repository<Order,Guid>().GetAllAsync()
+
             throw new NotImplementedException();
         }
 
@@ -478,10 +488,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (!tableIdsList.Any())
                 return new Dictionary<Guid, OrderStaticsResponse>();
 
+            // Lấy tất cả orders cho các table ids trong 1 query
             var allOrders = await _unitOfWork.Repository<Order, Guid>()
                 .GetAllWithSpecAsync(new OrdersByTableIdsSpecification(tableIdsList), true);
 
-
+            // Group orders theo TableId
             var ordersByTableId = allOrders
                 .GroupBy(o => o.TableId)
                 .ToDictionary(g => g.Key, g => g.ToList());
@@ -526,6 +537,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 TotalOrderItems = totalOrderItems,
                 PaidCount = paidCount
             };
+        }
+
+        public async Task<BaseResponseModel<List<OrderResponse>>> GetOrderByDeviceToken(string idTable, string token)
+        {
+            // var temp = await _unitOfWork.Repository<Order, Guid>()
+            //     .GetAllWithSpecWithInclueAsync(new OrderWithDetailsSpecification(token), true);
+
+            var listas = await _unitOfWork.Repository<Order, Guid>()
+                .GetAllWithSpecWithInclueAsync(new OrderWithDetailsSpecification(token, idTable),
+                    true);
+
+            var response = _mapper.Map<List<OrderResponse>>(listas);
+            return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
     }
 }

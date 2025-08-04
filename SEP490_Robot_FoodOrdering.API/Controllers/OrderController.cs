@@ -19,6 +19,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
+
         public OrderController(IOrderService orderService)
         {
             _orderService = orderService;
@@ -171,9 +172,10 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         [ProducesResponseType(typeof(PaginatedList<OrderResponse>), 200)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 400)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 500)]
-        public async Task<ActionResult<BaseResponseModel>> GetOrders([FromQuery] PagingRequestModel paging , [FromQuery] string? ProductName)
+        public async Task<ActionResult<BaseResponseModel>> GetOrders([FromQuery] PagingRequestModel paging,
+            [FromQuery] string? ProductName)
         {
-            var result = await _orderService.GetOrdersAsync(paging,ProductName);
+            var result = await _orderService.GetOrdersAsync(paging, ProductName);
             return StatusCode(200, result);
         }
 
@@ -245,7 +247,8 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         [ProducesResponseType(typeof(BaseResponseModel<object>), 400)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 404)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 500)]
-        public async Task<ActionResult<BaseResponseModel>> UpdateOrderItemStatus(Guid orderId, Guid itemId, [FromBody] UpdateOrderItemStatusRequest request)
+        public async Task<ActionResult<BaseResponseModel>> UpdateOrderItemStatus(Guid orderId, Guid itemId,
+            [FromBody] UpdateOrderItemStatusRequest request)
         {
             var result = await _orderService.UpdateOrderItemStatusAsync(orderId, itemId, request);
             return StatusCode(result.StatusCode, result);
@@ -275,7 +278,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         [ProducesResponseType(typeof(BaseResponseModel<List<OrderResponse>>), 200)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 404)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 500)]
-        public async Task<ActionResult<BaseResponseModel>> GetOrdersByTableId(Guid orderId, Guid tableId )
+        public async Task<ActionResult<BaseResponseModel>> GetOrdersByTableId(Guid orderId, Guid tableId)
         {
             var result = await _orderService.GetOrdersbyTableiDAsync(orderId, tableId);
             return StatusCode(result.StatusCode, result);
@@ -334,7 +337,8 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         [ProducesResponseType(typeof(BaseResponseModel<List<OrderResponse>>), 200)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 404)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 500)]
-        public async Task<ActionResult<BaseResponseModel>> GetOrdersByTableIdWithStatus(Guid tableId, OrderStatus status)
+        public async Task<ActionResult<BaseResponseModel>> GetOrdersByTableIdWithStatus(Guid tableId,
+            OrderStatus status)
         {
             var result = await _orderService.GetOrdersByTableIdWithStatusAsync(tableId, status);
             return StatusCode(result.StatusCode, result);
@@ -374,11 +378,19 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         [ProducesResponseType(typeof(BaseResponseModel<object>), 400)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 404)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 500)]
-        public async Task<ActionResult<BaseResponseModel>> InitiatePayment(Guid orderId, [FromBody] OrderPaymentRequest request)
+        public async Task<ActionResult<BaseResponseModel>> InitiatePayment(Guid orderId,
+            [FromBody] OrderPaymentRequest request)
         {
             var result = await _orderService.InitiatePaymentAsync(orderId, request);
             return StatusCode(result.StatusCode, result);
         }
-        
+
+        [HttpGet("get-table-token/{idTable}/{token}")]
+        public async Task<ActionResult<BaseResponseModel<List<OrderResponse>>>> GetOrderByDeviceToken(string idTable,
+            string token)
+        {   
+            var res = await _orderService.GetOrderByDeviceToken(idTable, token);
+            return StatusCode(res.StatusCode, res);
+        }
     }
-} 
+}
