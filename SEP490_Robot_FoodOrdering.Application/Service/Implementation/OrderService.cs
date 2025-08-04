@@ -23,8 +23,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IMapper _mapper;
         private readonly ILogger<OrderService> _logger;
         private readonly IOrderItemReposotory _orderItemReposotory;
-
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IOrderItemReposotory orderItemReposotory, ILogger<OrderService> logger)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IOrderItemReposotory orderItemReposotory, ILogger<OrderService> logger )
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -34,6 +33,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
         {
+
             if (request.Items == null || !request.Items.Any())
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS", "Order must have at least one item.");
 
