@@ -37,30 +37,40 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (request.Items == null || !request.Items.Any())
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS", "Order must have at least one item.");
 
-            var order = _mapper.Map<Order>(request);
-
-            order.Status = OrderStatus.Pending;
-            order.PaymentStatus = PaymentStatusEnums.Pending;
+            
 
             var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
             if (table == null)
                 throw new ErrorException(StatusCodes.Status400BadRequest, "TABLE_NOT_FOUND", "Table not found.");
             
-            if (table == null)
-                throw new ErrorException(StatusCodes.Status400BadRequest, "TABLE_NOT_FOUND", "Table not found.");
-
-            var hasPendingOrder = await _unitOfWork.Repository<Order, Guid>()
-                .AnyAsync(o => o.TableId == request.TableId && o.Status == OrderStatus.Pending);
-
-            if (hasPendingOrder)
+            if (table.Status != TableEnums.Available)
             {
-                throw new ErrorException(StatusCodes.Status409Conflict, "TABLE_LOCKED", "Bàn này đang có đơn hàng chưa xử lý.");
+                throw new ErrorException(
+                    StatusCodes.Status409Conflict,
+                    "TABLE_NOT_AVAILABLE",
+                    "Bàn này đang được sử dụng bởi người dùng khác."
+                );
+            }
+
+            var hasOrderFromDevice = await _unitOfWork.Repository<Order, Guid>()
+                     .AnyAsync(o => o.TableId == request.TableId && o.CreatedBy == request.deviceToken);
+
+            if (hasOrderFromDevice)
+            {
+                throw new ErrorException(StatusCodes.Status409Conflict, "DEVICE_ALREADY_ORDERED", "Bàn này đang được sử dụng bởi người dùng khác.");
             }
             table.Status = TableEnums.Occupied;
             _unitOfWork.Repository<Table, Guid>().Update(table);
 
+            var order = _mapper.Map<Order>(request);
+
+            order.Status = OrderStatus.Pending;
+            order.PaymentStatus = PaymentStatusEnums.Pending;
+            order.CreatedBy = request.deviceToken;
+            order.LastUpdatedBy = request.deviceToken;
             order.CreatedTime = DateTime.UtcNow;
             order.LastUpdatedTime = DateTime.UtcNow;
+
             order.OrderItems = new List<OrderItem>();
             decimal total = 0;
             foreach (var itemReq in request.Items)
