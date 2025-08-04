@@ -18,6 +18,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
 
             AddIncludes();
         }
+       
         public OrderSpecification(string? productName, DateTime startUtc, DateTime endUtc)
      : base(o =>
          !o.DeletedTime.HasValue &&

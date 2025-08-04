@@ -93,6 +93,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.TableId, opt => opt.MapFrom(src => src.TableId));
             CreateMap<CreateOrderItemRequest, OrderItem>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => SEP490_Robot_FoodOrdering.Domain.Enums.OrderItemStatus.Pending));
+
             CreateMap<Order, OrderResponse>()
              .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.Table.Name))
              .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.OrderItems)); // Items instead of OrderItems
@@ -103,6 +104,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.ProductSize != null ? src.ProductSize.Price : 0)) // Map price from ProductSize
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => 1)) // Always set to 1 as per business rule
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Product != null ? src.Product.ImageUrl : null)) 
+                .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.Note))
                 .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src =>
                     src.OrderItemTopping != null && src.OrderItemTopping.Count > 0
                         ? src.OrderItemTopping.Select(oit => oit.Topping).ToList()

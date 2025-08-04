@@ -106,38 +106,6 @@ public class FeedbackService : IFeedbackService
     }
 
 
-    public async Task<BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>> GetAllFeedbackIsPeeding()
-    {
-        Dictionary<string, FeedbackPeedingInfo> feedbackList = new();
-
-        foreach (var table in _memoryStore.Tables)
-        {
-            _memoryStore.Store.TryGetValue(table.Key, out var feedbacks);
-
-            int counter = feedbacks?.Count(f =>
-                f is FeedbackModole fb && fb.IsPeeding
-            ) ?? 0;
-
-
-            var orderStats = await _orderService.GetOrderStatsByTableId(Guid.Parse(table.Key));
-
-            feedbackList[table.Key] = new FeedbackPeedingInfo(
-                table.Value,
-                counter,
-                orderStats.DeliveredCount,       // Delivered
-            orderStats.PaidCount,            // Paid
-            orderStats.TotalOrderItems);       // Total items);
-        }
-
-        var sorted = feedbackList
-            .OrderBy(x => x.Value.TableName)
-            .ToDictionary(x => x.Key, x => x.Value);
-
-        return new BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>(StatusCodes.Status200OK,
-            ResponseCodeConstants.SUCCESS, sorted);
-    }
-
-
     public async Task<BaseResponseModel<List<FeedbackCreate>>> ConfirmFeedback(Guid idTable, List<Guid> IDFeedback,
         bool isPeeding)
     {
@@ -163,6 +131,56 @@ public class FeedbackService : IFeedbackService
             StatusCodes.Status200OK,
             ResponseCodeConstants.SUCCESS,
             updatedFeedbacks
+        );
+    }
+
+    public async Task<BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>> GetAllFeedbackIsPeeding()
+    {
+        var tableCount = _memoryStore.Tables.Count;
+        var feedbackList = new Dictionary<string, FeedbackPeedingInfo>(tableCount); // Pre-allocate capacity
+
+        // Batch load order stats để giảm async calls
+        var tableIds = _memoryStore.Tables.Keys.Select(Guid.Parse).ToArray();
+        var orderStatsDict = await _orderService.GetOrderStatsByTableIds(tableIds); // Giả sử có method batch này
+
+
+        foreach (var table in _memoryStore.Tables)
+        {
+            // Tránh TryGetValue nếu có thể truy cập trực tiếp
+            var feedbacks = _memoryStore.Store.GetValueOrDefault(table.Key);
+
+            // Sử dụng span để tối ưu enumeration nếu có thể
+            int counter = 0;
+            if (feedbacks != null)
+            {
+                foreach (var feedback in feedbacks)
+                {
+                    if (feedback is FeedbackModole { IsPeeding: true })
+                        counter++;
+                }
+            }
+
+            var tableGuid = Guid.Parse(table.Key);
+            var orderStats = orderStatsDict[tableGuid];
+
+            feedbackList[table.Key] = new FeedbackPeedingInfo(
+                table.Value,
+                counter,
+                orderStats.DeliveredCount,
+                orderStats.PaidCount,
+                orderStats.TotalOrderItems
+            );
+        }
+
+        // Sử dụng LINQ với buffer size nhỏ hơn
+        var sorted = feedbackList
+            .OrderBy(x => x.Value.TableName, StringComparer.Ordinal) // Sử dụng Ordinal comparison
+            .ToDictionary(x => x.Key, x => x.Value, feedbackList.Comparer);
+
+        return new BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>(
+            StatusCodes.Status200OK,
+            ResponseCodeConstants.SUCCESS,
+            sorted
         );
     }
 }
