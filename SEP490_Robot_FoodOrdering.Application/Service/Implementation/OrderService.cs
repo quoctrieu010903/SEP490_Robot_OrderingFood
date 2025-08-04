@@ -39,21 +39,40 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS",
                     "Order must have at least one item.");
 
+            
+
+            var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
+            if (table == null)
+                throw new ErrorException(StatusCodes.Status400BadRequest, "TABLE_NOT_FOUND", "Table not found.");
+            
+            if (table.Status != TableEnums.Available)
+            {
+                throw new ErrorException(
+                    StatusCodes.Status409Conflict,
+                    "TABLE_NOT_AVAILABLE",
+                    "Bàn này đang được sử dụng bởi người dùng khác."
+                );
+            }
+
+            var hasOrderFromDevice = await _unitOfWork.Repository<Order, Guid>()
+                     .AnyAsync(o => o.TableId == request.TableId && o.CreatedBy == request.deviceToken);
+
+            if (hasOrderFromDevice)
+            {
+                throw new ErrorException(StatusCodes.Status409Conflict, "DEVICE_ALREADY_ORDERED", "Bàn này đang được sử dụng bởi người dùng khác.");
+            }
+            table.Status = TableEnums.Occupied;
+            _unitOfWork.Repository<Table, Guid>().Update(table);
+
             var order = _mapper.Map<Order>(request);
 
             order.Status = OrderStatus.Pending;
             order.PaymentStatus = PaymentStatusEnums.Pending;
-
-            // Load the table entity to avoid null reference exception
-            var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
-            if (table == null)
-                throw new ErrorException(StatusCodes.Status400BadRequest, "TABLE_NOT_FOUND", "Table not found.");
-
-            table.Status = TableEnums.Occupied;
-            _unitOfWork.Repository<Table, Guid>().Update(table);
-
+            order.CreatedBy = request.deviceToken;
+            order.LastUpdatedBy = request.deviceToken;
             order.CreatedTime = DateTime.UtcNow;
             order.LastUpdatedTime = DateTime.UtcNow;
+
             order.OrderItems = new List<OrderItem>();
             decimal total = 0;
             foreach (var itemReq in request.Items)
@@ -109,7 +128,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
 
             order.TotalPrice = total;
-            await _unitOfWork.Repository<Order, bool>().AddAsync(order);
+            await _unitOfWork.Repository<Order, Guid>().AddAsync(order);
             await _unitOfWork.SaveChangesAsync();
             var response = _mapper.Map<OrderResponse>(order);
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status201Created, "ORDER_CREATED", response);
