@@ -42,11 +42,20 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             order.Status = OrderStatus.Pending;
             order.PaymentStatus = PaymentStatusEnums.Pending;
 
-            // Load the table entity to avoid null reference exception
             var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
             if (table == null)
                 throw new ErrorException(StatusCodes.Status400BadRequest, "TABLE_NOT_FOUND", "Table not found.");
+            
+            if (table == null)
+                throw new ErrorException(StatusCodes.Status400BadRequest, "TABLE_NOT_FOUND", "Table not found.");
 
+            var hasPendingOrder = await _unitOfWork.Repository<Order, Guid>()
+                .AnyAsync(o => o.TableId == request.TableId && o.Status == OrderStatus.Pending);
+
+            if (hasPendingOrder)
+            {
+                throw new ErrorException(StatusCodes.Status409Conflict, "TABLE_LOCKED", "Bàn này đang có đơn hàng chưa xử lý.");
+            }
             table.Status = TableEnums.Occupied;
             _unitOfWork.Repository<Table, Guid>().Update(table);
 
@@ -101,7 +110,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 }
             }
             order.TotalPrice = total;
-            await _unitOfWork.Repository<Order, bool>().AddAsync(order);
+            await _unitOfWork.Repository<Order, Guid>().AddAsync(order);
             await _unitOfWork.SaveChangesAsync();
             var response = _mapper.Map<OrderResponse>(order);
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status201Created, "ORDER_CREATED", response);

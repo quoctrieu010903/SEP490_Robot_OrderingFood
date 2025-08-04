@@ -138,18 +138,15 @@ public class FeedbackService : IFeedbackService
     public async Task<BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>> GetAllFeedbackIsPeeding()
     {
         var tableCount = _memoryStore.Tables.Count;
-        var feedbackList = new Dictionary<string, FeedbackPeedingInfo>(tableCount); // Pre-allocate capacity
+        var feedbackList = new Dictionary<string, FeedbackPeedingInfo>(tableCount); 
 
-        // Batch load order stats để giảm async calls
         var tableIds = _memoryStore.Tables.Keys.Select(Guid.Parse).ToArray();
-        var orderStatsDict = await _orderService.GetOrderStatsByTableIds(tableIds); // Giả sử có method batch này
+        var orderStatsDict = await _orderService.GetOrderStatsByTableIds(tableIds); 
 
         foreach (var table in _memoryStore.Tables)
         {
-            // Tránh TryGetValue nếu có thể truy cập trực tiếp
             var feedbacks = _memoryStore.Store.GetValueOrDefault(table.Key);
 
-            // Sử dụng span để tối ưu enumeration nếu có thể
             int counter = 0;
             if (feedbacks != null)
             {
@@ -172,9 +169,9 @@ public class FeedbackService : IFeedbackService
             );
         }
 
-        // Sử dụng LINQ với buffer size nhỏ hơn
+   
         var sorted = feedbackList
-            .OrderBy(x => x.Value.TableName, StringComparer.Ordinal) // Sử dụng Ordinal comparison
+            .OrderBy(x => x.Value.TableName, StringComparer.Ordinal) 
             .ToDictionary(x => x.Key, x => x.Value, feedbackList.Comparer);
 
         return new BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>(
