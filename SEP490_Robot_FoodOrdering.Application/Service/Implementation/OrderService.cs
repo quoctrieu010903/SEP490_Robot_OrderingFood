@@ -522,7 +522,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     foreach (var item in order.OrderItems)
                     {
                         totalOrderItems++;
-                        if (item.Status == OrderItemStatus.Served)
+                        if (item.Status == OrderItemStatus.Ready)
                             deliveredCount++;
                     }
                 }
