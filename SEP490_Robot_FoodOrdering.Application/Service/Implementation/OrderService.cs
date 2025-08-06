@@ -373,7 +373,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             OrderPaymentRequest request)
         {
             var order = await _unitOfWork.Repository<Order, Guid>()
-                .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.Table);
+                .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.Table , o=> o.OrderItems);
             if (order == null)
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND",
                     "Order not found.");
@@ -387,6 +387,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 if (order.Payment != null)
                 {
                     order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
+                  
+
+                }
+              
+                foreach (OrderItem item in order.OrderItems)
+                {
+                    item.Status = OrderItemStatus.Completed; // Mark all items as completed
+                    item.LastUpdatedTime = DateTime.UtcNow;
                 }
 
                 // Update table status to Available when payment is completed
@@ -522,13 +530,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     foreach (var item in order.OrderItems)
                     {
                         totalOrderItems++;
-                        if (item.Status == OrderItemStatus.Served)
+                        if (item.Status == OrderItemStatus.Ready)
                             deliveredCount++;
+                        if (order.PaymentStatus == PaymentStatusEnums.Paid &&
+                             item.Status == OrderItemStatus.Completed)
+                        {
+                            paidCount++;
+                        }
+
                     }
                 }
 
-                if (order.PaymentStatus == PaymentStatusEnums.Paid)
-                    paidCount++;
+               
             }
 
             return new OrderStaticsResponse
