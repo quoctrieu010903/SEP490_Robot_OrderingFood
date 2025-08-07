@@ -541,6 +541,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                              item.Status == OrderItemStatus.Completed)
                         {
                             paidCount++;
+                            deliveredCount++;
                         }
 
                     }
