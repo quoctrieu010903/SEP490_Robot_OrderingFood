@@ -530,12 +530,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     foreach (var item in order.OrderItems)
                     {
                         totalOrderItems++;
-                        if (item.Status == OrderItemStatus.Ready)
+                        if ((item.Status == OrderItemStatus.Ready || item.Status == OrderItemStatus.Served)
+                                          && item.Status != OrderItemStatus.Returned
+                                          && item.Status != OrderItemStatus.Cancelled)
+                        {
                             deliveredCount++;
+                        }
+                        deliveredCount++;
                         if (order.PaymentStatus == PaymentStatusEnums.Paid &&
                              item.Status == OrderItemStatus.Completed)
                         {
                             paidCount++;
+                            deliveredCount++;
                         }
 
                     }
