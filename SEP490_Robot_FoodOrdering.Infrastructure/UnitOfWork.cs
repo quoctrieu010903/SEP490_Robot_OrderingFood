@@ -1,5 +1,6 @@
 ﻿
 
+using Microsoft.EntityFrameworkCore.Storage;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 using SEP490_Robot_FoodOrdering.Infrastructure.Repository;
@@ -100,9 +101,10 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure
 
             return result;
         }
-        public async Task BeginTransactionAsync()
+      
+        public Task<IDbContextTransaction> BeginTransactionAsync()
         {
-            await _context.Database.BeginTransactionAsync();
+            return _context.Database.BeginTransactionAsync();
         }
 
         public async Task CommitAsync()

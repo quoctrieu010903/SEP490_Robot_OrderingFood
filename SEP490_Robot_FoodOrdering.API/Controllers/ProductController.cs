@@ -106,7 +106,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// 
         /// </remarks>
         [HttpPost]
-        public async Task<ActionResult<BaseResponseModel>> Create([FromBody] CreateProductRequest request)
+        public async Task<ActionResult<BaseResponseModel>> Create([FromForm] CreateProductRequest request)
         {
             var result = await _service.Create(request);
             return Ok(result);
@@ -175,7 +175,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// - Last modified timestamp is automatically updated
         /// </remarks>
         [HttpPut("{id}")]
-        public async Task<ActionResult<BaseResponseModel<ProductResponse>>> Update([FromBody] CreateProductRequest request, Guid id)
+        public async Task<ActionResult<BaseResponseModel<ProductResponse>>> Update([FromForm] CreateProductRequest request, Guid id)
         {
             var result = await _service.Update(request, id);
             return Ok(result);

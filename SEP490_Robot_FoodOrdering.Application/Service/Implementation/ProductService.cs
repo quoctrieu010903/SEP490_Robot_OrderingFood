@@ -12,6 +12,7 @@ using SEP490_Robot_FoodOrdering.Core.Constants;
 using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
 using SEP490_Robot_FoodOrdering.Domain.Specifications;
 using SEP490_Robot_FoodOrdering.Domain.Specifications.Params;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Cloudinary;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -19,21 +20,35 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public ProductService(IUnitOfWork unitOfWork, IMapper mapper)
+        public ProductService(IUnitOfWork unitOfWork, IMapper mapper, ICloudinaryService cloudinaryService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _cloudinaryService = cloudinaryService;
         }
 
         public async Task<BaseResponseModel> Create(CreateProductRequest request)
         {
             var entity = _mapper.Map<Product>(request);
+
             entity.CreatedBy = "";
             entity.CreatedTime = DateTime.UtcNow;
             entity.LastUpdatedBy = "";
             entity.LastUpdatedTime = DateTime.UtcNow;
             // TODO: Handle file upload for ImageUrl if needed
+            if (request.ImageFile is not null && request.ImageFile.Length > 0)
+            {
+                var imageUrl = await _cloudinaryService.UploadImageAsync(
+                    request.ImageFile,
+                    "products", // tên folder trên Cloudinary
+                    null        // vì đang tạo mới nên không có ảnh cũ để xóa
+                );
+                entity.ImageUrl = imageUrl;
+            }
+
+
             await _unitOfWork.Repository<Product, bool>().AddAsync(entity);
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, entity);
@@ -91,6 +106,21 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             existedProduct.LastUpdatedBy = "";
             existedProduct.LastUpdatedTime = DateTime.UtcNow;
             // TODO: Handle file upload for ImageUrl if needed
+            if (request.ImageFile is not null && request.ImageFile.Length > 0)
+            {
+                // Xoá ảnh cũ nếu có
+                if (!string.IsNullOrEmpty(existedProduct.ImageUrl))
+                {
+                    await _cloudinaryService.DeleteImageAsync(existedProduct.ImageUrl);
+                }
+
+                var imageUrl = await _cloudinaryService.UploadImageAsync(
+                    request.ImageFile,
+                    "products", // tên folder trên Cloudinary
+                    existedProduct.ImageUrl // xóa ảnh cũ nếu có
+                );
+                existedProduct.ImageUrl = imageUrl;
+            }
             await _unitOfWork.Repository<Product, Product>().UpdateAsync(existedProduct);
             await _unitOfWork.SaveChangesAsync();
             var productResponse = _mapper.Map<ProductResponse>(existedProduct);

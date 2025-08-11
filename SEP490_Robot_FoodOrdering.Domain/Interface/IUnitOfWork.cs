@@ -1,4 +1,6 @@
 ﻿
+using Microsoft.EntityFrameworkCore.Storage;
+
 namespace SEP490_Robot_FoodOrdering.Domain.Interface
 {
     public interface IUnitOfWork : IDisposable
@@ -15,7 +17,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Interface
         // or when handling complex logic with dependencies
         int SaveChangesWithTransaction();
         Task<int> SaveChangesWithTransactionAsync();
-        Task BeginTransactionAsync();
+        Task<IDbContextTransaction> BeginTransactionAsync();
 
         // Commit the transaction
         Task CommitAsync();

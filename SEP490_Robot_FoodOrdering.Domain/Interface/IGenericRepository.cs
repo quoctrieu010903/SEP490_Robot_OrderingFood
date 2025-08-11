@@ -12,6 +12,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Interface
         Task<IEnumerable<TEntity>> GetAllAsync(bool tracked = true);
         Task<IEnumerable<TEntity>> GetAllWithIncludeAsync(bool tracked = true, params Expression<Func<TEntity, object>>[] includes);
 
+        Task<IEnumerable<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate);
         Task<TEntity?> GetByIdAsync(TKey id);
         Task<TEntity?> GetByIdWithIncludeAsync(
       Expression<Func<TEntity, bool>> predicate,
