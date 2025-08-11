@@ -228,6 +228,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// * Served (4)
         /// * Completed (5)
         /// * Cancelled (6)
+        /// * Returned (7) : lam lại món an chua phuc vụ
         /// 
         /// This endpoint supports:
         /// * Individual item status updates

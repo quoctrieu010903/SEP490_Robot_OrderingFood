@@ -340,12 +340,21 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     "Order item not found.");
             var oldStatus = item.Status;
             item.Status = request.Status;
+           
             item.LastUpdatedTime = DateTime.UtcNow;
+
+            if (request.Status == OrderItemStatus.Returned)
+            {
+                item.Note = string.IsNullOrWhiteSpace(request.Note) ? "Làm lại" : request.Note.Trim();
+
+            }
+
             _logger.LogInformation(
                 $"OrderItem {item.Id} status changed from {oldStatus} to {item.Status} in Order {orderId}");
             // Update order status automatically
             var oldOrderStatus = order.Status;
             order.Status = CalculateOrderStatus(order.OrderItems);
+            
             order.LastUpdatedTime = DateTime.UtcNow;
             if (oldOrderStatus != order.Status)
             {
@@ -357,7 +366,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var response = _mapper.Map<OrderItemResponse>(item);
             return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status200OK, "ITEM_STATUS_UPDATED", response);
         }
-
+    
         public async Task<BaseResponseModel<List<OrderItemResponse>>> GetOrderItemsAsync(Guid orderId)
         {
             var order = await _unitOfWork.Repository<Order, Guid>()
@@ -468,6 +477,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 return OrderStatus.Completed;
             if (items.All(i => i.Status == OrderItemStatus.Cancelled))
                 return OrderStatus.Cancelled;
+            // Nếu còn món đang Returned (redo yêu cầu)
+            if (items.Any(i => i.Status == OrderItemStatus.Returned))
+                return OrderStatus.Pending; // quay lại chờ xử lý redo
             if (items.Any(i =>
                     i.Status == OrderItemStatus.Ready || i.Status == OrderItemStatus.Preparing ||
                     i.Status == OrderItemStatus.Served))
