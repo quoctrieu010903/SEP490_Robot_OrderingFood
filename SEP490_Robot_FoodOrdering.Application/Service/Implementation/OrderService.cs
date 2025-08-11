@@ -582,8 +582,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (!HasValidItems(request))
                 return BadRequest("NO_ITEMS", "Order must have at least one item.");
 
-            using var transaction = await _unitOfWork.BeginTransactionAsync();
-
+            
             var table = await GetAndValidateTableAsync(request.TableId);
             await EnsureNoOrderFromDeviceAsync(request.TableId, request.deviceToken);
 
@@ -606,8 +605,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             order.TotalPrice = currentTotal;
             await _unitOfWork.Repository<Order, Guid>().AddAsync(order);
             await _unitOfWork.SaveChangesAsync();
-            await transaction.CommitAsync();
-
+            
             var response = _mapper.Map<OrderResponse>(order);
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status201Created, "ORDER_CREATED", response);
         }
@@ -617,21 +615,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (!HasValidItems(request))
                 return BadRequest("NO_ITEMS", "Order must have at least one item.");
 
-            using var transaction = await _unitOfWork.BeginTransactionAsync();
 
             var existingOrder = await _unitOfWork.Repository<Order, Guid>()
-                .GetWithSpecAsync(new OrderSpecification(request.TableId), true);
+                .GetWithSpecAsync(new OrderSpecification(request.TableId), false);
 
             if (existingOrder != null)
             {
                 if (!existingOrder.LastUpdatedBy.Equals(request.deviceToken))
                     return BadRequest("INVALID_DEVICE", "Thiết bị không có quyền đặt hàng");
 
-                var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
-                if (table != null && table.Status != TableEnums.Occupied)
+                if (existingOrder.Table != null && existingOrder.Table.Status != TableEnums.Occupied)
                 {
-                    table.Status = TableEnums.Occupied;
-                    _unitOfWork.Repository<Table, Guid>().Update(table);
+                    existingOrder.Table.Status = TableEnums.Occupied;
                 }
 
 
@@ -643,13 +638,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     var orderItem = await BuildOrderItemAsync(itemReq, lookupData, currentTotal);
                     existingOrder.OrderItems.Add(orderItem.orderItem);
                 }
-
                 existingOrder.TotalPrice += currentTotal;
                 existingOrder.LastUpdatedTime = DateTime.UtcNow;
 
                 _unitOfWork.Repository<Order, Guid>().Update(existingOrder);
                 await _unitOfWork.SaveChangesAsync();
-                await transaction.CommitAsync();
+               
 
                 var response = _mapper.Map<OrderResponse>(existingOrder);
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status200OK, "ORDER_UPDATED", response);
