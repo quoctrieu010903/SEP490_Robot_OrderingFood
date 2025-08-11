@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Cloudinary;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Category;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Topping;
@@ -18,12 +19,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IUnitOfWork _unitOfWork;
         private readonly IToppingRepository _toppingRepository;
         private readonly IMapper _mapper;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public ToppingService(IUnitOfWork unitOfWork, IMapper mapper, IToppingRepository toppingRepository)
+        public ToppingService(IUnitOfWork unitOfWork, IMapper mapper, IToppingRepository toppingRepository , ICloudinaryService cloudinaryService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _toppingRepository = toppingRepository;
+            _cloudinaryService = cloudinaryService;
         }
 
         public async Task<BaseResponseModel> Create(CreateToppingRequest request)
@@ -33,6 +36,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             entity.CreatedTime = DateTime.UtcNow;
             entity.LastUpdatedBy = "";
             entity.LastUpdatedTime = DateTime.UtcNow;
+            // Handle file upload for ImageUrl if needed
+
+            if (request.ImageFile is not null && request.ImageFile.Length > 0)
+            {
+                var imageUrl = await _cloudinaryService.UploadImageAsync(
+                    request.ImageFile,
+                    "toppings", // tên folder trên Cloudinary
+                    null        // vì đang tạo mới nên không có ảnh cũ để xóa
+                );
+                entity.ImageUrl = imageUrl;
+            }
+
             await _unitOfWork.Repository<Topping, bool>().AddAsync(entity);
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS,
@@ -101,6 +116,22 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _mapper.Map(request, existedEntity);
             existedEntity.LastUpdatedBy = "";
             existedEntity.LastUpdatedTime = DateTime.UtcNow;
+            // Handle file upload for ImageUrl if needed
+            if (request.ImageFile is not null && request.ImageFile.Length > 0)
+            {
+                // If there is an existing image, delete it first
+                if (!string.IsNullOrEmpty(existedEntity.ImageUrl))
+                {
+                    await _cloudinaryService.DeleteImageAsync(existedEntity.ImageUrl);
+                }
+                // Upload the new image
+                var imageUrl = await _cloudinaryService.UploadImageAsync(
+                    request.ImageFile,
+                    "toppings", // tên folder trên Cloudinary
+                    null        // vì đang cập nhật nên không có ảnh cũ để xóa
+                );
+                existedEntity.ImageUrl = imageUrl;
+            }
             _unitOfWork.Repository<Topping, bool>().Update(existedEntity);
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS,

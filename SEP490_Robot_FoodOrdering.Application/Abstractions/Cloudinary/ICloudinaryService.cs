@@ -18,7 +18,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Abstractions.Cloudinary
         /// <param name="oldFile">The public ID of the old image to delete, if any. If not null, the old image will be removed before uploading the new one.</param>
         /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
         /// <returns>Returns the public ID of the uploaded image.</returns>
-        Task<string> UploadImageAsync(IFormFile file, string? folder, string? oldFile, CancellationToken cancellationToken);
+        Task<string> UploadImageAsync(IFormFile file, string? folder, string? oldFile);
 
         /// <summary>
         /// Deletes an image from Cloudinary based on the provided public ID.
@@ -27,8 +27,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Abstractions.Cloudinary
         /// <returns>Asynchronously deletes the image from Cloudinary.</returns>
         Task DeleteImageAsync(string oldFile);
 
-        Task<string> UploadFileAsync(IFormFile file, string? folder, string? oldFile, ResourceType resourceType, CancellationToken cancellationToken);
+        Task<string> UploadFileAsync(IFormFile file, string? folder, string? oldFile, CloudinaryDotNet.Actions.ResourceType resourceType);
 
-        Task DeleteFileAsync(string oldFile, ResourceType resourceType);
+        Task DeleteFileAsync(string oldFile, CloudinaryDotNet.Actions.ResourceType resourceType);
     }
 }

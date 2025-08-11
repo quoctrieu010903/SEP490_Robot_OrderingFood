@@ -11,6 +11,6 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Request
     {
         public string Name { get; set; }
         public decimal Price { get; set; }
-        public IFormFile ImageUrl { get; set; }
+        public IFormFile ImageFile { get; set; }
     }
 }
