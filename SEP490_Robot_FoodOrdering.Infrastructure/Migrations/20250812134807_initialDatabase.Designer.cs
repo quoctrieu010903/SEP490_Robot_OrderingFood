@@ -12,7 +12,7 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
-    [Migration("20250803054318_initialDatabase")]
+    [Migration("20250812134807_initialDatabase")]
     partial class initialDatabase
     {
         /// <inheritdoc />
@@ -139,6 +139,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
                     b.Property<Guid>("ProductSizeId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("RemarkNote")
+                        .HasColumnType("text");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");

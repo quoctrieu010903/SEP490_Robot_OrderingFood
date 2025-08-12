@@ -137,6 +137,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<Guid>("ProductSizeId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("RemarkNote")
+                        .HasColumnType("text");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 

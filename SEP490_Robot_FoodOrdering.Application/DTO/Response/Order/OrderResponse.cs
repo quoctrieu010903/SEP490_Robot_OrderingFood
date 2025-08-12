@@ -1,4 +1,4 @@
-using SEP490_Robot_FoodOrdering.Application.DTO.Response.Topping;
+﻿using SEP490_Robot_FoodOrdering.Application.DTO.Response.Topping;
 
 namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Order
 {
@@ -23,6 +23,7 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Order
         public Guid ProductSizeId { get; set; }
         public string SizeName { get; set; }
         public string Note { get; set; }
+        public string RemarkNote { get; set; } = string.Empty;
 
         public int Quantity { get; set; } = 1; // Default to 1 as per business rule
         public decimal Price { get; set; } // Add price field
@@ -30,5 +31,8 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Order
         public string? ImageUrl { get; set; }
         public DateTime CreatedTime { get; set; }
         public List<ToppingResponse> Toppings { get; set; }
+      
     }
+  
+
 }
