@@ -33,7 +33,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _orderItemReposotory = orderItemReposotory;
         }
         #region Order Management old , need to improve 
-        private async Task<BaseResponseModel<OrderResponse>> CreateOrderAsyncs(CreateOrderRequest request)
+        public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
         {
             if (request.Items == null || !request.Items.Any())
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS",
@@ -135,7 +135,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status201Created, "ORDER_CREATED", response);
         }
 
-        private async Task<BaseResponseModel<OrderResponse>> HandleOrderAsyncs(CreateOrderRequest request)
+        public async Task<BaseResponseModel<OrderResponse>> HandleOrderAsync(CreateOrderRequest request)
         {
             if (request.Items == null || !request.Items.Any())
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS",
@@ -589,7 +589,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
         #region order item   improved 
-        public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
+        public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsyncs(CreateOrderRequest request)
         {
             if (!HasValidItems(request))
                 return BadRequest("NO_ITEMS", "Order must have at least one item.");
@@ -622,7 +622,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status201Created, "ORDER_CREATED", response);
         }
 
-        public async Task<BaseResponseModel<OrderResponse>> HandleOrderAsync(CreateOrderRequest request)
+        public async Task<BaseResponseModel<OrderResponse>> HandleOrderAsyncs(CreateOrderRequest request)
         {
             if (!HasValidItems(request))
                 return BadRequest("NO_ITEMS", "Order must have at least one item.");

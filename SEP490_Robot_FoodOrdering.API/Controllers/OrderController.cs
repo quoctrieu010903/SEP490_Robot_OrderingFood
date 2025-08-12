@@ -252,7 +252,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             [FromBody] UpdateOrderItemStatusRequest request)
         {
             var result = await _orderService.UpdateOrderItemStatusAsync(orderId, itemId, request);
-            return StatusCode(result.StatusCode, result);
+                return StatusCode(result.StatusCode, result);
         }
 
         /// <summary>
