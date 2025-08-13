@@ -36,7 +36,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<BaseResponseModel>> CreateToppingAsync([FromBody] CreateToppingRequest request)
+        public async Task<ActionResult<BaseResponseModel>> CreateToppingAsync([FromForm] CreateToppingRequest request)
         {
             var result = await _service.Create(request);
             return Ok(result);
@@ -50,7 +50,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<BaseResponseModel>> UpdateToppingAsync([FromBody] CreateToppingRequest request,
+        public async Task<ActionResult<BaseResponseModel>> UpdateToppingAsync([FromForm] CreateToppingRequest request,
             Guid id)
         {
             var result = await _service.Update(request, id);

@@ -1,12 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Cloudinary;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Email;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Application.Utils;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
+using SEP490_Robot_FoodOrdering.Infrastructure.Cloudinary;
 using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 using SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Options;
 using SEP490_Robot_FoodOrdering.Infrastructure.Email;
@@ -48,6 +50,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
 
 
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
 
 
 

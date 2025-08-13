@@ -32,8 +32,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _logger = logger;
             _orderItemReposotory = orderItemReposotory;
         }
-
-        public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
+        #region Order Management old , need to improve 
+        private async Task<BaseResponseModel<OrderResponse>> CreateOrderAsyncs(CreateOrderRequest request)
         {
             if (request.Items == null || !request.Items.Any())
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS",
@@ -135,7 +135,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status201Created, "ORDER_CREATED", response);
         }
 
-        public async Task<BaseResponseModel<OrderResponse>> HandleOrderAsync(CreateOrderRequest request)
+        private async Task<BaseResponseModel<OrderResponse>> HandleOrderAsyncs(CreateOrderRequest request)
         {
             if (request.Items == null || !request.Items.Any())
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS",
@@ -229,7 +229,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // 3. Nếu chưa có order pending -> tạo mới
             return await CreateOrderAsync(request);
         }
-
+        #endregion
 
         public async Task<BaseResponseModel<OrderResponse>> GetOrderByIdAsync(Guid orderId
         )
@@ -340,12 +340,21 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     "Order item not found.");
             var oldStatus = item.Status;
             item.Status = request.Status;
+           
             item.LastUpdatedTime = DateTime.UtcNow;
+
+            if (request.Status == OrderItemStatus.Returned)
+            {
+                item.Note = string.IsNullOrWhiteSpace(request.Note) ? "Làm lại" : request.Note.Trim();
+
+            }
+
             _logger.LogInformation(
                 $"OrderItem {item.Id} status changed from {oldStatus} to {item.Status} in Order {orderId}");
             // Update order status automatically
             var oldOrderStatus = order.Status;
             order.Status = CalculateOrderStatus(order.OrderItems);
+            
             order.LastUpdatedTime = DateTime.UtcNow;
             if (oldOrderStatus != order.Status)
             {
@@ -357,7 +366,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var response = _mapper.Map<OrderItemResponse>(item);
             return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status200OK, "ITEM_STATUS_UPDATED", response);
         }
-
+    
         public async Task<BaseResponseModel<List<OrderItemResponse>>> GetOrderItemsAsync(Guid orderId)
         {
             var order = await _unitOfWork.Repository<Order, Guid>()
@@ -373,7 +382,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             OrderPaymentRequest request)
         {
             var order = await _unitOfWork.Repository<Order, Guid>()
-                .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.Table , o=> o.OrderItems);
+                .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.Table, o => o.OrderItems);
             if (order == null)
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND",
                     "Order not found.");
@@ -387,10 +396,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 if (order.Payment != null)
                 {
                     order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
-                  
+
 
                 }
-              
+
                 foreach (OrderItem item in order.OrderItems)
                 {
                     item.Status = OrderItemStatus.Completed; // Mark all items as completed
@@ -409,7 +418,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAID",
                     new OrderPaymentResponse
                     {
-                        OrderId = orderId, PaymentStatus = PaymentStatusEnums.Paid, Message = "Payment successful (COD)"
+                        OrderId = orderId,
+                        PaymentStatus = PaymentStatusEnums.Paid,
+                        Message = "Payment successful (COD)"
                     });
             }
             else if (request.PaymentMethod == PaymentMethodEnums.VNPay)
@@ -423,7 +434,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAYMENT_INITIATED",
                     new OrderPaymentResponse
                     {
-                        OrderId = orderId, PaymentStatus = PaymentStatusEnums.Pending, PaymentUrl = paymentUrl,
+                        OrderId = orderId,
+                        PaymentStatus = PaymentStatusEnums.Pending,
+                        PaymentUrl = paymentUrl,
                         Message = "Redirect to VNPay for payment."
                     });
             }
@@ -464,6 +477,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 return OrderStatus.Completed;
             if (items.All(i => i.Status == OrderItemStatus.Cancelled))
                 return OrderStatus.Cancelled;
+            // Nếu còn món đang Returned (redo yêu cầu)
+            if (items.Any(i => i.Status == OrderItemStatus.Returned))
+                return OrderStatus.Pending; // quay lại chờ xử lý redo
             if (items.Any(i =>
                     i.Status == OrderItemStatus.Ready || i.Status == OrderItemStatus.Preparing ||
                     i.Status == OrderItemStatus.Served))
@@ -530,18 +546,24 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     foreach (var item in order.OrderItems)
                     {
                         totalOrderItems++;
-                        if (item.Status == OrderItemStatus.Ready)
+                        if ((item.Status == OrderItemStatus.Ready || item.Status == OrderItemStatus.Served)
+                                          && item.Status != OrderItemStatus.Returned
+                                          && item.Status != OrderItemStatus.Cancelled)
+                        {
                             deliveredCount++;
+                        }
+                        deliveredCount++;
                         if (order.PaymentStatus == PaymentStatusEnums.Paid &&
                              item.Status == OrderItemStatus.Completed)
                         {
                             paidCount++;
+                            deliveredCount++;
                         }
 
                     }
                 }
 
-               
+
             }
 
             return new OrderStaticsResponse
@@ -564,5 +586,199 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var response = _mapper.Map<List<OrderResponse>>(listas);
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
+
+
+        #region order item   improved 
+        public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
+        {
+            if (!HasValidItems(request))
+                return BadRequest("NO_ITEMS", "Order must have at least one item.");
+
+            
+            var table = await GetAndValidateTableAsync(request.TableId);
+            await EnsureNoOrderFromDeviceAsync(request.TableId, request.deviceToken);
+
+            table.Status = TableEnums.Occupied;
+            _unitOfWork.Repository<Table, Guid>().Update(table);
+
+            var order = InitializeOrder(request);
+            decimal currentTotal = 0m; // 🔹 khai báo biến này
+
+            var lookupData = await LoadProductDataAsync(request.Items);
+
+            foreach (var itemReq in request.Items)
+            {
+                var orderitem = await BuildOrderItemAsync(itemReq, lookupData, currentTotal);
+                currentTotal = orderitem.total;
+                order.OrderItems.Add(orderitem.orderItem);
+
+            }
+
+            order.TotalPrice = currentTotal;
+            await _unitOfWork.Repository<Order, Guid>().AddAsync(order);
+            await _unitOfWork.SaveChangesAsync();
+            
+            var response = _mapper.Map<OrderResponse>(order);
+            return new BaseResponseModel<OrderResponse>(StatusCodes.Status201Created, "ORDER_CREATED", response);
+        }
+
+        public async Task<BaseResponseModel<OrderResponse>> HandleOrderAsync(CreateOrderRequest request)
+        {
+            if (!HasValidItems(request))
+                return BadRequest("NO_ITEMS", "Order must have at least one item.");
+
+
+            var existingOrder = await _unitOfWork.Repository<Order, Guid>()
+                .GetWithSpecAsync(new OrderSpecification(request.TableId), false);
+
+            if (existingOrder != null)
+            {
+                if (!existingOrder.LastUpdatedBy.Equals(request.deviceToken))
+                    return BadRequest("INVALID_DEVICE", "Thiết bị không có quyền đặt hàng");
+
+                if (existingOrder.Table != null && existingOrder.Table.Status != TableEnums.Occupied)
+                {
+                    existingOrder.Table.Status = TableEnums.Occupied;
+                }
+
+
+                decimal currentTotal = 0m;
+                var lookupData = await LoadProductDataAsync(request.Items);
+
+                foreach (var itemReq in request.Items)
+                {
+                    var orderItem = await BuildOrderItemAsync(itemReq, lookupData, currentTotal);
+                    existingOrder.OrderItems.Add(orderItem.orderItem);
+                }
+                existingOrder.TotalPrice += currentTotal;
+                existingOrder.LastUpdatedTime = DateTime.UtcNow;
+
+                _unitOfWork.Repository<Order, Guid>().Update(existingOrder);
+                await _unitOfWork.SaveChangesAsync();
+               
+
+                var response = _mapper.Map<OrderResponse>(existingOrder);
+                return new BaseResponseModel<OrderResponse>(StatusCodes.Status200OK, "ORDER_UPDATED", response);
+            }
+
+            return await CreateOrderAsync(request);
+        }
+        #endregion
+
+        #region Helper Methods
+
+        private bool HasValidItems(CreateOrderRequest request) =>
+            request.Items != null && request.Items.Any();
+
+        private BaseResponseModel<OrderResponse> BadRequest(string code, string message) =>
+            new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, code, message);
+
+        private async Task<Table> GetAndValidateTableAsync(Guid tableId)
+        {
+            var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(tableId);
+            if (table == null)
+                throw new ErrorException(StatusCodes.Status400BadRequest, "TABLE_NOT_FOUND", "Table not found.");
+
+            if (!table.Status.Equals(TableEnums.Available))
+                throw new ErrorException(StatusCodes.Status409Conflict, "TABLE_NOT_AVAILABLE", "Bàn này đang được sử dụng.");
+
+            return table;
+        }
+
+        private async Task EnsureNoOrderFromDeviceAsync(Guid tableId, string deviceToken)
+        {
+            var hasOrderFromDevice = await _unitOfWork.Repository<Order, Guid>()
+                .AnyAsync(o => o.TableId == tableId && o.CreatedBy == deviceToken);
+
+            if (hasOrderFromDevice)
+                throw new ErrorException(StatusCodes.Status409Conflict, "DEVICE_ALREADY_ORDERED", "Thiết bị này đã đặt hàng.");
+        }
+
+        private Order InitializeOrder(CreateOrderRequest request)
+        {
+            var now = DateTime.UtcNow;
+            return new Order
+            {
+                Id = Guid.NewGuid(),
+                TableId = request.TableId,
+                Status = OrderStatus.Pending,
+                PaymentStatus = PaymentStatusEnums.Pending,
+                CreatedBy = request.deviceToken,
+                LastUpdatedBy = request.deviceToken,
+                CreatedTime = now,
+                LastUpdatedTime = now,
+                OrderItems = new List<OrderItem>()
+            };
+        }
+
+        private async Task<(Dictionary<Guid, Product> products, Dictionary<Guid, ProductSize> sizes, Dictionary<Guid, Topping> toppings)>
+            LoadProductDataAsync(IEnumerable<CreateOrderItemRequest> items)
+        {
+            var productIds = items.Select(i => i.ProductId).Distinct().ToList();
+            var sizeIds = items.Select(i => i.ProductSizeId).Distinct().ToList();
+            var toppingIds = items.SelectMany(i => i.ToppingIds).Distinct().ToList();
+
+            var products = (await _unitOfWork.Repository<Product, Guid>().GetListAsync(p => productIds.Contains(p.Id)))
+                .ToDictionary(p => p.Id);
+            var sizes = (await _unitOfWork.Repository<ProductSize, Guid>().GetListAsync(s => sizeIds.Contains(s.Id)))
+                .ToDictionary(s => s.Id);
+            var toppings = (await _unitOfWork.Repository<Topping, Guid>().GetListAsync(t => toppingIds.Contains(t.Id)))
+                .ToDictionary(t => t.Id);
+
+            return (products, sizes, toppings);
+        }
+
+        private async Task<(OrderItem orderItem, decimal total)> BuildOrderItemAsync(
+          CreateOrderItemRequest itemReq,
+          (Dictionary<Guid, Product> products, Dictionary<Guid, ProductSize> sizes, Dictionary<Guid, Topping> toppings) lookupData,
+          decimal currentTotal)
+        {
+            if (!lookupData.products.TryGetValue(itemReq.ProductId, out var product) ||
+                !lookupData.sizes.TryGetValue(itemReq.ProductSizeId, out var productSize))
+            {
+                throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_PRODUCT_OR_SIZE", "Invalid product or size.");
+            }
+
+            var orderItem = new OrderItem
+            {
+                Id = Guid.NewGuid(),
+                ProductId = itemReq.ProductId,
+                Product = product,
+                ProductSizeId = itemReq.ProductSizeId,
+                ProductSize = productSize,
+                Note = itemReq.Note,
+                Status = OrderItemStatus.Pending,
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow,
+                OrderItemTopping = new List<OrderItemTopping>()
+            };
+
+            currentTotal += productSize.Price;
+
+            foreach (var toppingId in itemReq.ToppingIds)
+            {
+                if (!lookupData.toppings.TryGetValue(toppingId, out var topping))
+                    throw new ErrorException(StatusCodes.Status400BadRequest, "TOPPING_NOT_FOUND", "Topping not found.");
+
+                orderItem.OrderItemTopping.Add(new OrderItemTopping
+                {
+                    Id = Guid.NewGuid(),
+                    ToppingId = topping.Id,
+                    Price = topping.Price,
+                    CreatedTime = DateTime.UtcNow,
+                    LastUpdatedTime = DateTime.UtcNow
+                });
+
+                currentTotal += topping.Price;
+            }
+
+            return (orderItem, currentTotal);
+        }
+
+
+        #endregion
+
+
+
     }
 }
