@@ -76,7 +76,7 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
             vnPay.AddRequestData("vnp_IpAddr", Utils.GetIpAddress(_httpContextAccessor));
             var now = DateTime.UtcNow;
             vnPay.AddRequestData("vnp_CreateDate", now.ToString("yyyyMMddHHmmss"));
-            vnPay.AddRequestData("vnp_ExpireDate", now.AddMinutes(15).ToString("yyyyMMddHHmmss"));
+            vnPay.AddRequestData("vnp_ExpireDate", now.AddMinutes(30).ToString("yyyyMMddHHmmss"));
 
             var paymentUrl = vnPay.CreateRequestUrl(_options.Url, _options.HashSecret);
 
