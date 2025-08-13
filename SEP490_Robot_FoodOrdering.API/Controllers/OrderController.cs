@@ -366,6 +366,10 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// * Payment status tracking
         /// * Payment URL generation for online payments
         /// * Order status updates after payment
+        /// 
+        /// Notes:
+        /// - Client does NOT need to pass the order total amount when creating the payment URL.
+        /// - The system will read `order.TotalPrice` on the server and send that to the gateway.
         /// </remarks>
         /// <param name="orderId">Unique identifier of the order</param>
         /// <param name="request">Payment request with payment method</param>
