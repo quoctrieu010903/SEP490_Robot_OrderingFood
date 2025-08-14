@@ -53,8 +53,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
            
 
 
-            services.AddScoped<IEmailService, EmailService>();
-            services.AddSingleton<ICloudinaryService, CloudinaryService>();
+                services.AddScoped<IEmailService, EmailService>();
+                services.AddSingleton<ICloudinaryService, CloudinaryService>();
 
 
 
