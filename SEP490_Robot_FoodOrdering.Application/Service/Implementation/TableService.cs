@@ -1,9 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using QRCoder;
+using System.Drawing; 
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Table;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
@@ -15,6 +14,7 @@ using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 using SEP490_Robot_FoodOrdering.Domain.Specifications;
+using ZXing.QrCode.Internal;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -55,6 +55,15 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
             var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecAsync( new TableSpecification(paging.PageNumber , paging.PageSize,status));
             var mapped = _mapper.Map<List<TableResponse>>(list);
+            foreach (var table in mapped)
+            {
+                // Tạo URL chứa id của bàn
+                string url = $"https://mobile-production-1431.up.railway.app/{table.Id}";
+
+                // Sinh QR code dạng Base64
+                table.QRCode = GenerateQrCodeBase64_NoDrawing(url);
+
+            }
 
             return PaginatedList<TableResponse>.Create(mapped, paging.PageNumber, paging.PageSize);
         }
@@ -78,5 +87,15 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Cập nhật thành công");
         }
+        private string GenerateQrCodeBase64_NoDrawing(string text)
+        {
+            using var qrGenerator = new QRCodeGenerator();
+            QRCodeData qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
+
+            var qrCode = new PngByteQRCode(qrCodeData);
+            byte[] qrBytes = qrCode.GetGraphic(20);
+            return $"data:image/png;base64,{Convert.ToBase64String(qrBytes)}";
+        }
+
     }
 } 
