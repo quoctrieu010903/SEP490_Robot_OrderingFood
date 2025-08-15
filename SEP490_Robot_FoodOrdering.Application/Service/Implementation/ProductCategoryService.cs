@@ -33,7 +33,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
             var entity = new ProductCategory
             {
-                Id = Guid.NewGuid(),
                 ProductId = productId,
                 CategoryId = categoryId,
                 CreatedBy = "",
@@ -41,7 +40,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 LastUpdatedBy = "",
                 LastUpdatedTime = DateTime.UtcNow
             };
-            await _unitOfWork.Repository<ProductCategory, bool>().AddAsync(entity);
+            await _unitOfWork.Repository<ProductCategory, ProductCategory>().AddAsync(entity);
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, "SUCCESS", entity);
         }

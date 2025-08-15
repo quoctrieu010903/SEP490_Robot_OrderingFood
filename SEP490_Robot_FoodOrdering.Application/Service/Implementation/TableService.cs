@@ -79,7 +79,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var existed = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(id);
             if (existed == null)
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Table không tìm thấy");
-            existed.Name = request.Name;
             existed.Status = request.Status;
             existed.LastUpdatedBy = "";
             existed.LastUpdatedTime = DateTime.UtcNow;

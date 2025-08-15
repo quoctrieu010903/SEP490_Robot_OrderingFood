@@ -9,3 +9,4 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
         Reserved = 2    // Bàn đã được đặt trước
     }
 }
+    
