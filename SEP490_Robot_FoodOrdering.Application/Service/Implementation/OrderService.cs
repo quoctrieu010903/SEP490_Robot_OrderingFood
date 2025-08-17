@@ -33,7 +33,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _orderItemReposotory = orderItemReposotory;
         }
         #region Order Management old , need to improve 
-        private async Task<BaseResponseModel<OrderResponse>> CreateOrderAsyncs(CreateOrderRequest request)
+        public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
         {
             if (request.Items == null || !request.Items.Any())
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS",
@@ -71,6 +71,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             order.PaymentStatus = PaymentStatusEnums.Pending;
             order.CreatedBy = request.deviceToken;
             order.LastUpdatedBy = request.deviceToken;
+
             order.CreatedTime = DateTime.UtcNow;
             order.LastUpdatedTime = DateTime.UtcNow;
 
@@ -135,7 +136,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status201Created, "ORDER_CREATED", response);
         }
 
-        private async Task<BaseResponseModel<OrderResponse>> HandleOrderAsyncs(CreateOrderRequest request)
+        public async Task<BaseResponseModel<OrderResponse>> HandleOrderAsync(CreateOrderRequest request)
         {
             if (request.Items == null || !request.Items.Any())
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS",
@@ -338,17 +339,23 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (item == null)
                 return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status404NotFound, "ITEM_NOT_FOUND",
                     "Order item not found.");
+
+            if (request.Status == OrderItemStatus.Remark)
+            {
+                if (string.IsNullOrWhiteSpace(request.RemarkNote))
+                {
+                    return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status400BadRequest, "NOTE_REQUIRED",
+                        "Note is required when status is Remark.");
+                }
+
+                item.RemarkNote = request.RemarkNote; // hoặc item.Note nếu bạn dùng field Note
+            }
+
+
             var oldStatus = item.Status;
             item.Status = request.Status;
            
             item.LastUpdatedTime = DateTime.UtcNow;
-
-            if (request.Status == OrderItemStatus.Returned)
-            {
-                item.Note = string.IsNullOrWhiteSpace(request.Note) ? "Làm lại" : request.Note.Trim();
-
-            }
-
             _logger.LogInformation(
                 $"OrderItem {item.Id} status changed from {oldStatus} to {item.Status} in Order {orderId}");
             // Update order status automatically
@@ -366,6 +373,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var response = _mapper.Map<OrderItemResponse>(item);
             return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status200OK, "ITEM_STATUS_UPDATED", response);
         }
+
     
         public async Task<BaseResponseModel<List<OrderItemResponse>>> GetOrderItemsAsync(Guid orderId)
         {
@@ -478,11 +486,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (items.All(i => i.Status == OrderItemStatus.Cancelled))
                 return OrderStatus.Cancelled;
             // Nếu còn món đang Returned (redo yêu cầu)
-            if (items.Any(i => i.Status == OrderItemStatus.Returned))
-                return OrderStatus.Pending; // quay lại chờ xử lý redo
+          
             if (items.Any(i =>
                     i.Status == OrderItemStatus.Ready || i.Status == OrderItemStatus.Preparing ||
-                    i.Status == OrderItemStatus.Served))
+                    i.Status == OrderItemStatus.Served || i.Status == OrderItemStatus.Remark))
                 return OrderStatus.Delivering;
             return OrderStatus.Pending;
         }
@@ -546,18 +553,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     foreach (var item in order.OrderItems)
                     {
                         totalOrderItems++;
-                        if ((item.Status == OrderItemStatus.Ready || item.Status == OrderItemStatus.Served)
-                                          && item.Status != OrderItemStatus.Returned
-                                          && item.Status != OrderItemStatus.Cancelled)
+                        if ((item.Status == OrderItemStatus.Ready || item.Status == OrderItemStatus.Served || item.Status == OrderItemStatus.Remark || item.Status == OrderItemStatus.Completed))
+                                         
                         {
                             deliveredCount++;
                         }
-                        deliveredCount++;
+
                         if (order.PaymentStatus == PaymentStatusEnums.Paid &&
                              item.Status == OrderItemStatus.Completed)
                         {
                             paidCount++;
-                            deliveredCount++;
                         }
 
                     }
@@ -589,7 +594,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
         #region order item   improved 
-        public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
+        public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsyncs(CreateOrderRequest request)
         {
             if (!HasValidItems(request))
                 return BadRequest("NO_ITEMS", "Order must have at least one item.");
@@ -622,7 +627,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status201Created, "ORDER_CREATED", response);
         }
 
-        public async Task<BaseResponseModel<OrderResponse>> HandleOrderAsync(CreateOrderRequest request)
+        public async Task<BaseResponseModel<OrderResponse>> HandleOrderAsyncs(CreateOrderRequest request)
         {
             if (!HasValidItems(request))
                 return BadRequest("NO_ITEMS", "Order must have at least one item.");
@@ -775,6 +780,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return (orderItem, currentTotal);
         }
 
+       
 
         #endregion
 
