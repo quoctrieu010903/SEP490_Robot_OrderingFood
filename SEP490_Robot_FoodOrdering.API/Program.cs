@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SEP490_Robot_FoodOrdering.API.Extentions;
+using SEP490_Robot_FoodOrdering.API.Hubs;
 using SEP490_Robot_FoodOrdering.API.Middleware;
 using SEP490_Robot_FoodOrdering.Application.Extentions;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
@@ -18,6 +19,11 @@ builder.Services.AddInfrastructure(builder.Configuration)
                 .AddSwagger();
 builder.Services.AddSingleton<IConfigureOptions<JsonOptions>, JsonOptionsConfigurator>();
 
+// Add SignalR
+builder.Services.AddSignalR();
+
+// Add SignalR notification services
+builder.Services.AddSignalRNotifications();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -43,7 +49,7 @@ app.UseCors(x => x
     .AllowAnyMethod()
     .AllowAnyHeader()
     .SetIsOriginAllowed(origin => true)
-    .WithOrigins("http://192.168.110.46:3000")
+    .WithOrigins("http://192.168.110.46:3000", "http://localhost:5235", "https://localhost:5235")
     .AllowCredentials());
 
 app.UseAuthorization();
@@ -51,6 +57,8 @@ app.UseStaticFiles();
 
 app.UseMiddleware<CustomExceptionHandlerMiddleware>();
 
+// Map SignalR Hub
+app.MapHub<OrderNotificationHub>("/orderNotificationHub");
 
 app.MapControllers();
 

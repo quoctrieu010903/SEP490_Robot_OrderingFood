@@ -1,10 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SEP490_Robot_FoodOrdering.Application.Abstractions.Options;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Cloudinary;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Email;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Options;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
