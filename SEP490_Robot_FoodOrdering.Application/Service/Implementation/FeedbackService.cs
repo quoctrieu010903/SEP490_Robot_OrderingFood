@@ -1,12 +1,15 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.VisualBasic;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request.fedback;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Feedback;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Constants;
 using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
 using SEP490_Robot_FoodOrdering.Core.Response;
+using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
+using SEP490_Robot_FoodOrdering.Domain.Specifications;
 using SEP490_Robot_FoodOrdering.Infrastructure.Repository;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation;
@@ -66,21 +69,44 @@ public class FeedbackService : IFeedbackService
     }
 
 
-    public async Task<BaseResponseModel<FeedbackCreate>> CreateFeedback(Guid idTable, string feedback)
+    public async Task<BaseResponseModel<FeedbackCreate>> CreateFeedback(FeedbackRequest feedbackRequest)
     {
-        List<object> feedbackList = await getStore(idTable);
+        List<object> feedbackList = await getStore(feedbackRequest.idTable);
 
-        var temp = new FeedbackModole(feedback, true, DateTime.Now, Guid.NewGuid());
+        List<OrderItemDTO> dtos = new List<OrderItemDTO>();
+        if (feedbackRequest.idOrderItem != null)
+        {
+            try
+            {
+                var items = await _items(feedbackRequest.idOrderItem);
+                IDictionary<Guid, int> dictionary = new Dictionary<Guid, int>();
+                items.ForEach(item =>
+                    dtos.Add(new OrderItemDTO(item.Id, item.Product.Name, item.Product.ImageUrl, item.Status)));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        var temp = new FeedbackModole(feedbackRequest.note, true, DateTime.Now, "", Guid.NewGuid(), dtos);
 
         feedbackList.Add(temp);
 
-        _memoryStore.Store[idTable.ToString()] = feedbackList;
+        _memoryStore.Store[feedbackRequest.idTable.ToString()] = feedbackList;
 
         return new BaseResponseModel<FeedbackCreate>
         (StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS,
             new FeedbackCreate(temp.CreatedTime, temp.IsPeeding, temp.Feedback));
     }
 
+
+    protected async Task<List<OrderItem>> _items(List<Guid> ids)
+    {
+        var temp = await _unitOfWork.Repository<OrderItem, Guid>().GetAllWithIncludeAsync(true, item => item.Product);
+        return temp.Where(item => ids.Contains(item.Id)).ToList();
+    }
 
     public async Task<BaseResponseModel<List<FeedbackGet>>> GetFeedbackTable(Guid idTable)
     {
@@ -94,7 +120,7 @@ public class FeedbackService : IFeedbackService
             if (o is FeedbackModole feedback)
             {
                 feedbackList.Add(new FeedbackGet(feedback.IDFeedback, idTable, feedback.Feedback, feedback.IsPeeding,
-                    feedback.CreatedTime));
+                    feedback.CreatedTime, feedback.OrderItemDto));
             }
         }
 
@@ -107,7 +133,7 @@ public class FeedbackService : IFeedbackService
 
 
     public async Task<BaseResponseModel<List<FeedbackCreate>>> ConfirmFeedback(Guid idTable, List<Guid> IDFeedback,
-        bool isPeeding)
+        bool isPeeding, string content)
     {
         var feedbackList = await getStore(idTable) ?? new List<object>();
 
@@ -121,6 +147,7 @@ public class FeedbackService : IFeedbackService
                 feedback.IsPeeding = isPeeding;
                 updatedFeedbacks.Add(new FeedbackCreate(feedback.CreatedTime, feedback.IsPeeding, feedback.Feedback));
                 found = true;
+                content = content;
             }
         }
 
@@ -137,10 +164,10 @@ public class FeedbackService : IFeedbackService
     public async Task<BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>> GetAllFeedbackIsPeeding()
     {
         var tableCount = _memoryStore.Tables.Count;
-        var feedbackList = new Dictionary<string, FeedbackPeedingInfo>(tableCount); 
+        var feedbackList = new Dictionary<string, FeedbackPeedingInfo>(tableCount);
 
         var tableIds = _memoryStore.Tables.Keys.Select(Guid.Parse).ToArray();
-        var orderStatsDict = await _orderService.GetOrderStatsByTableIds(tableIds); 
+        var orderStatsDict = await _orderService.GetOrderStatsByTableIds(tableIds);
 
 
         foreach (var table in _memoryStore.Tables)
@@ -169,9 +196,9 @@ public class FeedbackService : IFeedbackService
             );
         }
 
-   
+
         var sorted = feedbackList
-            .OrderBy(x => x.Value.TableName, StringComparer.Ordinal) 
+            .OrderBy(x => x.Value.TableName, StringComparer.Ordinal)
             .ToDictionary(x => x.Key, x => x.Value, feedbackList.Comparer);
 
         return new BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>(

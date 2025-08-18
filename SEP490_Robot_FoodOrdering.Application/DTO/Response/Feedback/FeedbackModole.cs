@@ -1,4 +1,6 @@
-﻿namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Feedback;
+﻿using SEP490_Robot_FoodOrdering.Application.DTO.Request.fedback;
+
+namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Feedback;
 
 public class FeedbackModole
 {
@@ -7,12 +9,19 @@ public class FeedbackModole
     public DateTime CreatedTime { get; set; }
     public Guid IDFeedback { get; set; }
 
+    public List<OrderItemDTO>? OrderItemDto { get; set; }
+
+    public string content { get; set; }
+
     public FeedbackModole(string feedback = null, bool isPeeding = default, DateTime createdTime = default,
-        Guid idFeedback = default)
+        string content = default,
+        Guid idFeedback = default, List<OrderItemDTO>? orderItemDto = default)
     {
         Feedback = feedback;
         IsPeeding = isPeeding;
         CreatedTime = createdTime;
         IDFeedback = idFeedback;
+        OrderItemDto = orderItemDto;
+        content = content;
     }
 }
