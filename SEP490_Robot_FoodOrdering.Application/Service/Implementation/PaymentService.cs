@@ -36,6 +36,7 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
                     "Order not found");
 
             // Ensure there is a Payment entity
+            var isNewPayment = false;
             if (order.Payment == null)
             {
                 order.Payment = new Payment
@@ -47,6 +48,7 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
                     CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 };
+                isNewPayment = true;
             }
             else
             {
@@ -56,7 +58,13 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
             }
 
             order.PaymentStatus = PaymentStatusEnums.Pending;
-            await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
+
+            // Persist changes explicitly to avoid EF marking a new Payment as Modified (causing concurrency error)
+            if (isNewPayment)
+            {
+                await _unitOfWork.Repository<Payment, Guid>().AddAsync(order.Payment);
+            }
+            // The retrieved order is tracked; no need to call UpdateAsync here
             await _unitOfWork.SaveChangesAsync();
 
             // Build VNPay request
@@ -195,13 +203,18 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
             await _unitOfWork.SaveChangesAsync();
 
             var status = isSuccess ? PaymentStatusEnums.Paid : PaymentStatusEnums.Failed;
+
+            // Include frontend redirect URL so the client can navigate post-payment
+            var redirectUrl = _options.FrontendReturnUrl;
+
             return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, isSuccess ? "PAID" : "FAILED",
                 new OrderPaymentResponse
                 {
                     OrderId = order.Id,
                     PaymentStatus = status,
                     Message = isSuccess ? "Payment success (VNPay)" : "Payment failed (VNPay)"
-                });
+                },
+                new { redirectUrl });
         }
 
         private string BuildAbsoluteReturnUrl()
