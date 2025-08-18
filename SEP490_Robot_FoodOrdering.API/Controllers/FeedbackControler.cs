@@ -19,7 +19,7 @@ public class FeedbackControler
 
 
     [HttpPost]
-    public Task<BaseResponseModel<FeedbackCreate>> CreateFeedback([FromBody]FeedbackRequest feedbackRequest)
+    public Task<BaseResponseModel<FeedbackCreate>> CreateFeedback([FromBody] FeedbackRequest feedbackRequest)
         => FeedbackService.CreateFeedback(feedbackRequest);
 
 
@@ -31,8 +31,9 @@ public class FeedbackControler
     public Task<BaseResponseModel<List<FeedbackCreate>>> ConfirmFeedback(
         Guid idTable,
         [FromQuery] List<Guid> idFeedback,
+        [FromQuery] string content,
         [FromQuery] bool isPeeding)
-        => FeedbackService.ConfirmFeedback(idTable, idFeedback, isPeeding);
+        => FeedbackService.ConfirmFeedback(idTable, idFeedback, isPeeding, content);
 
 
     [HttpGet]

@@ -11,7 +11,10 @@ public class FeedbackModole
 
     public List<OrderItemDTO>? OrderItemDto { get; set; }
 
+    public string content { get; set; }
+
     public FeedbackModole(string feedback = null, bool isPeeding = default, DateTime createdTime = default,
+        string content = default,
         Guid idFeedback = default, List<OrderItemDTO>? orderItemDto = default)
     {
         Feedback = feedback;
@@ -19,7 +22,6 @@ public class FeedbackModole
         CreatedTime = createdTime;
         IDFeedback = idFeedback;
         OrderItemDto = orderItemDto;
+        content = content;
     }
-    
-    
 }

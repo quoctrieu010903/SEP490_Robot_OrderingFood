@@ -9,5 +9,5 @@ public interface IFeedbackService
     Task<BaseResponseModel<FeedbackCreate>> CreateFeedback(FeedbackRequest feedbackRequest);
     Task<BaseResponseModel<List<FeedbackGet>>> GetFeedbackTable(Guid idTable);
     Task<BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>> GetAllFeedbackIsPeeding();
-    Task<BaseResponseModel<List<FeedbackCreate>>> ConfirmFeedback(Guid idTable, List<Guid> IDFeedback, bool isPeeding);
+    Task<BaseResponseModel<List<FeedbackCreate>>> ConfirmFeedback(Guid idTable, List<Guid> IDFeedback, bool isPeeding,string content);
 }

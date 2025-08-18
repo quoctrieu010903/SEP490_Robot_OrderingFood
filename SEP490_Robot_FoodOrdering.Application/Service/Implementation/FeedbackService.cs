@@ -80,7 +80,8 @@ public class FeedbackService : IFeedbackService
             {
                 var items = await _items(feedbackRequest.idOrderItem);
                 IDictionary<Guid, int> dictionary = new Dictionary<Guid, int>();
-                items.ForEach(item => dtos.Add(new OrderItemDTO(item.Id, item.Product.Name, item.Product.ImageUrl,item.Status)));
+                items.ForEach(item =>
+                    dtos.Add(new OrderItemDTO(item.Id, item.Product.Name, item.Product.ImageUrl, item.Status)));
             }
             catch (Exception e)
             {
@@ -89,7 +90,7 @@ public class FeedbackService : IFeedbackService
             }
         }
 
-        var temp = new FeedbackModole(feedbackRequest.note, true, DateTime.Now, Guid.NewGuid(), dtos);
+        var temp = new FeedbackModole(feedbackRequest.note, true, DateTime.Now, "", Guid.NewGuid(), dtos);
 
         feedbackList.Add(temp);
 
@@ -132,7 +133,7 @@ public class FeedbackService : IFeedbackService
 
 
     public async Task<BaseResponseModel<List<FeedbackCreate>>> ConfirmFeedback(Guid idTable, List<Guid> IDFeedback,
-        bool isPeeding)
+        bool isPeeding, string content)
     {
         var feedbackList = await getStore(idTable) ?? new List<object>();
 
@@ -146,6 +147,7 @@ public class FeedbackService : IFeedbackService
                 feedback.IsPeeding = isPeeding;
                 updatedFeedbacks.Add(new FeedbackCreate(feedback.CreatedTime, feedback.IsPeeding, feedback.Feedback));
                 found = true;
+                content = content;
             }
         }
 
