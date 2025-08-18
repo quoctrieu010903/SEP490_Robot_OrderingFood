@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SignalR Test Client</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .group { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .log { height: 300px; overflow-y: scroll; background: #f5f5f5; padding: 10px; border: 1px solid #ccc; }
+        button { margin: 5px; padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        input, select { margin: 5px; padding: 8px; border: 1px solid #ccc; border-radius: 3px; }
+        .status { font-weight: bold; }
+        .connected { color: green; }
+        .disconnected { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SignalR Order Notification Test Client</h1>
+        
+        <div class="group">
+            <h3>Connection Status: <span id="connectionStatus" class="status disconnected">Disconnected</span></h3>
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
+        </div>
+
+        <div class="group">
+            <h3>Join Groups</h3>
+            <input type="text" id="tableId" placeholder="Table ID (e.g., table-123)" />
+            <button onclick="joinTableGroup()">Join Table Group</button>
+            <button onclick="leaveTableGroup()">Leave Table Group</button>
+            <br>
+            <button onclick="joinKitchenGroup()">Join Kitchen Group</button>
+            <button onclick="leaveKitchenGroup()">Leave Kitchen Group</button>
+            <br>
+            <button onclick="joinWaiterGroup()">Join Waiter Group</button>
+            <button onclick="leaveWaiterGroup()">Leave Waiter Group</button>
+            <br>
+            <button onclick="joinModeratorGroup()">Join Moderator Group</button>
+            <button onclick="leaveModeratorGroup()">Leave Moderator Group</button>
+        </div>
+
+        <div class="group">
+            <h3>Test Notifications</h3>
+            <button onclick="testOrderItemStatus()">Test Order Item Status</button>
+            <button onclick="testOrderStatus()">Test Order Status</button>
+            <button onclick="testPaymentStatus()">Test Payment Status</button>
+            <br>
+            <input type="text" id="testMessage" placeholder="Test message" />
+            <button onclick="testTableNotification()">Test Table Notification</button>
+            <button onclick="testKitchenNotification()">Test Kitchen Notification</button>
+            <button onclick="testWaiterNotification()">Test Waiter Notification</button>
+            <button onclick="testModeratorNotification()">Test Moderator Notification</button>
+        </div>
+
+        <div class="group">
+            <h3>Notification Log</h3>
+            <button onclick="clearLog()">Clear Log</button>
+            <div id="messageLog" class="log"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@microsoft/signalr@latest/dist/browser/signalr.js"></script>
+    <script>
+        let connection = null;
+        const log = document.getElementById('messageLog');
+        const statusElement = document.getElementById('connectionStatus');
+
+        function addToLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<strong>[${timestamp}] ${type.toUpperCase()}:</strong> ${JSON.stringify(message, null, 2)}`;
+            log.appendChild(logEntry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function updateConnectionStatus(status) {
+            statusElement.textContent = status;
+            statusElement.className = status === 'Connected' ? 'status connected' : 'status disconnected';
+        }
+
+        async function connect() {
+            try {
+                // Create connection
+                connection = new signalR.HubConnectionBuilder()
+                    .withUrl("/orderNotificationHub")
+                    .withAutomaticReconnect()
+                    .build();
+
+                // Set up event handlers for all notification types
+                connection.on("OrderItemStatusChanged", function (notification) {
+                    addToLog(notification, "OrderItemStatusChanged");
+                });
+
+                connection.on("OrderStatusChanged", function (notification) {
+                    addToLog(notification, "OrderStatusChanged");
+                });
+
+                connection.on("PaymentStatusChanged", function (notification) {
+                    addToLog(notification, "PaymentStatusChanged");
+                });
+
+                connection.on("TableNotification", function (notification) {
+                    addToLog(notification, "TableNotification");
+                });
+
+                connection.on("KitchenNotification", function (notification) {
+                    addToLog(notification, "KitchenNotification");
+                });
+
+                connection.on("WaiterNotification", function (notification) {
+                    addToLog(notification, "WaiterNotification");
+                });
+
+                connection.on("ModeratorNotification", function (notification) {
+                    addToLog(notification, "ModeratorNotification");
+                });
+
+                // Start connection
+                await connection.start();
+                updateConnectionStatus('Connected');
+                addToLog("Connected to SignalR hub", "Connection");
+            } catch (err) {
+                updateConnectionStatus('Disconnected');
+                addToLog(`Connection failed: ${err}`, "Error");
+            }
+        }
+
+        async function disconnect() {
+            if (connection) {
+                await connection.stop();
+                updateConnectionStatus('Disconnected');
+                addToLog("Disconnected from SignalR hub", "Connection");
+            }
+        }
+
+        async function joinTableGroup() {
+            const tableId = document.getElementById('tableId').value;
+            if (connection && tableId) {
+                await connection.invoke("JoinTableGroup", tableId);
+                addToLog(`Joined table group: ${tableId}`, "Group");
+            }
+        }
+
+        async function leaveTableGroup() {
+            const tableId = document.getElementById('tableId').value;
+            if (connection && tableId) {
+                await connection.invoke("LeaveTableGroup", tableId);
+                addToLog(`Left table group: ${tableId}`, "Group");
+            }
+        }
+
+        async function joinKitchenGroup() {
+            if (connection) {
+                await connection.invoke("JoinKitchenGroup");
+                addToLog("Joined kitchen group", "Group");
+            }
+        }
+
+        async function leaveKitchenGroup() {
+            if (connection) {
+                await connection.invoke("LeaveKitchenGroup");
+                addToLog("Left kitchen group", "Group");
+            }
+        }
+
+        async function joinWaiterGroup() {
+            if (connection) {
+                await connection.invoke("JoinWaiterGroup");
+                addToLog("Joined waiter group", "Group");
+            }
+        }
+
+        async function leaveWaiterGroup() {
+            if (connection) {
+                await connection.invoke("LeaveWaiterGroup");
+                addToLog("Left waiter group", "Group");
+            }
+        }
+
+        async function joinModeratorGroup() {
+            if (connection) {
+                await connection.invoke("JoinModeratorGroup");
+                addToLog("Joined moderator group", "Group");
+            }
+        }
+
+        async function leaveModeratorGroup() {
+            if (connection) {
+                await connection.invoke("LeaveModeratorGroup");
+                addToLog("Left moderator group", "Group");
+            }
+        }
+
+        async function testOrderItemStatus() {
+            try {
+                const response = await fetch('/api/NotificationTest/test-order-item-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                addToLog("Triggered order item status test", "Test");
+            } catch (err) {
+                addToLog(`Test failed: ${err}`, "Error");
+            }
+        }
+
+        async function testOrderStatus() {
+            try {
+                const response = await fetch('/api/NotificationTest/test-order-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                addToLog("Triggered order status test", "Test");
+            } catch (err) {
+                addToLog(`Test failed: ${err}`, "Error");
+            }
+        }
+
+        async function testPaymentStatus() {
+            try {
+                const response = await fetch('/api/NotificationTest/test-payment-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                addToLog("Triggered payment status test", "Test");
+            } catch (err) {
+                addToLog(`Test failed: ${err}`, "Error");
+            }
+        }
+
+        async function testTableNotification() {
+            const tableId = document.getElementById('tableId').value;
+            const message = document.getElementById('testMessage').value;
+            if (!tableId || !message) {
+                addToLog("Please enter both table ID and message", "Error");
+                return;
+            }
+            try {
+                const response = await fetch(`/api/NotificationTest/test-table-notification/${tableId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(message)
+                });
+                const result = await response.json();
+                addToLog("Triggered table notification test", "Test");
+            } catch (err) {
+                addToLog(`Test failed: ${err}`, "Error");
+            }
+        }
+
+        async function testKitchenNotification() {
+            const message = document.getElementById('testMessage').value;
+            if (!message) {
+                addToLog("Please enter a message", "Error");
+                return;
+            }
+            try {
+                const response = await fetch('/api/NotificationTest/test-kitchen-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(message)
+                });
+                const result = await response.json();
+                addToLog("Triggered kitchen notification test", "Test");
+            } catch (err) {
+                addToLog(`Test failed: ${err}`, "Error");
+            }
+        }
+
+        async function testWaiterNotification() {
+            const message = document.getElementById('testMessage').value;
+            if (!message) {
+                addToLog("Please enter a message", "Error");
+                return;
+            }
+            try {
+                const response = await fetch('/api/NotificationTest/test-waiter-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(message)
+                });
+                const result = await response.json();
+                addToLog("Triggered waiter notification test", "Test");
+            } catch (err) {
+                addToLog(`Test failed: ${err}`, "Error");
+            }
+        }
+
+        async function testModeratorNotification() {
+            const message = document.getElementById('testMessage').value;
+            if (!message) {
+                addToLog("Please enter a message", "Error");
+                return;
+            }
+            try {
+                const response = await fetch('/api/NotificationTest/test-moderator-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(message)
+                });
+                const result = await response.json();
+                addToLog("Triggered moderator notification test", "Test");
+            } catch (err) {
+                addToLog(`Test failed: ${err}`, "Error");
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('messageLog').innerHTML = '';
+        }
+
+        // Auto-connect on page load
+        window.onload = function() {
+            connect();
+        };
+    </script>
+</body>
+</html>
