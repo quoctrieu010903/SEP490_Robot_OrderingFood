@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request.fedback;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Feedback;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Response;
@@ -17,9 +18,9 @@ public class FeedbackControler
     }
 
 
-    [HttpPost("{idTable}")]
-    public Task<BaseResponseModel<FeedbackCreate>> CreateFeedback(Guid idTable, [FromQuery] string feedback)
-        => FeedbackService.CreateFeedback(idTable, feedback);
+    [HttpPost]
+    public Task<BaseResponseModel<FeedbackCreate>> CreateFeedback([FromBody]FeedbackRequest feedbackRequest)
+        => FeedbackService.CreateFeedback(feedbackRequest);
 
 
     [HttpGet("{idTable}")]

@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Options;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Cloudinary;
@@ -46,11 +48,13 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
 
             services.Configure<CloudinaryOptions>(configuration.GetSection(nameof(CloudinaryOptions)));
             services.Configure<EmailOptions>(configuration.GetSection(nameof(EmailOptions)));
+            services.Configure<VNPayOptions>(configuration.GetSection("VNPay"));
+            services.AddScoped<IPaymentService, PaymentService>();
            
 
 
-            services.AddScoped<IEmailService, EmailService>();
-            services.AddScoped<ICloudinaryService, CloudinaryService>();
+                services.AddScoped<IEmailService, EmailService>();
+                services.AddSingleton<ICloudinaryService, CloudinaryService>();
 
 
 

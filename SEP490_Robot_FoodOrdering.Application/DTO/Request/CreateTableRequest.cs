@@ -5,7 +5,6 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Request
 {
     public class CreateTableRequest
     {
-        public string Name { get; set; }
         public TableEnums Status { get; set; }
     }
 } 
