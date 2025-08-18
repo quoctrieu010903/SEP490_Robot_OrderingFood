@@ -82,7 +82,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             existed.Status = request.Status;
             existed.LastUpdatedBy = "";
             existed.LastUpdatedTime = DateTime.UtcNow;
-            await _unitOfWork.Repository<Table, Table>().UpdateAsync(existed);
+            await _unitOfWork.Repository<Table, Guid>().UpdateAsync(existed);
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Cập nhật thành công");
         }
