@@ -144,15 +144,23 @@ public class FeedbackService : IFeedbackService
         {
             if (o is FeedbackModole feedback && IDFeedback.Contains(feedback.IDFeedback))
             {
+                // Cập nhật trạng thái
                 feedback.IsPeeding = isPeeding;
-                updatedFeedbacks.Add(new FeedbackCreate(feedback.CreatedTime, feedback.IsPeeding, feedback.Feedback));
+
+                // Nếu muốn cập nhật nội dung thì gán luôn
+                feedback.content = content;
+
+                updatedFeedbacks.Add(
+                    new FeedbackCreate(feedback.CreatedTime, feedback.IsPeeding, feedback.Feedback)
+                );
                 found = true;
-                content = content;
             }
         }
 
         if (!found)
             throw new ErrorException(404, "No feedbacks found with given IDs");
+
+        _memoryStore.Store[idTable.ToString()] = feedbackList;
 
         return new BaseResponseModel<List<FeedbackCreate>>(
             StatusCodes.Status200OK,
