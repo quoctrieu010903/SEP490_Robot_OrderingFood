@@ -1,5 +1,6 @@
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Notification;
 using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
@@ -23,14 +24,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IMapper _mapper;
         private readonly ILogger<OrderService> _logger;
         private readonly IOrderItemReposotory _orderItemReposotory;
+        private readonly INotificationService? _notificationService;
 
         public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IOrderItemReposotory orderItemReposotory,
-            ILogger<OrderService> logger)
+            ILogger<OrderService> logger, INotificationService? notificationService = null)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
             _orderItemReposotory = orderItemReposotory;
+            _notificationService = notificationService;
         }
         #region Order Management old , need to improve 
         public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
@@ -370,6 +373,62 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
             await _unitOfWork.SaveChangesAsync();
+            
+            // Send real-time notification for order item status change
+            if (_notificationService != null)
+            {
+                try
+                {
+                    var orderItemNotification = new OrderItemStatusNotification
+                    {
+                        OrderId = orderId,
+                        OrderItemId = orderItemId,
+                        TableId = order.TableId ?? Guid.Empty,
+                        TableName = order.Table?.Name ?? "Unknown",
+                        ProductName = item.Product?.Name ?? "Unknown Product",
+                        SizeName = item.ProductSize?.SizeName.ToString() ?? "Unknown Size",
+                        OldStatus = oldStatus,
+                        NewStatus = item.Status,
+                        RemarkNote = item.RemarkNote,
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "System" // You can enhance this to track actual user
+                    };
+
+                    await _notificationService.SendOrderItemStatusNotificationAsync(orderItemNotification);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send order item status notification");
+                    // Don't fail the main operation if notification fails
+                }
+            }
+
+            // Send order status notification if order status changed
+            if (oldOrderStatus != order.Status && _notificationService != null)
+            {
+                try
+                {
+                    var orderNotification = new OrderStatusNotification
+                    {
+                        OrderId = orderId,
+                        TableId = order.TableId ?? Guid.Empty,
+                        TableName = order.Table?.Name ?? "Unknown",
+                        OldStatus = oldOrderStatus,
+                        NewStatus = order.Status,
+                        TotalPrice = order.TotalPrice,
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "System"
+                    };
+
+                    await _notificationService.SendOrderStatusNotificationAsync(orderNotification);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send order status notification");
+                    // Don't fail the main operation if notification fails
+                }
+            }
+            
             var response = _mapper.Map<OrderItemResponse>(item);
             return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status200OK, "ITEM_STATUS_UPDATED", response);
         }
@@ -423,6 +482,32 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                 await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
                 await _unitOfWork.SaveChangesAsync();
+
+                // Send payment status notification
+                if (_notificationService != null)
+                {
+                    try
+                    {
+                        var paymentNotification = new PaymentStatusNotification
+                        {
+                            OrderId = orderId,
+                            TableId = order.TableId ?? Guid.Empty,
+                            TableName = order.Table?.Name ?? "Unknown",
+                            OldStatus = PaymentStatusEnums.Pending,
+                            NewStatus = PaymentStatusEnums.Paid,
+                            PaymentMethod = request.PaymentMethod,
+                            TotalAmount = order.TotalPrice,
+                            UpdatedAt = DateTime.UtcNow
+                        };
+
+                        await _notificationService.SendPaymentStatusNotificationAsync(paymentNotification);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send payment status notification");
+                    }
+                }
+
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAID",
                     new OrderPaymentResponse
                     {
