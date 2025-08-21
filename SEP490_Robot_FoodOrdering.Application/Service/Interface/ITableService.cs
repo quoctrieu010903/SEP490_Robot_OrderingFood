@@ -12,8 +12,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
     public interface ITableService
     {
         Task<BaseResponseModel> Create(CreateTableRequest request);
-        Task<BaseResponseModel> Delete(Guid id);    
-        Task<PaginatedList<TableResponse>> GetAll(PagingRequestModel paging , TableEnums? status );
+        Task<BaseResponseModel> Delete(Guid id);
+        Task<PaginatedList<TableResponse>> GetAll(PagingRequestModel paging, TableEnums? status, string? tableName);
         Task<TableResponse> GetById(Guid id);
         Task<BaseResponseModel> Update(CreateTableRequest request, Guid id);
     }

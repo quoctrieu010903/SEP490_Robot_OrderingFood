@@ -13,8 +13,9 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
     {
         public int PageIndex { get; set; }
         public int PageSize { get; set; }
-        public TableSpecification(int pageIndex, int pageSize, TableEnums? status)
-    :   base(t => !t.DeletedTime.HasValue && (!status.HasValue || t.Status == status.Value))
+        public TableSpecification(int pageIndex, int pageSize, TableEnums? status, string? TableName)
+    :   base(t => !t.DeletedTime.HasValue && (!status.HasValue || t.Status == status.Value) &&
+             (string.IsNullOrEmpty(TableName) || t.Name.ToLower().Contains(TableName.ToLower())))
         {
             PageIndex = pageIndex;
             PageSize = pageSize;

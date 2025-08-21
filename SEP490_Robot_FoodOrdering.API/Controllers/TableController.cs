@@ -60,9 +60,9 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// <response code="400">Invalid query parameters</response>
         /// <response code="500">Internal server error</response>
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] PagingRequestModel paging, [FromQuery] TableEnums? status)
+        public async Task<IActionResult> GetAll([FromQuery] PagingRequestModel paging, [FromQuery] TableEnums? status , [FromQuery] string? tableName)
         {
-            var result = await _service.GetAll(paging, status);
+            var result = await _service.GetAll(paging, status,tableName);
             return Ok(result);
         }
 
