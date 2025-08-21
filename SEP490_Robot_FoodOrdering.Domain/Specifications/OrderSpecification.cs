@@ -52,7 +52,8 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
     // Get all orders by table ID for payment (not filtered by status)
     public OrderSpecification(bool forPayment, Guid tableId) : base(o => !o.DeletedTime.HasValue && o.TableId == tableId)
     {
-        AddIncludes();
+            AddOrderByDescending(o => o.CreatedTime); // Sắp xếp theo thời gian tạo mới nhất
+            AddIncludes();
     }
 
     // Get orders by table ID with Delivering status for payment

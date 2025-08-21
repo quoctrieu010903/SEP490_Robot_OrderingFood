@@ -21,6 +21,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
 
             ApplyInclude(q => q.Include(q => q.Orders));
             AddOrderBy(t => t.Name);
+            
         }
 
     }
