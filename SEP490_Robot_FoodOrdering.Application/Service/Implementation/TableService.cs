@@ -55,6 +55,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
             var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecAsync( new TableSpecification(paging.PageNumber , paging.PageSize,status));
             var mapped = _mapper.Map<List<TableResponse>>(list);
+            mapped = mapped
+                        .OrderBy(t =>
+                        {
+                            var match = System.Text.RegularExpressions.Regex.Match(t.Name, @"\d+");
+                            return match.Success ? Convert.ToInt32(match.Value) : int.MaxValue;
+                        })
+                        .ToList();
             foreach (var table in mapped)
             {
                 // Tạo URL chứa id của bàn
@@ -64,6 +71,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 table.QRCode = GenerateQrCodeBase64_NoDrawing(url);
 
             }
+            
 
             return PaginatedList<TableResponse>.Create(mapped, paging.PageNumber, paging.PageSize);
         }
@@ -76,7 +84,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
         public async Task<BaseResponseModel> Update(CreateTableRequest request, Guid id)
         {
-            var existed = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(id);
+               var existed = await _unitOfWork.Repository<Table, Guid>()
+                    .GetByIdWithIncludeAsync(
+                        t => t.Id == id,
+                        true,
+                        t => t.Orders
+                    );
+
             if (existed == null)
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Table không tìm thấy");
             existed.Status = request.Status;
