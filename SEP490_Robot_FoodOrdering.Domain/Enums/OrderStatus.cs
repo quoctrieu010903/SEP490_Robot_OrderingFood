@@ -15,5 +15,5 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
         Completed = 5,     // Đã giao / hoàn thành
         Cancelled = 6,      // Đã huỷ
         RedoRequested = 7  // Yêu cầu làm lại món
-    }
+    }   
 }
