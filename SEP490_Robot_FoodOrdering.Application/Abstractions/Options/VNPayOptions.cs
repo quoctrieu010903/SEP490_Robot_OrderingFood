@@ -9,5 +9,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Abstractions.Options
         public string ReturnUrl { get; set; } = string.Empty;
         public string HashSecret { get; set; } = string.Empty;
         public string Locale { get; set; } = "vn";
+        // Frontend page to redirect user after VNPay returns (e.g., waiter page)
+        public string FrontendReturnUrl { get; set; } = string.Empty;
     }
 }
