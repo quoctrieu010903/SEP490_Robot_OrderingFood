@@ -14,6 +14,7 @@ using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
 using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Specifications;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response;
+using SEP490_Robot_FoodOrdering.Core.Constants;
 
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
@@ -47,26 +48,15 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (table == null)
                 throw new ErrorException(StatusCodes.Status400BadRequest, "TABLE_NOT_FOUND", "Table not found.");
 
-            if (!table.Status.Equals(TableEnums.Available))
-            {
-                throw new ErrorException(
-                    StatusCodes.Status409Conflict,
-                    "TABLE_NOT_AVAILABLE",
-                    "Bàn này đang được sử dụng bởi người dùng khác."
-                );
-            }
+            // ✅ THÊM MỚI: Kiểm tra trạng thái bàn
+            if (table.Status != TableEnums.Occupied)
+                throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.BADREQUEST,
+                    "Chỉ có thể đặt món khi bàn đang được sử dụng");
 
-            var hasOrderFromDevice = await _unitOfWork.Repository<Order, Guid>()
-                .AnyAsync(o => o.TableId == request.TableId && o.CreatedBy == request.deviceToken);
-
-            if (hasOrderFromDevice)
-            {
-                throw new ErrorException(StatusCodes.Status409Conflict, "DEVICE_ALREADY_ORDERED",
-                    "Bàn này đang được sử dụng bởi người dùng khác.");
-            }
-
-            table.Status = TableEnums.Occupied;
-            _unitOfWork.Repository<Table, Guid>().Update(table);
+            // ✅ THÊM MỚI: Kiểm tra device có quyền order không
+            if (string.IsNullOrEmpty(request.deviceToken) || table.DeviceId != request.deviceToken)
+                throw new ErrorException(StatusCodes.Status403Forbidden, ResponseCodeConstants.FORBIDDEN,
+                    "Thiết bị không có quyền đặt món cho bàn này");
 
             var order = _mapper.Map<Order>(request);
 

@@ -77,7 +77,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] CreateTableRequest request)
+        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateStatusTable request)
         {
             var result = await _service.Update(request, id);
             return Ok(result);
