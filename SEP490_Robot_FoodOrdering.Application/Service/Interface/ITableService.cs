@@ -15,6 +15,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
         Task<BaseResponseModel> Delete(Guid id);
         Task<PaginatedList<TableResponse>> GetAll(PagingRequestModel paging, TableEnums? status, string? tableName);
         Task<TableResponse> GetById(Guid id);
-        Task<BaseResponseModel> Update(CreateTableRequest request, Guid id);
+        Task<BaseResponseModel> Update(UpdateStatusTable request, Guid id);
+        Task<BaseResponseModel<TableResponse>> ScanQrCode(Guid id, string DevidedId);
+        Task<TableResponse> ChangeTableStatus(Guid tableId, TableEnums newStatus, string? reason = null, string updatedBy = "System");
     }
 } 

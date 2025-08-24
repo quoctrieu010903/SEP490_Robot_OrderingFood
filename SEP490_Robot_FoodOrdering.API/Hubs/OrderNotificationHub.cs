@@ -63,7 +63,7 @@ namespace SEP490_Robot_FoodOrdering.API.Hubs
         /// </summary>
         public async Task JoinModeratorGroup()
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, "Moderators");
+            await Groups.AddToGroupAsync(Context.ConnectionId, "Moderators");   
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace SEP490_Robot_FoodOrdering.API.Hubs
 
         /// <summary>
         /// Called when a client connects
-        /// </summary>
+        /// </summary>      
         public override async Task OnConnectedAsync()
         {
             await base.OnConnectedAsync();
@@ -93,4 +93,4 @@ namespace SEP490_Robot_FoodOrdering.API.Hubs
             Console.WriteLine($"Client {Context.ConnectionId} disconnected from OrderNotificationHub");
         }
     }
-}
+}   

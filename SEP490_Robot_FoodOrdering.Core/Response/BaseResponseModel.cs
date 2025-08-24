@@ -21,7 +21,7 @@ namespace SEP490_Robot_FoodOrdering.Core.Response
             AdditionalData = additionalData;
             Message = message;
         }
-
+            
         public BaseResponseModel(int statusCode, string code, string? message)
         {
             StatusCode = statusCode;

@@ -8,6 +8,8 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Table
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string Status { get; set; }
+        public bool IsQrLocked { get; set; } 
+        public DateTime? LockedAt { get; set; } 
         public string QRCode { get; set; }
     }
 } 
