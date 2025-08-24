@@ -75,11 +75,17 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             var result = await _service.GetById(id);
             return Ok(result);
         }
+        [HttpGet("{id}/scanQrCode/{DevidedId}")]
+        public async Task<IActionResult> ScanQrCode(Guid id, string DevidedId)
+        {
+            var result = await _service.ScanQrCode(id, DevidedId);
+            return Ok(result);
+        }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id}/status")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateStatusTable request)
         {
-            var result = await _service.Update(request, id);
+            var result = await _service.ChangeTableStatus(id, request.Status,request.Reason);
             return Ok(result);
         }
     }

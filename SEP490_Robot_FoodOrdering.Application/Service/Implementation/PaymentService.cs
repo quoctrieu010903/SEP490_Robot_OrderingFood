@@ -187,7 +187,11 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
                 if (order.Table != null)
                 {
                     order.Table.Status = TableEnums.Available;
-                    await _unitOfWork.Repository<Table, Guid>().UpdateAsync(order.Table);
+                    order.Table.DeviceId = null; // Clear device ID if any
+                    order.Table.IsQrLocked = false; 
+                    order.Table.LockedAt = null;
+                   
+                await _unitOfWork.Repository<Table, Guid>().UpdateAsync(order.Table);
                 }
 
                 order.Status = OrderStatus.Completed;

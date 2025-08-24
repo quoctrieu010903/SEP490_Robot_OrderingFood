@@ -162,33 +162,20 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 case (TableEnums.Available, TableEnums.Occupied):
                     await HandleAvailableToOccupied(table, orders.ToList());
                     break;
-
-                // 3️⃣ Reserved → Occupied
-                //case (TableEnums.Reserved, TableEnums.Occupied):
-                //    await HandleReservedToOccupied(table);
-                //    break;
-
+                
                 // 4️⃣ Occupied → Reserved
-                //case (TableEnums.Occupied, TableEnums.Reserved):
-                //    await HandleOccupiedToReserved(table, allItems);
-                //    break;
+                case (TableEnums.Occupied, TableEnums.Reserved):
+                    await HandleOccupiedToReserved(table, allItems);
+                    break;
 
                 // 5️⃣ Reserved → Available
                 //case (TableEnums.Reserved, TableEnums.Available):
-                //    await HandleReservedToAvailable(table, orders);
+                //    await HandleReservedToAvailable(table, orders.ToList());
                 //    break;
 
-                // 6️⃣ Any → OutOfService
-                //case (_, TableEnums.OutOfService):
-                //    await HandleToOutOfService(table, allItems, reason, updatedBy);
-                //    break;
-
-                // 7️⃣ OutOfService → Available
-                //case (TableEnums.OutOfService, TableEnums.Available):
-                //    table.Status = TableEnums.Available;
-                //    table.DeviceId = null;
-                //    table.IsQrLocked = false;
-                //    table.LockedAt = null;
+                // 6️⃣ Reserved → Occupied
+                //case (TableEnums.Reserved, TableEnums.Occupied):
+                //    await HandleReservedToOccupied(table);
                 //    break;
 
                 default:
@@ -203,8 +190,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _unitOfWork.Repository<Table, Guid>().Update(table);
             await _unitOfWork.SaveChangesAsync();
 
-            // Log status change
-            //await LogTableStatusChange(tableId, oldStatus, newStatus, reason, updatedBy);
+            //Log status change
+           //await LogTableStatusChange(tableId, oldStatus, newStatus, reason, updatedBy);
 
             // Send notification
             await SendTableStatusChangeNotification(table, oldStatus, newStatus, reason, updatedBy);
@@ -246,6 +233,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
                 existed.Status = TableEnums.Occupied;
                 existed.DeviceId = deviceId;
+                existed.IsQrLocked = true;
                 existed.LockedAt = DateTime.UtcNow;
                 existed.LastAccessedAt = DateTime.UtcNow;
                 existed.LastUpdatedTime = DateTime.UtcNow;
@@ -322,6 +310,33 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             table.LockedAt = DateTime.UtcNow;
             table.LastAccessedAt = DateTime.UtcNow;
         }
+        private async Task HandleOccupiedToReserved(Table table, List<OrderItem> allItems)
+        {
+            // Kiểm tra có món đang active không
+            var activeItems = allItems.Where(i => i.Status == OrderItemStatus.Pending ||
+                                                i.Status == OrderItemStatus.Preparing ||
+                                                i.Status == OrderItemStatus.Ready ||
+                                                i.Status == OrderItemStatus.Served).ToList();
+
+            if (activeItems.Any())
+                throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.BADREQUEST,
+                    "Không thể chuyển bàn sang Reserved vì vẫn còn món đang hoạt động");
+
+            // Cancel tất cả pending items
+            foreach (var item in allItems.Where(i => i.Status == OrderItemStatus.Pending))
+            {
+                item.Status = OrderItemStatus.Cancelled;
+                item.LastUpdatedTime = DateTime.UtcNow;
+                _unitOfWork.Repository<OrderItem, Guid>().Update(item);
+            }
+
+            table.Status = TableEnums.Reserved;
+            table.IsQrLocked = false;
+            table.LockedAt = null;
+        }
+       
+
+
 
         private async Task SendTableStatusChangeNotification(Table table, TableEnums oldStatus, TableEnums newStatus,
             string? reason, string updatedBy)

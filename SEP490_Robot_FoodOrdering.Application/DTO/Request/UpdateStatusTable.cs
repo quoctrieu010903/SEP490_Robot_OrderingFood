@@ -10,5 +10,6 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Request
     public class UpdateStatusTable
     {
         public TableEnums Status { get; set; } // Trạng thái mới của bàn
+        public string? Reason { get; set; } 
     }
 }
