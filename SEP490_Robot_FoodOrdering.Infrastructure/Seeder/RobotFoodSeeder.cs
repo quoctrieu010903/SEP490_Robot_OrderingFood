@@ -184,6 +184,35 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                             CreatedTime = DateTime.UtcNow,
                             LastUpdatedTime = DateTime.UtcNow
                         },
+                                    new Table
+                        {
+                            Id = Guid.NewGuid(),
+                            Name= "Bàn 7",
+                            Status = Domain.Enums.TableEnums.Available,
+                            CreatedTime = DateTime.UtcNow,
+                            LastUpdatedTime = DateTime.UtcNow
+                        },
+                                         new Table
+                        {
+                            Id = Guid.NewGuid(),
+                            Name= "Bàn 8",
+                            Status = Domain.Enums.TableEnums.Available,
+                            CreatedTime = DateTime.UtcNow,
+                            LastUpdatedTime = DateTime.UtcNow
+                        },
+                                         new Table { Id = Guid.NewGuid(), Name = "Bàn 9", Status = Domain.Enums.TableEnums.Available, CreatedTime = DateTime.UtcNow, LastUpdatedTime = DateTime.UtcNow },
+                                            new Table { Id = Guid.NewGuid(), Name = "Bàn 10", Status = Domain.Enums.TableEnums.Available, CreatedTime = DateTime.UtcNow, LastUpdatedTime = DateTime.UtcNow },
+                                            new Table { Id = Guid.NewGuid(), Name = "Bàn 11", Status = Domain.Enums.TableEnums.Available, CreatedTime = DateTime.UtcNow, LastUpdatedTime = DateTime.UtcNow },
+                                            new Table { Id = Guid.NewGuid(), Name = "Bàn 12", Status = Domain.Enums.TableEnums.Available, CreatedTime = DateTime.UtcNow, LastUpdatedTime = DateTime.UtcNow },
+                                            new Table { Id = Guid.NewGuid(), Name = "Bàn 13", Status = Domain.Enums.TableEnums.Available, CreatedTime = DateTime.UtcNow, LastUpdatedTime = DateTime.UtcNow },
+                                            new Table { Id = Guid.NewGuid(), Name = "Bàn 14", Status = Domain.Enums.TableEnums.Available, CreatedTime = DateTime.UtcNow, LastUpdatedTime = DateTime.UtcNow },
+                                            new Table { Id = Guid.NewGuid(), Name = "Bàn 15", Status = Domain.Enums.TableEnums.Available, CreatedTime = DateTime.UtcNow, LastUpdatedTime = DateTime.UtcNow },
+                                            new Table { Id = Guid.NewGuid(), Name = "Bàn 16", Status = Domain.Enums.TableEnums.Available, CreatedTime = DateTime.UtcNow, LastUpdatedTime = DateTime.UtcNow },
+                                            new Table { Id = Guid.NewGuid(), Name = "Bàn 17", Status = Domain.Enums.TableEnums.Available, CreatedTime = DateTime.UtcNow, LastUpdatedTime = DateTime.UtcNow },
+                                            new Table { Id = Guid.NewGuid(), Name = "Bàn 18", Status = Domain.Enums.TableEnums.Available, CreatedTime = DateTime.UtcNow, LastUpdatedTime = DateTime.UtcNow },
+                                            new Table { Id = Guid.NewGuid(), Name = "Bàn 19", Status = Domain.Enums.TableEnums.Available, CreatedTime = DateTime.UtcNow, LastUpdatedTime = DateTime.UtcNow },
+                                            new Table { Id = Guid.NewGuid(), Name = "Bàn 20", Status = Domain.Enums.TableEnums.Available, CreatedTime = DateTime.UtcNow, LastUpdatedTime = DateTime.UtcNow }
+
              };
         }
 
