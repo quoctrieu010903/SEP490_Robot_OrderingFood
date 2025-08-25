@@ -80,7 +80,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 string url = $"https://mobile-production-1431.up.railway.app/{table.Id}";
 
                 // Sinh QR code dạng Base64
-                table.QRCode = GenerateQrCodeBase64_NoDrawing(url);
+                table.QRCode = "data:image/png;base64," + GenerateQrCodeBase64_NoDrawing(url);
 
             }
             
