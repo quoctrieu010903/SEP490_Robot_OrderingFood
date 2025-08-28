@@ -171,48 +171,99 @@ public class FeedbackService : IFeedbackService
 
     public async Task<BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>> GetAllFeedbackIsPeeding()
     {
+        // Đảm bảo store được khởi tạo trước
+        await EnsureStoreInitialized();
+        
         var tableCount = _memoryStore.Tables.Count;
         var feedbackList = new Dictionary<string, FeedbackPeedingInfo>(tableCount);
 
-        var tableIds = _memoryStore.Tables.Keys.Select(Guid.Parse).ToArray();
-        var orderStatsDict = await _orderService.GetOrderStatsByTableIds(tableIds);
-
-
-        foreach (var table in _memoryStore.Tables)
+        try
         {
-            var feedbacks = _memoryStore.Store.GetValueOrDefault(table.Key);
+            var tableIds = _memoryStore.Tables.Keys.Select(Guid.Parse).ToArray();
+            var orderStatsDict = await _orderService.GetOrderStatsByTableIds(tableIds);
 
-            int counter = 0;
-            if (feedbacks != null)
+            foreach (var table in _memoryStore.Tables)
             {
+                var feedbacks = _memoryStore.Store.GetValueOrDefault(table.Key) ?? new List<object>();
+
+                int counter = 0;
                 foreach (var feedback in feedbacks)
                 {
-                    if (feedback is FeedbackModole { IsPeeding: true })
+                    if (feedback is FeedbackModole feedbackModole && feedbackModole.IsPeeding)
                         counter++;
+                }
+
+                var tableGuid = Guid.Parse(table.Key);
+                
+                // Kiểm tra xem orderStatsDict có chứa tableGuid không
+                if (orderStatsDict.TryGetValue(tableGuid, out var orderStats))
+                {
+                    feedbackList[table.Key] = new FeedbackPeedingInfo(
+                        table.Value,
+                        counter,
+                        orderStats.DeliveredCount,
+                        orderStats.PaidCount,
+                        orderStats.TotalOrderItems
+                    );
+                }
+                else
+                {
+                    // Nếu không có dữ liệu order stats, tạo với giá trị mặc định
+                    feedbackList[table.Key] = new FeedbackPeedingInfo(
+                        table.Value,
+                        counter,
+                        0, // DeliveredCount mặc định
+                        0, // PaidCount mặc định  
+                        0  // TotalOrderItems mặc định
+                    );
                 }
             }
 
-            var tableGuid = Guid.Parse(table.Key);
-            var orderStats = orderStatsDict[tableGuid];
+            var sorted = feedbackList
+                .OrderBy(x => x.Value.TableName, StringComparer.Ordinal)
+                .ToDictionary(x => x.Key, x => x.Value, feedbackList.Comparer);
 
-            feedbackList[table.Key] = new FeedbackPeedingInfo(
-                table.Value,
-                counter,
-                orderStats.DeliveredCount,
-                orderStats.PaidCount,
-                orderStats.TotalOrderItems
+            return new BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>(
+                StatusCodes.Status200OK,
+                ResponseCodeConstants.SUCCESS,
+                sorted
             );
         }
+        catch (Exception ex)
+        {
+            // Log lỗi và trả về response với dữ liệu mặc định
+            Console.WriteLine($"Error in GetAllFeedbackIsPeeding: {ex.Message}");
+            
+            // Tạo response với dữ liệu cơ bản từ tables
+            foreach (var table in _memoryStore.Tables)
+            {
+                var feedbacks = _memoryStore.Store.GetValueOrDefault(table.Key) ?? new List<object>();
+                
+                int counter = 0;
+                foreach (var feedback in feedbacks)
+                {
+                    if (feedback is FeedbackModole feedbackModole && feedbackModole.IsPeeding)
+                        counter++;
+                }
 
+                feedbackList[table.Key] = new FeedbackPeedingInfo(
+                    table.Value,
+                    counter,
+                    0, // DeliveredCount mặc định khi có lỗi
+                    0, // PaidCount mặc định khi có lỗi
+                    0  // TotalOrderItems mặc định khi có lỗi
+                );
+            }
 
-        var sorted = feedbackList
-            .OrderBy(x => x.Value.TableName, StringComparer.Ordinal)
-            .ToDictionary(x => x.Key, x => x.Value, feedbackList.Comparer);
+            var sorted = feedbackList
+                .OrderBy(x => x.Value.TableName, StringComparer.Ordinal)
+                .ToDictionary(x => x.Key, x => x.Value, feedbackList.Comparer);
 
-        return new BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>(
-            StatusCodes.Status200OK,
-            ResponseCodeConstants.SUCCESS,
-            sorted
-        );
+            return new BaseResponseModel<Dictionary<string, FeedbackPeedingInfo>>(
+                StatusCodes.Status200OK,
+                ResponseCodeConstants.SUCCESS,
+                sorted
+            );
+        }
     }
 }

@@ -346,11 +346,27 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
             var oldStatus = item.Status;
-            item.Status = request.Status;
-           
-            item.LastUpdatedTime = DateTime.UtcNow;
+            // Find all sibling items in the same order that belong to the same group
+            // Grouping definition: same ProductId, same ProductSizeId, and the same current Status
+            var siblings = order.OrderItems
+                .Where(i => i.ProductId == item.ProductId
+                            && i.ProductSizeId == item.ProductSizeId
+                            && i.Status == oldStatus)
+                .ToList();
+
+            foreach (var oi in siblings)
+            {
+                if (request.Status == OrderItemStatus.Remark)
+                {
+                    oi.RemarkNote = request.RemarkNote;
+                }
+                oi.Status = request.Status;
+                oi.LastUpdatedTime = DateTime.UtcNow;
+                _logger.LogInformation(
+                    $"OrderItem {oi.Id} status changed from {oldStatus} to {oi.Status} in Order {orderId}");
+            }
             _logger.LogInformation(
-                $"OrderItem {item.Id} status changed from {oldStatus} to {item.Status} in Order {orderId}");
+                $"Group update applied: {siblings.Count} item(s) for Product {item.ProductId} Size {item.ProductSizeId} changed from {oldStatus} to {request.Status} in Order {orderId}");
             // Update order status automatically
             var oldOrderStatus = order.Status;
             order.Status = CalculateOrderStatus(order.OrderItems);
@@ -369,22 +385,25 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
                 try
                 {
-                    var orderItemNotification = new OrderItemStatusNotification
+                    foreach (var updatedItem in siblings)
                     {
-                        OrderId = orderId,
-                        OrderItemId = orderItemId,
-                        TableId = order.TableId ?? Guid.Empty,
-                        TableName = order.Table?.Name ?? "Unknown",
-                        ProductName = item.Product?.Name ?? "Unknown Product",
-                        SizeName = item.ProductSize?.SizeName.ToString() ?? "Unknown Size",
-                        OldStatus = oldStatus,
-                        NewStatus = item.Status,
-                        RemarkNote = item.RemarkNote,
-                        UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = "System" // You can enhance this to track actual user
-                    };
+                        var orderItemNotification = new OrderItemStatusNotification
+                        {
+                            OrderId = orderId,
+                            OrderItemId = updatedItem.Id,
+                            TableId = order.TableId ?? Guid.Empty,
+                            TableName = order.Table?.Name ?? "Unknown",
+                            ProductName = updatedItem.Product?.Name ?? "Unknown Product",
+                            SizeName = updatedItem.ProductSize?.SizeName.ToString() ?? "Unknown Size",
+                            OldStatus = oldStatus,
+                            NewStatus = updatedItem.Status,
+                            RemarkNote = updatedItem.RemarkNote,
+                            UpdatedAt = DateTime.UtcNow,
+                            UpdatedBy = "System"
+                        };
 
-                    await _notificationService.SendOrderItemStatusNotificationAsync(orderItemNotification);
+                        await _notificationService.SendOrderItemStatusNotificationAsync(orderItemNotification);
+                    }
                 }
                 catch (Exception ex)
                 {
