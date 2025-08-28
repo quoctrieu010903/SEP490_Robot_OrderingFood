@@ -12,8 +12,8 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
-    [Migration("20250821094057_initialDatabase")]
-    partial class initialDatabase
+    [Migration("20250824101806_initial_Database")]
+    partial class initial_Database
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -423,10 +423,22 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DeviceId")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsQrLocked")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastAccessedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text");
 
                     b.Property<DateTime>("LastUpdatedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LockedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")

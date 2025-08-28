@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class initialDatabase : Migration
+    public partial class initial_Database : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -57,6 +57,10 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
+                    IsQrLocked = table.Column<bool>(type: "boolean", nullable: false),
+                    LockedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeviceId = table.Column<string>(type: "text", nullable: true),
+                    LastAccessedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
                     DeletedBy = table.Column<string>(type: "text", nullable: true),

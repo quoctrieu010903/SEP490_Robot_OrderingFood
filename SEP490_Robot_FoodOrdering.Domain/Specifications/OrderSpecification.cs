@@ -12,6 +12,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
         {
             AddIncludes();
         }
+      
         public OrderSpecification()
         : base(o => !o.DeletedTime.HasValue &&  o.CreatedTime.Date == DateTime.UtcNow.Date)
         {
@@ -61,6 +62,9 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
     {
         AddIncludes();
     }
+        // Get orders by table IDs for the current day
+
+       
         private void AddIncludes()
         {
             ApplyInclude(q => q
