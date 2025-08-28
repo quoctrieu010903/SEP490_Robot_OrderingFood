@@ -1,18 +1,27 @@
-﻿using SEP490_Robot_FoodOrdering.Application.DTO.Request.invoice;
+﻿using System.Net.NetworkInformation;
+using AutoMapper;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request.invoice;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Invouce;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
+using SEP490_Robot_FoodOrdering.Application.Service.Interface;
+using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 using SEP490_Robot_FoodOrdering.Domain.Specifications;
+using SEP490_Robot_FoodOrdering.Domain.Specifications.Params;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 
-public class InvoiceService : Interface.IInvoiceService
+public class InvoiceService : IInvoiceService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
 
-    public InvoiceService(IUnitOfWork unitOfWork)
+    public InvoiceService(IUnitOfWork unitOfWork, IMapper mapper)
     {
+        _mapper = mapper;
         _unitOfWork = unitOfWork;
     }
 
@@ -39,7 +48,7 @@ public class InvoiceService : Interface.IInvoiceService
         Invoice invoice = new Invoice();
         Order order = null;
 
-        var temp = await _unitOfWork.Repository<Order, Guid>()
+        var temp = await _unitOfWork.Repository<Order, Order>()
             .GetAllWithSpecAsync(new OrdersByTableIdsSpecification(request.tableId));
 
         Console.WriteLine($"Found {temp?.Count() ?? 0} orders");
@@ -169,6 +178,26 @@ public class InvoiceService : Interface.IInvoiceService
             PaymentStatus = order.Payment.PaymentStatus.ToString(),
             Details = details.Select(d => CreateInvoiceDetailResponse(d)).Where(d => d != null).ToList()
         };
+    }
+
+    public Task<PaginatedList<InvoiceResponse>> getAllInvoice(PagingRequestModel pagingRequest )
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<InvoiceResponse> getInvoiceById(Guid id)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<PaginatedList<InvoiceResponse>> getInvoiceByTableId(Guid tableId, PagingRequestModel pagingRequest)
+    {
+        var specification = new InvoiceSpecification(tableId,pagingRequest.PageNumber,pagingRequest.PageSize);
+        var invoices = await _unitOfWork.Repository<Invoice, Guid>().GetAllWithSpecAsync(specification);
+        var response = _mapper.Map<List<InvoiceResponse>>(invoices);
+
+
+        return PaginatedList<InvoiceResponse>.Create(response, pagingRequest.PageNumber, pagingRequest.PageSize);
     }
 
     private InvoiceDetailResponse CreateInvoiceDetailResponse(InvoiceDetail detail)

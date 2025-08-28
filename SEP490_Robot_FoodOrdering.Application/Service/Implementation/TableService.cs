@@ -15,6 +15,7 @@ using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 using SEP490_Robot_FoodOrdering.Domain.Specifications;
 using ZXing.QrCode.Internal;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request.invoice;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -23,11 +24,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly INotificationService _notificationService;
-        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService)
+        private readonly IInvoiceService _invoiceService;
+        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService , IInvoiceService invoiceService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _notificationService = notificationService;
+            _invoiceService = invoiceService;
         }
         public async Task<BaseResponseModel> Create(CreateTableRequest request)
         {
@@ -77,7 +80,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             foreach (var table in mapped)
             {
                 // Tạo URL chứa id của bàn
-                string url = $"https://mobile-production-1431.up.railway.app/{table.Id}";
+                string url = $"{ServerEndpoint.FrontendBase}/{table.Id}";
 
                 // Sinh QR code dạng Base64
                 table.QRCode = "data:image/png;base64," + GenerateQrCodeBase64_NoDrawing(url);
@@ -156,6 +159,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 // 1️⃣ Occupied → Available
                 case (TableEnums.Occupied, TableEnums.Available):
                     await HandleOccupiedToAvailable(table, allItems, updatedBy);
+                    if (!string.IsNullOrEmpty(reason) &&
+                        reason.Contains("rời đi", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var invoiceRequest = new InvoiceCreatRequest
+                        {
+                            tableId = tableId,
+                            status = StatusInvoice.Cancelled,
+                            MethodEnums = PaymentMethodEnums.COD 
+                        };
+
+                        var invoiceResponse = await _invoiceService.createInvoice(invoiceRequest);
+                        Console.WriteLine($"Invoice Cancelled created for table {tableId}, invoiceId = {invoiceResponse.Id}");
+                    }
                     break;
 
                 // 2️⃣ Available → Occupied  
@@ -258,8 +274,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         {
             // Kiểm tra có món đã served/completed
             if (allItems.Any(i => i.Status == OrderItemStatus.Served || i.Status == OrderItemStatus.Completed))
-                throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.BADREQUEST,
-                    "Không thể chuyển bàn sang Available vì có món đã Served/Completed");
+                //throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.BADREQUEST,
+                //    "Không thể chuyển bàn sang Available vì có món đã Served/Completed");
+
 
             // Xử lý các món còn lại
             foreach (var item in allItems)
