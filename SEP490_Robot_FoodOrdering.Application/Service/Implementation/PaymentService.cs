@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Options;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
@@ -17,24 +18,27 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
         private readonly IUnitOfWork _unitOfWork;
         private readonly VNPayOptions _options;
         private readonly IHttpContextAccessor _httpContextAccessor;
-
+        
+        private readonly ILogger _logger;
         public PaymentService(IUnitOfWork unitOfWork, IOptions<VNPayOptions> options,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor, ILogger<PaymentService> logger)
         {
             _unitOfWork = unitOfWork;
             _options = options.Value;
             _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
         }
 
         public async Task<BaseResponseModel<OrderPaymentResponse>> CreateVNPayPaymentUrl(Guid orderId, string moneyUnit,
             string paymentContent)
         {
+            _logger.LogInformation($"CreateVNPayPaymentUrl start - orderId {orderId}");
             var order = await _unitOfWork.Repository<Order, Guid>()
                 .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.Table, o => o.OrderItems);
             if (order == null)
                 return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND",
                     "Order not found");
-
+            
             // Ensure there is a Payment entity
             var isNewPayment = false;
             if (order.Payment == null)
@@ -58,7 +62,7 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
             }
 
             order.PaymentStatus = PaymentStatusEnums.Pending;
-
+            _logger.LogInformation($"CreateVNPayPaymentUrl create Payment Entity success - orderId {orderId}");
             // Persist changes explicitly to avoid EF marking a new Payment as Modified (causing concurrency error)
             if (isNewPayment)
             {
@@ -81,13 +85,14 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
             vnPay.AddRequestData("vnp_OrderType", _options.BookingPackageType);
             vnPay.AddRequestData("vnp_Amount", ((long)(order.TotalPrice * 100)).ToString());
             vnPay.AddRequestData("vnp_ReturnUrl", BuildAbsoluteReturnUrl());
+            _logger.LogInformation($"Return URL: {BuildAbsoluteReturnUrl()}");
             vnPay.AddRequestData("vnp_IpAddr", Utils.GetIpAddress(_httpContextAccessor));
             var now = DateTime.UtcNow.AddHours(7);
             vnPay.AddRequestData("vnp_CreateDate", now.ToString("yyyyMMddHHmmss"));
             vnPay.AddRequestData("vnp_ExpireDate", now.AddMinutes(30).ToString("yyyyMMddHHmmss"));
 
             var paymentUrl = vnPay.CreateRequestUrl(_options.Url, _options.HashSecret);
-
+            _logger.LogInformation($"CreateVNPayPaymentUrl create Payment Entity success - payment url {paymentUrl}");
             return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAYMENT_INITIATED",
                 new OrderPaymentResponse
                 {
@@ -96,6 +101,8 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
                     PaymentUrl = paymentUrl,
                     Message = "Redirect to VNPay for payment."
                 });
+            
+            
         }
 
         public async Task<BaseResponseModel<OrderPaymentResponse>> HandleVNPayReturn(IQueryCollection queryCollection)
@@ -223,25 +230,28 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
 
         private string BuildAbsoluteReturnUrl()
         {
+            // TODO: remove the hardcode URL please :'( 
             // If ReturnUrl is absolute in config, honor it. If relative, build from request
-            if (Uri.TryCreate(_options.ReturnUrl, UriKind.Absolute, out var absolute))
-            {
-                return absolute.ToString();
-            }
-
-            var request = _httpContextAccessor.HttpContext?.Request;
-            if (request == null)
-            {
-                return _options.ReturnUrl; // fallback
-            }
-
-            var builder = new UriBuilder
-            {
-                Scheme = request.Scheme,
-                Host = request.Host.Host,
-                Port = request.Host.Port ?? (request.Scheme == "https" ? 443 : 80),
-                Path = _options.ReturnUrl.StartsWith("/") ? _options.ReturnUrl : "/" + _options.ReturnUrl
-            };
-            return builder.Uri.ToString();
+            // if (Uri.TryCreate(_options.ReturnUrl, UriKind.Absolute, out var absolute))
+            // {
+            //     return absolute.ToString();
+            // }
+            //
+            // var request = _httpContextAccessor.HttpContext?.Request;
+            // if (request == null)
+            // {
+            //     return _options.ReturnUrl; // fallback
+            // }
+            //
+            // var builder = new UriBuilder
+            // {
+            //     Scheme = request.Scheme,
+            //     Host = request.Host.Host,
+            //     Port = request.Host.Port ?? (request.Scheme == "https" ? 443 : 80),
+            //     Path = _options.ReturnUrl.StartsWith("/") ? _options.ReturnUrl : "/" + _options.ReturnUrl
+            // };
+            // return builder.Uri.ToString();
+            
+            return "https://be-robo.zd-dev.xyz/api/Payment/vnpay-return";
         }
     }
