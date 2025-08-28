@@ -1,6 +1,4 @@
-﻿
-
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SEP490_Robot_FoodOrdering.Core.Base;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 
@@ -9,7 +7,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence
     public class RobotFoodOrderingDBContext : DbContext
     {
         public RobotFoodOrderingDBContext(DbContextOptions<RobotFoodOrderingDBContext> options)
-            : base(options) { }
+            : base(options)
+        {
+        }
 
         public DbSet<Category> Categories { get; set; }
         public DbSet<Order> Orders { get; set; }
@@ -23,12 +23,13 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence
         public DbSet<Table> Tables { get; set; }
         public DbSet<Topping> Toppings { get; set; }
 
+        public DbSet<Invoice> Invoices { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(RobotFoodOrderingDBContext).Assembly);
 
             base.OnModelCreating(modelBuilder);
         }
-   
     }
 }
