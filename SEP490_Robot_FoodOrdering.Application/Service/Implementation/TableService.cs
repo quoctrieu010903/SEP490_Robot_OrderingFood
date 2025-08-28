@@ -77,7 +77,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             foreach (var table in mapped)
             {
                 // Tạo URL chứa id của bàn
-                string url = $"https://mobile-production-1431.up.railway.app/{table.Id}";
+                string url = $"{ServerEndpoint.FrontendBase}/{table.Id}";
 
                 // Sinh QR code dạng Base64
                 table.QRCode = "data:image/png;base64," + GenerateQrCodeBase64_NoDrawing(url);
