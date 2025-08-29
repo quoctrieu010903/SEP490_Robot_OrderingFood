@@ -608,7 +608,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
 
         public async Task<Dictionary<Guid, OrderStaticsResponse>> GetOrderStatsByTableIds(IEnumerable<Guid> tableIds)
-        {
+                    {
             var tableIdsList = tableIds.ToList();
             if (!tableIdsList.Any())
                 return new Dictionary<Guid, OrderStaticsResponse>();
@@ -638,6 +638,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         {
             int deliveredCount = 0;
             int paidCount = 0;
+            int servedCount = 0;
             int totalOrderItems = 0;
 
             foreach (var order in orders)
@@ -648,9 +649,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     {
                         totalOrderItems++;
                         if ((item.Status == OrderItemStatus.Ready || item.Status == OrderItemStatus.Served || item.Status == OrderItemStatus.Remark || item.Status == OrderItemStatus.Completed))
-                                         
                         {
                             deliveredCount++;
+                        }
+                        if (item.Status == OrderItemStatus.Served || item.Status == OrderItemStatus.Completed)
+                        {
+                            servedCount++;
                         }
 
                         if (order.PaymentStatus == PaymentStatusEnums.Paid &&
@@ -667,6 +671,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             return new OrderStaticsResponse
             {
+                ServedCount = servedCount,
                 DeliveredCount = deliveredCount,
                 TotalOrderItems = totalOrderItems,
                 PaidCount = paidCount
