@@ -201,6 +201,7 @@ public class FeedbackService : IFeedbackService
                     feedbackList[table.Key] = new FeedbackPeedingInfo(
                         table.Value,
                         counter,
+                        orderStats.ServedCount,
                         orderStats.DeliveredCount,
                         orderStats.PaidCount,
                         orderStats.TotalOrderItems
@@ -212,6 +213,7 @@ public class FeedbackService : IFeedbackService
                     feedbackList[table.Key] = new FeedbackPeedingInfo(
                         table.Value,
                         counter,
+                        0,// ServedCount mặc định
                         0, // DeliveredCount mặc định
                         0, // PaidCount mặc định  
                         0  // TotalOrderItems mặc định
@@ -249,6 +251,7 @@ public class FeedbackService : IFeedbackService
                 feedbackList[table.Key] = new FeedbackPeedingInfo(
                     table.Value,
                     counter,
+                    0, // ServedCount mặc định khi có lỗi
                     0, // DeliveredCount mặc định khi có lỗi
                     0, // PaidCount mặc định khi có lỗi
                     0  // TotalOrderItems mặc định khi có lỗi
