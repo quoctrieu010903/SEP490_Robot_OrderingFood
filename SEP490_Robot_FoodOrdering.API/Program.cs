@@ -1,3 +1,4 @@
+using DotNetEnv;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -10,6 +11,15 @@ using SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load .env if present (useful locally). In Docker, env vars are injected by the runtime.
+try
+{
+    Env.Load();
+}
+catch
+{
+    // Ignore if .env is missing; runtime env vars will still be used
+}
 
 builder.Services.AddControllers();
 
@@ -61,5 +71,5 @@ app.UseMiddleware<CustomExceptionHandlerMiddleware>();
 app.MapHub<OrderNotificationHub>("/orderNotificationHub");
 
 app.MapControllers();
-
+app.Logger.LogInformation("ContentRootPath: {ContentRoot}", app.Environment.ContentRootPath);
 app.Run();
