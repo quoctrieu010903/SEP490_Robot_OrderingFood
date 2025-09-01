@@ -1,0 +1,12 @@
+services:
+    image: datiso/sep490-robot-ordering-system:latest
+    container_name: sep490-robot-api
+    restart: unless-stopped
+    ports:
+      - "5235:5235"
+    env_file:
+      - .env
+
+networks:
+  default:
+    driver: bridge
