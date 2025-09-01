@@ -151,6 +151,33 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Invoices",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TableId = table.Column<Guid>(type: "uuid", nullable: false),
+                    totalMoney = table.Column<decimal>(type: "numeric", nullable: false),
+                    status = table.Column<int>(type: "integer", nullable: false),
+                    PhuongThucThanhToan = table.Column<int>(type: "integer", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true),
+                    CreatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastUpdatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DeletedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Invoices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Invoices_Tables_TableId",
+                        column: x => x.TableId,
+                        principalTable: "Tables",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Orders",
                 columns: table => new
                 {
@@ -278,6 +305,39 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "InvoiceDetail",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderItemId = table.Column<Guid>(type: "uuid", nullable: false),
+                    totalMoney = table.Column<decimal>(type: "numeric", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    InvoiceId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true),
+                    CreatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastUpdatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DeletedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InvoiceDetail", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InvoiceDetail_Invoices_InvoiceId",
+                        column: x => x.InvoiceId,
+                        principalTable: "Invoices",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_InvoiceDetail_OrderItems_OrderItemId",
+                        column: x => x.OrderItemId,
+                        principalTable: "OrderItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OrderItemToppings",
                 columns: table => new
                 {
@@ -308,6 +368,21 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InvoiceDetail_InvoiceId",
+                table: "InvoiceDetail",
+                column: "InvoiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InvoiceDetail_OrderItemId",
+                table: "InvoiceDetail",
+                column: "OrderItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Invoices_TableId",
+                table: "Invoices",
+                column: "TableId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderItems_OrderId",
@@ -375,6 +450,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "InvoiceDetail");
+
+            migrationBuilder.DropTable(
                 name: "OrderItemToppings");
 
             migrationBuilder.DropTable(
@@ -385,6 +463,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "ProductToppings");
+
+            migrationBuilder.DropTable(
+                name: "Invoices");
 
             migrationBuilder.DropTable(
                 name: "OrderItems");
