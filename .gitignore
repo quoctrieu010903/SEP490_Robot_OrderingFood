@@ -444,3 +444,7 @@ Beta
 used queries
 1
 *.dll
+
+.env
+*.env
+.DS_Store
