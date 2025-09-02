@@ -19,7 +19,10 @@ try
 catch
 {
     // Ignore if .env is missing; runtime env vars will still be used
-}
+}   
+
+// force refresh .env vars after loading .env 
+builder.Configuration.AddEnvironmentVariables();
 
 builder.Services.AddControllers();
 
