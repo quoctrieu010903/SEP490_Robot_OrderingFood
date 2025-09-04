@@ -225,7 +225,23 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // Kiểm tra bàn có sẵn sàng để sử dụng không
             if (existed.Status == TableEnums.Reserved )
                 throw new ErrorException(StatusCodes.Status403Forbidden, ResponseCodeConstants.FORBIDDEN, "Bàn không khả dụng");
+            var currentTable = (await _unitOfWork.Repository<Table, Guid>()
+                .GetWithSpecAsync(new BaseSpecification<Table>(x => x.DeviceId == deviceId && x.Status == TableEnums.Occupied)));
+            if (currentTable != null && currentTable.Id != id)
+            {
+                var unpaidInvoices = await _unitOfWork.Repository<Invoice, Guid>()
+                    .GetWithSpecAsync(new BaseSpecification<Invoice>(
+                        i => i.TableId == currentTable.Id &&
+                             (i.status == PaymentStatusEnums.Pending)
+                    ));
 
+                if (unpaidInvoices != null)
+                {
+                    throw new ErrorException(StatusCodes.Status403Forbidden,
+                        ResponseCodeConstants.FORBIDDEN,
+                        $"Bạn đang có hóa đơn chưa thanh toán ở bàn {currentTable.Name}, vui lòng thanh toán trước khi đổi bàn.");
+                }
+            }
             // Kiểm tra bàn đã bị sử dụng bởi thiết bị khác
             if (existed.Status == TableEnums.Occupied && existed.DeviceId != deviceId)
                 throw new ErrorException(StatusCodes.Status403Forbidden, ResponseCodeConstants.FORBIDDEN, "Bàn đã có người sử dụng, vui lòng chuyển sang bàn khác");
