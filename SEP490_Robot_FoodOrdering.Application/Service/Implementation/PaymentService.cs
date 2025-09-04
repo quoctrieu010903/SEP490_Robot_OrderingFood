@@ -231,28 +231,37 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
 
         private string BuildAbsoluteReturnUrl()
         {
-            // TODO: remove the hardcode URL please :'( 
-            // If ReturnUrl is absolute in config, honor it. If relative, build from request
-            // if (Uri.TryCreate(_options.ReturnUrl, UriKind.Absolute, out var absolute))
-            // {
-            //     return absolute.ToString();
-            // }
-            //
-            // var request = _httpContextAccessor.HttpContext?.Request;
-            // if (request == null)
-            // {
-            //     return _options.ReturnUrl; // fallback
-            // }
-            //
-            // var builder = new UriBuilder
-            // {
-            //     Scheme = request.Scheme,
-            //     Host = request.Host.Host,
-            //     Port = request.Host.Port ?? (request.Scheme == "https" ? 443 : 80),
-            //     Path = _options.ReturnUrl.StartsWith("/") ? _options.ReturnUrl : "/" + _options.ReturnUrl
-            // };
-            // return builder.Uri.ToString();
+            // If ReturnUrl is absolute in config, keep it. 
+            // If relative, build from current request base URL.
+            var configured = string.IsNullOrWhiteSpace(_options.ReturnUrl)
+                ? "/api/Payment/vnpay-return"
+                : _options.ReturnUrl;
             
-            return "https://be-robo.zd-dev.xyz/api/Payment/vnpay-return";
+            if (System.Uri.TryCreate(configured, System.UriKind.Absolute, out var absoluteUri))
+            {
+                return absoluteUri.ToString();
+            }
+
+            var request = _httpContextAccessor.HttpContext?.Request;
+            if (request == null)
+            {
+                // Fallback to configured string (likely relative);
+                // VNPay expects absolute.
+                return configured;
+            }
+
+            // Respect PathBase for apps hosted behind reverse proxies or under sub-paths
+            var path = configured.StartsWith("/") ? configured : $"{request.PathBase}/{configured}";
+            // Normalize any accidental double slashes
+            path = path.Replace("//", "/");
+
+            var builder = new System.UriBuilder
+            {
+                Scheme = request.Scheme,
+                Host = request.Host.Host,
+                Port = request.Host.Port ?? (request.Scheme == "https" ? 443 : 80),
+                Path = path
+            };
+            return builder.Uri.ToString();
         }
     }
