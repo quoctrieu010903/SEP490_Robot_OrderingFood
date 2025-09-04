@@ -183,6 +183,7 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
                 order.paymentMethod = PaymentMethodEnums.VNPay;
                 order.PaymentStatus = PaymentStatusEnums.Paid;
 
+                
                 // Mark order items as completed
                 foreach (var item in order.OrderItems)
                 {
@@ -226,7 +227,7 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
                     Message = isSuccess ? "Payment success (VNPay)" : "Payment failed (VNPay)"
                 },
                 new { redirectUrl });
-        }
+        }   
 
         private string BuildAbsoluteReturnUrl()
         {
