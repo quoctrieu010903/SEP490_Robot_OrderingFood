@@ -35,7 +35,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// Get all products with pagination and filtering options
         /// </summary>
         /// <param name="paging">Pagination parameters including page number and page size</param>
-        /// <param name="fillter">Product filtering parameters such as category, price range, availability status</param>
+        /// <param name="fillter">Product filtering parameters such as categoryName,Search : can Search flowing by ProductName or description of Product  </param>
         /// <returns>Paginated list of products with total count and page information</returns>
         /// <response code="200">Successfully retrieved products list</response>
         /// <response code="400">Invalid pagination or filter parameters</response>
@@ -43,11 +43,11 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// <remarks>
         /// Sample request:
         /// 
-        ///     GET /api/Product?pageNumber=1&amp;pageSize=10&amp;categoryId=123e4567-e89b-12d3-a456-426614174000&amp;isAvailable=true
+        ///     GET /api/Product?pageNumber=1&amp;pageSize=10&amp;categoryName="Đồ Uống" &amp
         /// 
         /// This endpoint supports:
         /// - Pagination with configurable page size
-        /// - Filtering by category, price range, availability
+        /// - Filtering by category, duration range, "Search" flowing by ProductName or description of Product
         /// - Sorting by name, price, creation date
         /// </remarks>
         [HttpGet]
@@ -106,7 +106,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// 
         /// </remarks>
         [HttpPost]
-        public async Task<ActionResult<BaseResponseModel>> Create([FromBody] CreateProductRequest request)
+        public async Task<ActionResult<BaseResponseModel>> Create([FromForm] CreateProductRequest request)
         {
             var result = await _service.Create(request);
             return Ok(result);
@@ -175,7 +175,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// - Last modified timestamp is automatically updated
         /// </remarks>
         [HttpPut("{id}")]
-        public async Task<ActionResult<BaseResponseModel<ProductResponse>>> Update([FromBody] CreateProductRequest request, Guid id)
+        public async Task<ActionResult<BaseResponseModel<ProductResponse>>> Update([FromForm] CreateProductRequest request, Guid id)
         {
             var result = await _service.Update(request, id);
             return Ok(result);

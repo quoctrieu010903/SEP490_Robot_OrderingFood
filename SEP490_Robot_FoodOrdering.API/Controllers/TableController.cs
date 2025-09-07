@@ -60,9 +60,9 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// <response code="400">Invalid query parameters</response>
         /// <response code="500">Internal server error</response>
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] PagingRequestModel paging, [FromQuery] TableEnums? status)
+        public async Task<IActionResult> GetAll([FromQuery] PagingRequestModel paging, [FromQuery] TableEnums? status , [FromQuery] string? tableName)
         {
-            var result = await _service.GetAll(paging, status);
+            var result = await _service.GetAll(paging, status,tableName);
             return Ok(result);
         }
 
@@ -75,11 +75,17 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             var result = await _service.GetById(id);
             return Ok(result);
         }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] CreateTableRequest request)
+        [HttpGet("{id}/scanQrCode/{DevidedId}")]
+        public async Task<IActionResult> ScanQrCode(Guid id, string DevidedId)
         {
-            var result = await _service.Update(request, id);
+            var result = await _service.ScanQrCode(id, DevidedId);
+            return Ok(result);
+        }
+
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateStatusTable request)
+        {
+            var result = await _service.ChangeTableStatus(id, request.Status,request.Reason);
             return Ok(result);
         }
     }

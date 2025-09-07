@@ -24,6 +24,15 @@ SEP490_Robot_FoodOrdering.Infrastructure/obj/
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+# Ignore build folders
+bin/
+obj/
+Debug/
+*.user
+*.suo
+*.log
+*.vs/
+
 # Visual Studio cache/options
 .vs/
 
@@ -435,3 +444,7 @@ Beta
 used queries
 1
 *.dll
+
+.env
+*.env
+.DS_Store

@@ -11,6 +11,5 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Request
         public string MoneyUnit { get; set; }
         public Guid OrderId { get; set; }
         public string PaymentContent { get; set; } = "";
-        public float TotalAmount { get; set; } = 0;
     }
 }

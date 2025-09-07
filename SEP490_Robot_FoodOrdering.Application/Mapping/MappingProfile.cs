@@ -1,9 +1,8 @@
-﻿
-
-using AutoMapper;
+﻿using AutoMapper;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.Category;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Category;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Invouce;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Table;
@@ -95,6 +94,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.TableId, opt => opt.MapFrom(src => src.TableId));
             CreateMap<CreateOrderItemRequest, OrderItem>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => SEP490_Robot_FoodOrdering.Domain.Enums.OrderItemStatus.Pending));
+
             CreateMap<Order, OrderResponse>()
              .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.Table.Name))
              .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.OrderItems)); // Items instead of OrderItems
@@ -104,11 +104,29 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.SizeName, opt => opt.MapFrom(src => src.ProductSize.SizeName.ToString()))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.ProductSize != null ? src.ProductSize.Price : 0)) // Map price from ProductSize
                 .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => 1)) // Always set to 1 as per business rule
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Product != null ? src.Product.ImageUrl : null)) 
+                .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.Note))
                 .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src =>
                     src.OrderItemTopping != null && src.OrderItemTopping.Count > 0
                         ? src.OrderItemTopping.Select(oit => oit.Topping).ToList()
                         : new List<Topping>())); // Direct Topping entities
 
+
+            CreateMap<Invoice, InvoiceResponse>()
+            .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.Table != null ? src.Table.Name : string.Empty))
+            .ForMember(dest => dest.TotalMoney, opt => opt.MapFrom(src => src.totalMoney))
+            .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => src.status.ToString()))
+       
+            .ForMember(dest => dest.Details, opt => opt.MapFrom(src => src.Details))
+            .ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(src => src.CreatedTime));
+
+            CreateMap<InvoiceDetail, InvoiceDetailResponse>()
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.OrderItem.Product.Name))
+                .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.OrderItem.ProductSize.Price))
+                .ForMember(dest => dest.TotalMoney, opt => opt.MapFrom(src => src.totalMoney));
+                
         }
+
+    
     }
 }

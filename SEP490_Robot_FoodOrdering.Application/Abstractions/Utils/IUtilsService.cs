@@ -34,6 +34,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Abstractions.Utils
         /// <param name="folder">The folder where the template file is located.</param>
         /// <returns>The content of the template file as a string.</returns>
         /// <exception cref="FileNotFoundException">Thrown when the template file does not exist at the specified location.</exception>
-        string GetEmailTemplate(string templateName, string folder);
+        Task<string> GetEmailTemplateAsync(string templateName, string folder);
     }
 }

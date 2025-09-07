@@ -7,27 +7,35 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
 {
     public class OrderSpecification : BaseSpecification<Order>
     {
-        public OrderSpecification(Guid tableId) : base(o => !o.DeletedTime.HasValue && o.TableId == tableId && o.Status == OrderStatus.Pending)
+
+        public OrderSpecification(Guid tableId) : base(o => !o.DeletedTime.HasValue && o.TableId == tableId && o.Status == OrderStatus.Pending || o.Status == OrderStatus.Confirmed)
         {
             AddIncludes();
         }
+      
         public OrderSpecification()
         : base(o => !o.DeletedTime.HasValue &&  o.CreatedTime.Date == DateTime.UtcNow.Date)
         {
 
             AddIncludes();
         }
-        public OrderSpecification(string? productName)
-      : base(o =>
-          !o.DeletedTime.HasValue &&
-          o.CreatedTime.Date == DateTime.UtcNow.Date &&
-          (string.IsNullOrEmpty(productName) ||
-           o.OrderItems.Any(oi => oi.Product != null &&
-                                  oi.Product.Name != null &&
-                                  oi.Product.Name.ToLower().Contains(productName.ToLower()))))
+       
+        public OrderSpecification(string? productName, DateTime startUtc, DateTime endUtc)
+     : base(o =>
+         !o.DeletedTime.HasValue &&
+        o.CreatedTime >= startUtc &&
+        o.CreatedTime < endUtc &&
+        (string.IsNullOrEmpty(productName) ||
+         o.OrderItems.Any(oi =>
+            oi.Product != null &&
+            !string.IsNullOrEmpty(oi.Product.Name) &&
+            oi.Product.Name.ToLower().Contains(productName.ToLower()))
+        ))
         {
             AddIncludes();
         }
+
+
 
 
 
@@ -45,7 +53,8 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
     // Get all orders by table ID for payment (not filtered by status)
     public OrderSpecification(bool forPayment, Guid tableId) : base(o => !o.DeletedTime.HasValue && o.TableId == tableId)
     {
-        AddIncludes();
+            AddOrderByDescending(o => o.CreatedTime); // Sắp xếp theo thời gian tạo mới nhất
+            AddIncludes();
     }
 
     // Get orders by table ID with Delivering status for payment
@@ -53,6 +62,9 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
     {
         AddIncludes();
     }
+        // Get orders by table IDs for the current day
+
+       
         private void AddIncludes()
         {
             ApplyInclude(q => q

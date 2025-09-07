@@ -323,7 +323,12 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Repository
             return await ApplySpecification(query, specification).ToListAsync();
         }
 
-
+        public async Task<IEnumerable<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate)
+        {
+            return await _dbSet
+           .Where(predicate)
+           .ToListAsync();
+        }
     }
 
 }

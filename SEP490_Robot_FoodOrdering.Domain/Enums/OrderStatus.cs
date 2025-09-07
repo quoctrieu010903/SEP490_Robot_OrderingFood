@@ -13,7 +13,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
         Preparing = 3,     // Đang chuẩn bị món
         Delivering = 4,    // Bắt đầu phục phụ
         Completed = 5,     // Đã giao / hoàn thành
-        Cancelled = 6      // Đã huỷ
-
-    }
+        Cancelled = 6,      // Đã huỷ
+        RedoRequested = 7  // Yêu cầu làm lại món
+    }   
 }

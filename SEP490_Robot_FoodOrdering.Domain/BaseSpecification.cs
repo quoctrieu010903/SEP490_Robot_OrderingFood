@@ -15,7 +15,7 @@ namespace SEP490_Robot_FoodOrdering.Domain
 
         #region Query, Filtering, Order Data
         // Filtering criteria
-        public Expression<Func<TEntity, bool>> Criteria { get; } = null!;
+        public Expression<Func<TEntity, bool>> Criteria { get; set; } = null!;
 
         // Additional filters
         public List<Expression<Func<TEntity, bool>>> Filters { get; } = new();
@@ -71,6 +71,11 @@ namespace SEP490_Robot_FoodOrdering.Domain
         public void AddGroupBy(Expression<Func<TEntity, object>> groupByExpression)
         {
             GroupBy = groupByExpression;
+        }
+
+        public void AddCriteria(Expression<Func<TEntity, bool>> criteria)
+        {
+            Criteria = criteria;
         }
 
         public void EnableSplitQuery()

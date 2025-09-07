@@ -7,7 +7,12 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
     public class Table : BaseEntity
     {
         public string Name { get; set; }
-        public TableEnums Status { get; set; }  
+        public TableEnums Status { get; set; }
+        public bool IsQrLocked { get; set; } = false;  
+        public DateTime? LockedAt { get; set; } 
+        public string? DeviceId { get; set; } 
+        public DateTime? LastAccessedAt { get; set; } 
+
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }
