@@ -308,9 +308,9 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         [ProducesResponseType(typeof(BaseResponseModel<List<OrderResponse>>), 200)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 404)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 500)]
-        public async Task<ActionResult<BaseResponseModel>> GetOrdersByTableIdOnly(Guid tableId)
+        public async Task<ActionResult<BaseResponseModel>> GetOrdersByTableIdOnly(Guid tableId , [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
-            var result = await _orderService.GetOrdersByTableIdOnlyAsync(tableId);
+            var result = await _orderService.GetOrdersByTableIdOnlyAsync(tableId, startDate,endDate);
             return StatusCode(result.StatusCode, result);
         }
 

@@ -288,10 +288,21 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
-        public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdOnlyAsync(Guid tableId)
+        public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdOnlyAsync(Guid tableId , DateTime? startDate, DateTime? endDate)
         {
+            var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+            // Normalize sang UTC
+            DateTime? startUtc = startDate.HasValue
+                ? TimeZoneInfo.ConvertTimeToUtc(startDate.Value.Date, vnTimeZone)
+                : null;
+
+            DateTime? endUtc = endDate.HasValue
+                ? TimeZoneInfo.ConvertTimeToUtc(endDate.Value.Date.AddDays(1), vnTimeZone)
+                : null;
+
             var orders = await _unitOfWork.Repository<Order, Order>()
-                .GetAllWithSpecAsync(new OrderSpecification(true, tableId), true);
+                .GetAllWithSpecAsync(new OrderSpecification(tableId,startUtc,endUtc), true);
             var response = _mapper.Map<List<OrderResponse>>(orders);
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
