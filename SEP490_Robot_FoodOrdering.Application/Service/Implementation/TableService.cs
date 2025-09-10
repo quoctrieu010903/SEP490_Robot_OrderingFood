@@ -158,41 +158,20 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
                 // 1️⃣ Occupied → Available
                 case (TableEnums.Occupied, TableEnums.Available):
-                    await HandleOccupiedToAvailable(table, allItems, updatedBy);
-                    if (!string.IsNullOrEmpty(reason) &&
-                        reason.Contains("rời đi", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var invoiceRequest = new InvoiceCreatRequest
-                        {
-                            tableId = tableId,
-                            status = StatusInvoice.Cancelled,
-                            MethodEnums = PaymentMethodEnums.COD 
-                        };
-
-                        var invoiceResponse = await _invoiceService.createInvoice(invoiceRequest);
-                        Console.WriteLine($"Invoice Cancelled created for table {tableId}, invoiceId = {invoiceResponse.Id}");
-                    }
+                    await HandleOccupiedToAvailable(table, allItems, orders.ToList(), updatedBy);
                     break;
 
                 // 2️⃣ Available → Occupied  
                 case (TableEnums.Available, TableEnums.Occupied):
                     await HandleAvailableToOccupied(table, orders.ToList());
                     break;
-                
+
                 // 4️⃣ Occupied → Reserved
                 case (TableEnums.Occupied, TableEnums.Reserved):
                     await HandleOccupiedToReserved(table, allItems);
                     break;
 
-                // 5️⃣ Reserved → Available
-                //case (TableEnums.Reserved, TableEnums.Available):
-                //    await HandleReservedToAvailable(table, orders.ToList());
-                //    break;
 
-                // 6️⃣ Reserved → Occupied
-                //case (TableEnums.Reserved, TableEnums.Occupied):
-                //    await HandleReservedToOccupied(table);
-                //    break;
 
                 default:
                     throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.BADREQUEST,
@@ -206,8 +185,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _unitOfWork.Repository<Table, Guid>().Update(table);
             await _unitOfWork.SaveChangesAsync();
 
+
             //Log status change
-           //await LogTableStatusChange(tableId, oldStatus, newStatus, reason, updatedBy);
+            //await LogTableStatusChange(tableId, oldStatus, newStatus, reason, updatedBy);
 
             // Send notification
             await SendTableStatusChangeNotification(table, oldStatus, newStatus, reason, updatedBy);
@@ -223,7 +203,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Table không tìm thấy");
 
             // Kiểm tra bàn có sẵn sàng để sử dụng không
-            if (existed.Status == TableEnums.Reserved )
+            if (existed.Status == TableEnums.Reserved)
                 throw new ErrorException(StatusCodes.Status403Forbidden, ResponseCodeConstants.FORBIDDEN, "Bàn không khả dụng");
             var currentTable = (await _unitOfWork.Repository<Table, Guid>()
                 .GetWithSpecAsync(new BaseSpecification<Table>(x => x.DeviceId == deviceId && x.Status == TableEnums.Occupied)));
@@ -286,15 +266,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
         // ===== HELPER METHODS =====
-        private async Task HandleOccupiedToAvailable(Table table, List<OrderItem> allItems, string updatedBy)
+        private async Task HandleOccupiedToAvailable(Table table, List<OrderItem> allItems, List<Order> orders, string updatedBy)
         {
-            // Kiểm tra có món đã served/completed
-            if (allItems.Any(i => i.Status == OrderItemStatus.Served || i.Status == OrderItemStatus.Completed))
-                //throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.BADREQUEST,
-                //    "Không thể chuyển bàn sang Available vì có món đã Served/Completed");
-
-
-            // Xử lý các món còn lại
             foreach (var item in allItems)
             {
                 var oldItemStatus = item.Status;
@@ -305,25 +278,58 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         item.Status = OrderItemStatus.Cancelled;
                         break;
                     case OrderItemStatus.Preparing:
-                        item.Status = OrderItemStatus.RequestCancel;
+                        item.Status = OrderItemStatus.Cancelled;
                         break;
                     case OrderItemStatus.Ready:
                         item.Status = OrderItemStatus.Cancelled;
+                        break;
+                    case OrderItemStatus.Served:
+                    case OrderItemStatus.Completed:
+                    case OrderItemStatus.Cancelled:
+                    case OrderItemStatus.RequestCancel:
+                        // Giữ nguyên trạng thái
                         break;
                 }
 
                 if (item.Status != oldItemStatus)
                 {
                     item.LastUpdatedTime = DateTime.UtcNow;
-                    //item.UpdatedBy = updatedBy;
                     _unitOfWork.Repository<OrderItem, Guid>().Update(item);
 
                     // Send notification for each item status change
-                    //await _notificationService.Send(item, oldItemStatus, updatedBy, "Bàn chuyển sang Available");
+
                 }
             }
 
-            // Clear table info
+            foreach (var order in orders)
+            {
+                var orderItems = allItems.Where(item => item.OrderId == order.Id).ToList();
+                if (!orderItems.Any()) continue;
+
+                var (newOrderStatus, newPaymentStatus) = CalculateOrderAndPaymentStatus(orderItems, order);
+
+                var orderChanged = false;
+                if (order.Status != newOrderStatus)
+                {
+                    order.Status = newOrderStatus;
+                    orderChanged = true;
+                }
+
+                if (order.PaymentStatus != newPaymentStatus)
+                {
+                    order.PaymentStatus = newPaymentStatus;
+                    orderChanged = true;
+                }
+
+                if (orderChanged)
+                {
+                    order.LastUpdatedTime = DateTime.UtcNow;
+                    order.LastUpdatedBy = updatedBy;
+                    _unitOfWork.Repository<Order, Order>().Update(order);
+                }
+            }
+
+
             table.Status = TableEnums.Available;
             table.DeviceId = null;
             table.IsQrLocked = false;
@@ -367,9 +373,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             table.IsQrLocked = false;
             table.LockedAt = null;
         }
-       
-
-
 
         private async Task SendTableStatusChangeNotification(Table table, TableEnums oldStatus, TableEnums newStatus,
             string? reason, string updatedBy)
@@ -388,8 +391,77 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             //await _notificationService.SendKitchenNotificationAsync(notification);
         }
-  
 
-    
+        private (OrderStatus orderStatus, PaymentStatusEnums paymentStatus) CalculateOrderAndPaymentStatus(
+        List<OrderItem> allItems, Order currentOrder)
+        {
+            var totalItems = allItems.Count;
+            var servedItems = allItems.Count(x => x.Status == OrderItemStatus.Served ||
+                                                 x.Status == OrderItemStatus.Completed);
+            var cancelledItems = allItems.Count(x => x.Status == OrderItemStatus.Cancelled);
+            var requestCancelItems = allItems.Count(x => x.Status == OrderItemStatus.RequestCancel);
+
+            // Xác định Order Status
+            OrderStatus newOrderStatus;
+            if (requestCancelItems > 0)
+            {
+                // Có món đang chờ xác nhận hủy
+                newOrderStatus = OrderStatus.Cancelled;
+            }
+            else if (servedItems == totalItems)
+            {
+                // Tất cả món đã được phục vụ
+                newOrderStatus = OrderStatus.Completed;
+            }
+            else if (cancelledItems == totalItems)
+            {
+                // Tất cả món đều bị hủy
+                newOrderStatus = OrderStatus.Cancelled;
+            }
+            else if (servedItems > 0 && cancelledItems > 0)
+            {
+                // Hỗn hợp: một phần đã phục vụ, một phần bị hủy
+                newOrderStatus = OrderStatus.Completed;
+            }
+            else
+            {
+                // Trường hợp khác (fallback)
+                newOrderStatus = OrderStatus.Cancelled;
+            }
+
+            // Xác định Payment Status
+            PaymentStatusEnums newPaymentStatus;
+            if (requestCancelItems > 0)
+            {
+                // Có món chờ xác nhận hủy → chờ xử lý
+                newPaymentStatus = PaymentStatusEnums.Pending;
+            }
+            else if (cancelledItems == totalItems)
+            {
+                // Tất cả món bị hủy → hoàn tiền (nếu đã thanh toán)
+                newPaymentStatus = currentOrder.PaymentStatus == PaymentStatusEnums.Paid
+                    ? PaymentStatusEnums.Refunded
+                    : PaymentStatusEnums.Pending;
+            }
+            else if (servedItems == totalItems)
+            {
+                // Tất cả món đã phục vụ → giữ nguyên hoặc chờ thanh toán
+                newPaymentStatus = currentOrder.PaymentStatus;
+            }
+            else if (servedItems > 0 && cancelledItems > 0)
+            {
+                // Trường hợp hỗn hợp → cần xử lý hoàn tiền một phần
+                // Tạm thời set Pending để xử lý manual
+                newPaymentStatus = PaymentStatusEnums.Pending;
+            }
+            else
+            {
+                // Trường hợp khác
+                newPaymentStatus = PaymentStatusEnums.Pending;
+            }
+
+            return (newOrderStatus, newPaymentStatus);
+        }
+
     }
 } 
