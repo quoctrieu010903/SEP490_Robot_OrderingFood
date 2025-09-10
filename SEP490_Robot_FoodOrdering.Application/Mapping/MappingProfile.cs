@@ -103,7 +103,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
                 .ForMember(dest => dest.SizeName, opt => opt.MapFrom(src => src.ProductSize.SizeName.ToString()))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.ProductSize != null ? src.ProductSize.Price : 0)) // Map price from ProductSize
-                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => 1)) // Always set to 1 as per business rule
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Product != null ? src.Product.ImageUrl : null)) 
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.Note))
                 .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src =>
