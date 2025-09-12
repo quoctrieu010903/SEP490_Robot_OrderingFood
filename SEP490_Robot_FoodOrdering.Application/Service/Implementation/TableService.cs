@@ -152,7 +152,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var allItems = orders.SelectMany(o => o.OrderItems).ToList();
 
             // Lưu trạng thái cũ để log
-            var oldStatus = table.Status;
+                var oldStatus = table.Status;
 
             switch (table.Status, newStatus)
             {
