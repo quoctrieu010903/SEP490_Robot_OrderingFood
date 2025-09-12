@@ -142,7 +142,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // 2. Nếu có order -> thêm item vào và cập nhật lại giá
             if (existingOrder != null)
             {
-                if (!existingOrder.LastUpdatedBy.Equals(request.deviceToken))
+                if (!existingOrder.Table.DeviceId.Equals(request.deviceToken))
                 {
                     return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "",
                         "Thiết bị không có quyền đặt hàng");
