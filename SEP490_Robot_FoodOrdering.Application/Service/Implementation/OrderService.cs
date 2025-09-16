@@ -289,7 +289,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
 
         public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdOnlyAsync(Guid tableId , DateTime? startDate, DateTime? endDate)
-        {
+            {
             var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
             // Normalize sang UTC
@@ -303,7 +303,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             var orders = await _unitOfWork.Repository<Order, Order>()
                 .GetAllWithSpecAsync(new OrderSpecification(tableId,startUtc,endUtc), true);
-            var response = _mapper.Map<List<OrderResponse>>(orders);
+                var response = _mapper.Map<List<OrderResponse>>(orders);
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
@@ -381,7 +381,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // Update order status automatically
             var oldOrderStatus = order.Status;
             order.Status = CalculateOrderStatus(order.OrderItems);
-            
+            order.TotalPrice = CalculateOrderTotal(order.OrderItems);
+
             order.LastUpdatedTime = DateTime.UtcNow;
             if (oldOrderStatus != order.Status)
             {
@@ -598,6 +599,29 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 return OrderStatus.Delivering;
             return OrderStatus.Pending;
         }
+        /// <summary>
+        /// Tính tổng tiền của order từ danh sách orderItems.
+        /// - Bỏ qua món có Status = Cancelled hoặc Returned.
+        /// - Tính theo công thức: (Giá size + tổng topping) * số lượng.
+        /// </summary>
+        private decimal CalculateOrderTotal(IEnumerable<OrderItem> orderItems)
+        {
+            if (orderItems == null || !orderItems.Any())
+                return 0;
+
+            return orderItems
+                .Where(i => i.Status != OrderItemStatus.Cancelled)
+                .Sum(i =>
+                {
+                    var basePrice = i.ProductSize?.Price ?? 0;
+
+                    var toppingPrice = i.OrderItemTopping?.Sum(t => t.Topping?.Price ?? 0) ?? 0;
+
+                    return basePrice + toppingPrice; 
+                });
+        }
+
+
 
         protected async void updateStatus(Order order, PaymentStatusEnums status)
         {

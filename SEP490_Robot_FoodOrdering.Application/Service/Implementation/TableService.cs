@@ -275,11 +275,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 switch (item.Status)
                 {
                     case OrderItemStatus.Pending:
-                        item.Status = OrderItemStatus.Cancelled;
-                        break;
                     case OrderItemStatus.Preparing:
-                        item.Status = OrderItemStatus.Cancelled;
-                        break;
                     case OrderItemStatus.Ready:
                         item.Status = OrderItemStatus.Cancelled;
                         break;
@@ -299,6 +295,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     // Send notification for each item status change
 
                 }
+            
             }
 
             foreach (var order in orders)
@@ -320,14 +317,22 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     order.PaymentStatus = newPaymentStatus;
                     orderChanged = true;
                 }
-
+                // ✅ Tính lại tổng tiền, bỏ qua các item Cancelled
+                var newTotal = CalculateOrderTotal(orderItems);
+                if (order.TotalPrice != newTotal)
+                {
+                    order.TotalPrice = newTotal;
+                    orderChanged = true;
+                }
                 if (orderChanged)
                 {
+                    
                     order.LastUpdatedTime = DateTime.UtcNow;
                     order.LastUpdatedBy = updatedBy;
                     _unitOfWork.Repository<Order, Order>().Update(order);
                 }
             }
+            await _unitOfWork.SaveChangesAsync();
 
 
             table.Status = TableEnums.Available;
@@ -336,6 +341,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             table.LockedAt = null;
             table.LastAccessedAt = null;
         }
+        private decimal CalculateOrderTotal(List<OrderItem> orderItems)
+        {
+            return orderItems
+                .Where(i => i.Status != OrderItemStatus.Cancelled)
+                .Sum(i =>
+                    (i.ProductSize.Price + i.OrderItemTopping.Sum(t => t.Topping.Price))
+                );
+        }
+
+
 
         private async Task HandleAvailableToOccupied(Table table, List<Order> orders)
         {
