@@ -606,20 +606,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         /// </summary>
         private decimal CalculateOrderTotal(IEnumerable<OrderItem> orderItems)
         {
-            if (orderItems == null || !orderItems.Any())
-                return 0;
-
-            return orderItems
-                .Where(i => i.Status != OrderItemStatus.Cancelled)
-                .Sum(i =>
-                {
-                    var basePrice = i.ProductSize?.Price ?? 0;
-
-                    var toppingPrice = i.OrderItemTopping?.Sum(t => t.Topping?.Price ?? 0) ?? 0;
-
-                    return basePrice + toppingPrice; 
-                });
+            return (orderItems == null)
+                ? 0
+                : orderItems
+                    .Where(i => i.Status != OrderItemStatus.Cancelled)
+                    .Sum(i => (i.ProductSize?.Price ?? 0) +
+                              (i.OrderItemTopping?.Sum(t => t.Topping?.Price ?? 0) ?? 0));
         }
+
 
 
 
