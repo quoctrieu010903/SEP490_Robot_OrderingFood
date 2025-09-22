@@ -8,7 +8,7 @@ namespace SEP490_Robot_FoodOrdering.Core.Constants
 {
     public class ServerEndpoint
     {
-        public const string FrontendBase = "https://mobile-production-6c34.up.railway.app/";
+        public const string FrontendBase = "https://seb123123.up.railway.app/";
         
     }
 }
