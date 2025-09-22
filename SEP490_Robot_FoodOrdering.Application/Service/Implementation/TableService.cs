@@ -343,12 +343,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
         private decimal CalculateOrderTotal(List<OrderItem> orderItems)
         {
-            return orderItems
-                .Where(i => i.Status != OrderItemStatus.Cancelled)
-                .Sum(i =>
-                    (i.ProductSize.Price + i.OrderItemTopping.Sum(t => t.Topping.Price))
-                );
+            return orderItems.Any(i => i.Status != OrderItemStatus.Cancelled)
+                ? orderItems.Where(i => i.Status != OrderItemStatus.Cancelled)
+                    .Sum(i => i.ProductSize.Price + i.OrderItemTopping.Sum(t => t.Topping.Price))
+                : 0;
         }
+
 
 
 
