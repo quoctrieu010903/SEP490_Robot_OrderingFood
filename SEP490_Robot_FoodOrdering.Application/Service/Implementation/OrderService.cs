@@ -357,15 +357,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
             var oldStatus = item.Status;
-            // Find all sibling items in the same order that belong to the same group
-            // Grouping definition: same ProductId, same ProductSizeId, and the same current Status
-            var siblings = order.OrderItems
-                .Where(i => i.ProductId == item.ProductId
-                            && i.ProductSizeId == item.ProductSizeId
-                            && i.Status == oldStatus)
-                .ToList();
+            // Determine which items to update.
+            // For Cancelled or Remake, update ONLY the selected item.
+            var isSingleItemOnly = request.Status == OrderItemStatus.Cancelled || request.Status == OrderItemStatus.Remark;
+            var targets = isSingleItemOnly
+                ? new List<OrderItem> { item }
+                : order.OrderItems
+                    .Where(i => i.ProductId == item.ProductId
+                                && i.ProductSizeId == item.ProductSizeId
+                                && i.Status == oldStatus)
+                    .ToList();
 
-            foreach (var oi in siblings)
+            foreach (var oi in targets)
             {
                 if (request.Status == OrderItemStatus.Remark)
                 {
@@ -377,7 +380,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     $"OrderItem {oi.Id} status changed from {oldStatus} to {oi.Status} in Order {orderId}");
             }
             _logger.LogInformation(
-                $"Group update applied: {siblings.Count} item(s) for Product {item.ProductId} Size {item.ProductSizeId} changed from {oldStatus} to {request.Status} in Order {orderId}");
+                $"Update applied: {targets.Count} item(s) for Product {item.ProductId} Size {item.ProductSizeId} changed from {oldStatus} to {request.Status} in Order {orderId}");
             // Update order status automatically
             var oldOrderStatus = order.Status;
             order.Status = CalculateOrderStatus(order.OrderItems);
@@ -397,7 +400,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
                 try
                 {
-                    foreach (var updatedItem in siblings)
+                    foreach (var updatedItem in targets)
                     {
                         var orderItemNotification = new OrderItemStatusNotification
                         {
