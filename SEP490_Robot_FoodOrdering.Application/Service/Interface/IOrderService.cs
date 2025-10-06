@@ -28,6 +28,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
             GetOrdersByTableIdWithStatusAsync(Guid tableId, OrderStatus status);
 
         Task<Dictionary<Guid, OrderStaticsResponse>> GetOrderStatsByTableIds(IEnumerable<Guid> tableIds);
-        Task<BaseResponseModel<List<OrderResponse>>> GetOrderByDeviceToken(string idTable,string token);
+        Task<BaseResponseModel<OrderResponse>> GetOrderByDeviceToken(string idTable,string token);
     }
 }
