@@ -7,6 +7,7 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Order
         public Guid Id { get; set; }
         public Guid? TableId { get; set; }
         public string TableName { get; set; }
+        public string deviderId { get; set; }
         public string Status { get; set; }
         public string PaymentStatus { get; set; }
         public decimal TotalPrice { get; set; }

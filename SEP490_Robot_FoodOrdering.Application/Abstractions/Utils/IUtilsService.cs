@@ -1,5 +1,10 @@
 ﻿
 
+using System.Runtime.InteropServices;
+using SEP490_Robot_FoodOrdering.Domain.Enums;
+using ZXing.Common;
+using static QRCoder.PayloadGenerator.RussiaPaymentOrder;
+
 namespace SEP490_Robot_FoodOrdering.Application.Abstractions.Utils
 {
     public interface IUtilsService
@@ -11,7 +16,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Abstractions.Utils
         /// <returns>Random numeric string</returns>
         string GenerateRandomOtp(int length);
 
-      
+        string GenerateRandomString(int length, CharacterSet charSet);
+
         /// <summary>
         /// Hashes a password using BCrypt's EnhancedHashPassword method with SHA-512.
         /// </summary>

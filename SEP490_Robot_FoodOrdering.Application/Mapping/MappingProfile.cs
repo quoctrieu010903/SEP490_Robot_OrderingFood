@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.Category;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.CancelledItem;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Category;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Invouce;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
@@ -8,6 +9,7 @@ using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Table;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Topping;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
+using SEP490_Robot_FoodOrdering.Domain.Enums;
 
 namespace SEP490_Robot_FoodOrdering.Application.Mapping
 {
@@ -97,18 +99,44 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
 
             CreateMap<Order, OrderResponse>()
              .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.Table.Name))
+             .ForMember(dest => dest.deviderId, opt => opt.MapFrom(src => src.Table.DeviceId.ToString()))
              .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.OrderItems)); // Items instead of OrderItems
 
             CreateMap<OrderItem, OrderItemResponse>()
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
                 .ForMember(dest => dest.SizeName, opt => opt.MapFrom(src => src.ProductSize.SizeName.ToString()))
-                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.ProductSize != null ? src.ProductSize.Price : 0)) // Map price from ProductSize
+                //.ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.ProductSize != null ? src.ProductSize.Price : 0)) // Map price from ProductSize
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src =>
+                src.Status == OrderItemStatus.Cancelled
+                    ? 0
+                    : (src.ProductSize != null ? src.ProductSize.Price +
+                        (src.OrderItemTopping != null ? src.OrderItemTopping.Sum(t => t.Price) : 0)
+                      : 0)
+                 ))
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Product != null ? src.Product.ImageUrl : null)) 
+
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.Note))
                 .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src =>
                     src.OrderItemTopping != null && src.OrderItemTopping.Count > 0
                         ? src.OrderItemTopping.Select(oit => oit.Topping).ToList()
-                        : new List<Topping>())); // Direct Topping entities
+                        : new List<Topping>())); // Direct Top  ping entities
+
+            CreateMap<CancelledItem, CancelledItemResponse>()
+    
+        .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.OrderItem.ProductSize.Product.Name))
+        .ForMember(dest => dest.SizeName, opt => opt.MapFrom(src => src.OrderItem.ProductSize.SizeName))
+        .ForMember(
+                    dest => dest.ToppingName,
+                    opt => opt.MapFrom(src =>
+                        src.OrderItem.Product.AvailableToppings != null
+                            ? string.Join(", ", src.OrderItem.Product.AvailableToppings
+                                .Select(t => t.Topping.Name))
+                            : string.Empty
+                    )
+)
+
+                .ForMember(dest => dest.CancelledByUserName, opt => opt.MapFrom(src => src.CancelledByUser.FullName));
+
 
 
             CreateMap<Invoice, InvoiceResponse>()

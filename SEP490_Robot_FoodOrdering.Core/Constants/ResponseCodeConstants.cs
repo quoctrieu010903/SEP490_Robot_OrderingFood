@@ -52,6 +52,7 @@ namespace SEP490_Robot_FoodOrdering.Core.Constants
         public const string BADREQUEST = "Yêu cầu không hợp lệ!";
         public const string ERROR = "Lỗi!";
         public const string UNPROCESSABLE_ENTITY = "Trạng thái hiện tại không thể cập nhật thêm lần nữa";
+        public const string INVALID_PASSWORD = "Mật khẩu không đúng!";
 
     }
 }

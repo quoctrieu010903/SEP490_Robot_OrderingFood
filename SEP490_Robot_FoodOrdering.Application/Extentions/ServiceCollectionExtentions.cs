@@ -18,6 +18,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Extentions
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<IProductCategoryService, ProductCategoryService>();
             services.AddScoped<IInvoiceService,InvoiceService>();
+            services.AddScoped<ICancelledItemService, CancelledItemService>();
+            services.AddScoped<IRemakeItemService, RemakeService>();
             services.AddHttpContextAccessor();
 
             services.AddScoped<IProductToppingService, ProductToppingService>();

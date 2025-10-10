@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using SEP490_Robot_FoodOrdering.API.Extensions;
 using SEP490_Robot_FoodOrdering.API.Extentions;
 using SEP490_Robot_FoodOrdering.API.Hubs;
 using SEP490_Robot_FoodOrdering.API.Middleware;
@@ -18,6 +19,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddInfrastructure(builder.Configuration)
                 .AddApplication(builder.Configuration)
+                .AddJwtAuthentication(builder.Configuration)
                 .AddSwagger();
 builder.Services.AddSingleton<IConfigureOptions<JsonOptions>, JsonOptionsConfigurator>();
 
@@ -54,7 +56,9 @@ app.UseCors(x => x
     .WithOrigins("http://192.168.110.46:3000", "http://localhost:5235", "https://localhost:5235")
     .AllowCredentials());
 
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.UseStaticFiles();
 
 app.UseMiddleware<CustomExceptionHandlerMiddleware>();
