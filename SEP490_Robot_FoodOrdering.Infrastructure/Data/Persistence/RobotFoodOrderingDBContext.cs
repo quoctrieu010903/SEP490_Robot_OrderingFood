@@ -10,10 +10,13 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence
             : base(options)
         {
         }
-
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<User> Users { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<CancelledOrderItem> CancelledOrderItems { get; set; }
+        public DbSet<RemakeOrderItem> RemakeOrderItems { get; set; }
         public DbSet<OrderItemTopping> OrderItemToppings { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Product> Products { get; set; }

@@ -121,7 +121,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                         ? src.OrderItemTopping.Select(oit => oit.Topping).ToList()
                         : new List<Topping>())); // Direct Top  ping entities
 
-            CreateMap<CancelledItem, CancelledItemResponse>()
+            CreateMap<CancelledOrderItem, CancelledItemResponse>()
     
         .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.OrderItem.ProductSize.Product.Name))
         .ForMember(dest => dest.SizeName, opt => opt.MapFrom(src => src.OrderItem.ProductSize.SizeName))

@@ -13,6 +13,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
             builder.Property(o => o.Status)
                  .IsRequired()
                  .HasConversion<int>();
+            builder.Property(x => x.IsUrgent)
+                  .HasDefaultValue(false);
 
             builder.HasOne(oi => oi.Order)
                .WithMany(o => o.OrderItems)

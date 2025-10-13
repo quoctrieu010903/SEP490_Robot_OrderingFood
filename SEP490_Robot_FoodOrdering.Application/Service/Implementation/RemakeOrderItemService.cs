@@ -1,28 +1,21 @@
 ﻿
 
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
+using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
-    public class RemakeService : IRemakeItemService
+    public class RemakeOrderItemService : IRemakeItemService
     {
         private readonly IUnitOfWork _unitOfWork;
-        public RemakeService(IUnitOfWork unitOfWork)
+        public RemakeOrderItemService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
-        public Task<bool> CanRemakeItemAsync(Guid orderItemId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> CanUndoRemakeItemAsync(Guid orderItemId)
-        {
-            throw new NotImplementedException();
-        }
+        
 
         public async Task<bool> CreateRemakeItemAsync(Guid orderItemId, string? remakeNote, Guid remakedByUserId)
         {
@@ -32,7 +25,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (orderitem.Status != OrderItemStatus.Served || orderitem.Status != OrderItemStatus.Ready)
                 return false;
 
-            var remakeItem = new RemakeItem
+            var remakeItem = new RemakeOrderItem
             {
                 OrderItemId = orderItemId,
                 RemakeNote = remakeNote,
@@ -46,10 +39,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             };
             orderitem.Status =OrderItemStatus.Preparing;
             orderitem.LastUpdatedTime = DateTime.UtcNow;
-          await  _unitOfWork.Repository<RemakeItem, Guid>().AddAsync(remakeItem);
+            orderitem.IsUrgent = true;
+            await  _unitOfWork.Repository<RemakeOrderItem, Guid>().AddAsync(remakeItem);
             await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(orderitem);
             await _unitOfWork.SaveChangesAsync();
             return true;
+        }
+
+        public Task<PaginatedList<RemakeOrderItemsResponse>> GetAllRemakeItemsAsync()
+        {
+            throw new NotImplementedException();
         }
 
         public Task<bool> RedoRemakeItemAsync(Guid orderItemId, Guid redoneByUserId)

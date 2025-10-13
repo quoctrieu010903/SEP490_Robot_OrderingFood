@@ -17,12 +17,17 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
 
             public OrderItemStatus Status { get; set; } // Pending, Preparing, Ready, Served, Completed, Cancelled , Returned
             public string? Note { get; set; }
-            public string? RemarkNote { get; set; } 
+            public string? RemakeNote { get; set; }
+            public bool IsUrgent { get; set; } = false; 
 
-            public virtual ICollection<OrderItemTopping> OrderItemTopping { get; set; }
 
-        
-        
+        public virtual ICollection<OrderItemTopping> OrderItemTopping { get; set; }
+        public virtual ICollection<RemakeOrderItem> RemakeOrderItems { get; set; }
+        public virtual ICollection<CancelledOrderItem> CancelledOrderItems { get; set; }
+
+
+
+
 
 
 

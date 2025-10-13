@@ -26,11 +26,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly ILogger<OrderService> _logger;
         private readonly IOrderItemReposotory _orderItemReposotory;
         private readonly INotificationService? _notificationService;
-        //private readonly IRemakeItemService _remakeService;
+        private readonly IRemakeItemService _remakeItemService;
         private readonly ICancelledItemService _cancelledItemService;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<OrderService> logger, IOrderItemReposotory orderItemReposotory, INotificationService? notificationService, ICancelledItemService cancelledItemService, IHttpContextAccessor httpContextAccessor)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<OrderService> logger, IOrderItemReposotory orderItemReposotory, INotificationService? notificationService, ICancelledItemService cancelledItemService, IRemakeItemService remakeItemService ,IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -38,6 +38,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _orderItemReposotory = orderItemReposotory;
             _notificationService = notificationService;
             _cancelledItemService = cancelledItemService;
+            _remakeItemService = remakeItemService;
             _httpContextAccessor = httpContextAccessor;
         }
 
@@ -372,7 +373,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 }   
                 await _cancelledItemService.CreateCancelledItemAsync(orderItemId, request.RemarkNote ?? "", userid);
             }
-
+            if(request.Status == OrderItemStatus.Remark)
+            {
+                if (string.IsNullOrWhiteSpace(request.RemarkNote))
+                {
+                    return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status400BadRequest, "NOTE_REQUIRED",
+                        "Note is required when status is Remarked.");
+                }
+                // Call remake service to create remake item
+                await _remakeItemService.CreateRemakeItemAsync(orderItemId, request.RemarkNote ?? "", userid);
+            }
 
             var oldStatus = item.Status;
             // Find all sibling items in the same order that belong to the same group
