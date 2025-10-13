@@ -32,6 +32,15 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
             oi.Product.Name.ToLower().Contains(productName.ToLower()))
         ))
         {
+            // Ưu tiên các order có món remake, sắp xếp theo thời gian remake mới nhất
+            AddOrderByDescending(o =>
+                o.OrderItems
+                    .Where(oi => oi.RemakeOrderItems != null && oi.RemakeOrderItems.Any())
+                    .SelectMany(oi => oi.RemakeOrderItems)
+                    .Max(r => (DateTime?)r.LastUpdatedTime) ?? o.CreatedTime);
+
+            AddOrderByDescending(o => o.CreatedTime);
+
             AddIncludes();
         }
 

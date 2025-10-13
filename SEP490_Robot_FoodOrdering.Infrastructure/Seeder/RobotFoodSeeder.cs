@@ -52,6 +52,11 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     var productCategory = GetProductCategories();
                     await _dbContext.ProductCategories.AddRangeAsync(productCategory);
                 }
+                if (!_dbContext.Roles.Any())
+                {
+                    var roles = GetRoles();
+                    await _dbContext.Roles.AddRangeAsync(roles);
+                }
 
 
                 await _dbContext.SaveChangesAsync();
@@ -808,7 +813,49 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                 new ProductCategory { Id = Guid.NewGuid(), ProductId = Guid.Parse("35014A99-5664-4063-8BEB-83B80B2EEADB"), CategoryId = categoryId3,CreatedTime = DateTime.UtcNow,LastUpdatedTime = DateTime.UtcNow }  // Rau câu dừa
    
             };
+
+        }
+
+        
+            public static List<Role> GetRoles()
+            {
+                return new List<Role>
+        {
+            new Role
+            {
+                Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), // fixed Guid for consistency
+                Name = RoleNameEnums.Admin,
+                Description = "Full access to all system functionalities",
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            },
+            new Role
+            {
+                Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                Name = RoleNameEnums.Waiter,
+                Description = "Handles customer orders and interacts with tables",
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            },
+            new Role
+            {
+                Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                Name = RoleNameEnums.Chef,
+                Description = "Prepares meals and updates order statuses in the kitchen",
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            },
+            new Role
+            {
+                Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
+                Name = RoleNameEnums.Moderator,
+                Description = "Monitors user activity and manages feedback or reports",
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            }
+        };
+            }
         }
 
     }
-}
+

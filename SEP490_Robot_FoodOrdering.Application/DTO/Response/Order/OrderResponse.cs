@@ -31,6 +31,7 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Order
         public string Status { get; set; }
         public string? ImageUrl { get; set; }
         public DateTime CreatedTime { get; set; }
+        public bool IsUrgent { get; set; } 
         public List<ToppingResponse> Toppings { get; set; }
       
     }
