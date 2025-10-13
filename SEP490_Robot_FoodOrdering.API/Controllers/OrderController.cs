@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SEP490_Robot_FoodOrdering.API.Controllers
 {
@@ -243,6 +244,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// <response code="400">Invalid status or request data</response>
         /// <response code="404">Order or item not found</response>
         /// <response code="500">Internal server error</response>
+        [Authorize()]
         [HttpPatch("{orderId}/items/{itemId}/status")]
         [ProducesResponseType(typeof(BaseResponseModel<OrderItemResponse>), 200)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 400)]

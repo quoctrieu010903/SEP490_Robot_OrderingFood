@@ -26,16 +26,22 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly ILogger<OrderService> _logger;
         private readonly IOrderItemReposotory _orderItemReposotory;
         private readonly INotificationService? _notificationService;
+        //private readonly IRemakeItemService _remakeService;
+        private readonly ICancelledItemService _cancelledItemService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, IOrderItemReposotory orderItemReposotory,
-            ILogger<OrderService> logger, INotificationService? notificationService = null)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<OrderService> logger, IOrderItemReposotory orderItemReposotory, INotificationService? notificationService, ICancelledItemService cancelledItemService, IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
             _orderItemReposotory = orderItemReposotory;
             _notificationService = notificationService;
+            _cancelledItemService = cancelledItemService;
+            _httpContextAccessor = httpContextAccessor;
         }
+
+
         #region Order Management old , need to improve 
         public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
         {
@@ -120,6 +126,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                     total += topping.Price;
                 }
+                
             }
 
             order.TotalPrice = total;
@@ -127,8 +134,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             await _unitOfWork.SaveChangesAsync();
             var response = _mapper.Map<OrderResponse>(order);
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status201Created, "ORDER_CREATED", response);
-        }
-
+            }
+            
         public async Task<BaseResponseModel<OrderResponse>> HandleOrderAsync(CreateOrderRequest request)
         {
             if (request.Items == null || !request.Items.Any())
@@ -247,7 +254,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var specification = new OrderSpecification(ProductName, startUtc, endUtc);
 
             var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(specification, true);
-            var response = _mapper.Map<List<OrderResponse>>(orders);
+                var response = _mapper.Map<List<OrderResponse>>(orders);
 
 
             // Group OrderItems by ProductName or Status for the UI grouping
@@ -334,6 +341,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<BaseResponseModel<OrderItemResponse>> UpdateOrderItemStatusAsync(Guid orderId,
             Guid orderItemId, UpdateOrderItemStatusRequest request)
         {
+            var userid = Guid.Parse(_httpContextAccessor.HttpContext?.User?.FindFirst("Id")?.Value);
             var order = await _unitOfWork.Repository<Order, Guid>()
                 .GetWithSpecAsync(new OrderSpecification(orderId, true), true);
             if (order == null)
@@ -352,7 +360,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         "Note is required when status is Remark.");
                 }
 
-                item.RemarkNote = request.RemarkNote; // hoặc item.Note nếu bạn dùng field Note
+                item.RemakeNote = request.RemarkNote; // hoặc item.Note nếu bạn dùng field Note
+                
+            }
+            if(request.Status == OrderItemStatus.Cancelled)
+            {
+                if(string.IsNullOrWhiteSpace(request.RemarkNote))
+                {
+                    return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status400BadRequest, "NOTE_REQUIRED",
+                        "Note is required when status is Cancelled.");
+                }   
+                await _cancelledItemService.CreateCancelledItemAsync(orderItemId, request.RemarkNote ?? "", userid);
             }
 
 
@@ -369,7 +387,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
                 if (request.Status == OrderItemStatus.Remark)
                 {
-                    oi.RemarkNote = request.RemarkNote;
+                    oi.RemakeNote = request.RemarkNote;
                 }
                 oi.Status = request.Status;
                 oi.LastUpdatedTime = DateTime.UtcNow;
@@ -380,7 +398,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 $"Group update applied: {siblings.Count} item(s) for Product {item.ProductId} Size {item.ProductSizeId} changed from {oldStatus} to {request.Status} in Order {orderId}");
             // Update order status automatically
             var oldOrderStatus = order.Status;
-            order.Status = CalculateOrderStatus(order.OrderItems);
+            order.Status = await CalculateOrderStatusAsync(order.OrderItems, order.Table);
             order.TotalPrice = CalculateOrderTotal(order.OrderItems);
 
             order.LastUpdatedTime = DateTime.UtcNow;
@@ -409,7 +427,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                             SizeName = updatedItem.ProductSize?.SizeName.ToString() ?? "Unknown Size",
                             OldStatus = oldStatus,
                             NewStatus = updatedItem.Status,
-                            RemarkNote = updatedItem.RemarkNote,
+                            RemarkNote = updatedItem.RemakeNote,
                             UpdatedAt = DateTime.UtcNow,
                             UpdatedBy = "System"
                         };
@@ -585,20 +603,29 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
         }
 
-        private OrderStatus CalculateOrderStatus(IEnumerable<OrderItem> items)
+        private async Task<OrderStatus> CalculateOrderStatusAsync(IEnumerable<OrderItem> items, Table table)
         {
             if (items.All(i => i.Status == OrderItemStatus.Completed))
+            {
                 return OrderStatus.Completed;
+            }
+
             if (items.All(i => i.Status == OrderItemStatus.Cancelled))
-                return OrderStatus.Cancelled;
-            // Nếu còn món đang Returned (redo yêu cầu)
-          
+            {
+              return OrderStatus.Cancelled;
+            }
+
             if (items.Any(i =>
-                    i.Status == OrderItemStatus.Ready || i.Status == OrderItemStatus.Preparing ||
-                    i.Status == OrderItemStatus.Served || i.Status == OrderItemStatus.Remark))
+                    i.Status == OrderItemStatus.Ready ||
+                    i.Status == OrderItemStatus.Preparing ||
+                    i.Status == OrderItemStatus.Served ||
+                    i.Status == OrderItemStatus.Remark))
                 return OrderStatus.Delivering;
+
             return OrderStatus.Pending;
         }
+
+
         /// <summary>
         /// Tính tổng tiền của order từ danh sách orderItems.
         /// - Bỏ qua món có Status = Cancelled hoặc Returned.
@@ -612,6 +639,22 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     .Where(i => i.Status != OrderItemStatus.Cancelled)
                     .Sum(i => (i.ProductSize?.Price ?? 0) +
                               (i.OrderItemTopping?.Sum(t => t.Topping?.Price ?? 0) ?? 0));
+        }
+
+        private async Task<Table> ChangeTableToAvailableAsync(Table table)
+        {
+            if (table == null) return null;
+
+            table.Status = TableEnums.Available;
+            table.DeviceId = null;
+            table.IsQrLocked = false;
+            table.LockedAt = null;
+            table.LastAccessedAt = null;
+            table.LastUpdatedTime = DateTime.UtcNow;
+            table.LastUpdatedBy = "system"; // hoặc userId nếu có context
+
+            await _unitOfWork.Repository<Table, Guid>().UpdateAsync(table);
+            return table;
         }
 
 
