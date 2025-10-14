@@ -48,17 +48,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public Task<PaginatedList<RemakeOrderItemsResponse>> GetAllRemakeItemsAsync()
         {
-            throw new NotImplementedException();
+           throw new Exception("Not Implemented");
         }
 
-        public Task<bool> RedoRemakeItemAsync(Guid orderItemId, Guid redoneByUserId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> UndoRemakeItemAsync(Guid orderItemId, Guid undoneByUserId)
-        {
-            throw new NotImplementedException();
-        }
+        
     }
 }

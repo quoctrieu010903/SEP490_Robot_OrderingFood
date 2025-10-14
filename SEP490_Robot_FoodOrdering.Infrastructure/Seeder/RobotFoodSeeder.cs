@@ -12,6 +12,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
 {
     public class RobotFoodSeeder(RobotFoodOrderingDBContext _dbContext) : IRobotFoodSeeder
     {
+
         public async Task Seed()
         {
             if (await _dbContext.Database.CanConnectAsync())
@@ -816,10 +817,10 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
 
         }
 
-        
-            public static List<Role> GetRoles()
-            {
-                return new List<Role>
+
+        public static List<Role> GetRoles()
+        {
+            return new List<Role>
         {
             new Role
             {
@@ -854,8 +855,73 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                 LastUpdatedTime = DateTime.UtcNow
             }
         };
-            }
+        }
+
+        public static List<User> GetUsers()
+        {
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword("123456");
+
+            return new List<User>
+    {
+        new User
+        {
+            Id = Guid.NewGuid(),
+            EmploymentCode = "AD-0001",
+            UserName = "admin",
+            Password = hashedPassword,
+            FullName = "Nguyen Admin",
+            Avartar = "https://i.pinimg.com/222x/2a/65/f9/2a65f948b71ff3a70e21c64bca10a312.jpg",
+            Email = "admin@example.com",
+            PhoneNumber = "0900000001",
+            IsActive = true,
+            RoleId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            CreatedTime = DateTime.UtcNow
+        },
+        new User
+        {
+            Id = Guid.NewGuid(),
+            EmploymentCode = "MO-0001",
+            UserName = "moderator",
+            Password = hashedPassword,
+            FullName = "Tran Moderator",
+            Avartar = "https://i.pinimg.com/222x/2a/65/f9/2a65f948b71ff3a70e21c64bca10a312.jpg",
+            Email = "moderator@example.com",
+            PhoneNumber = "0900000002",
+            IsActive = true,
+            RoleId = Guid.Parse("44444444-4444-4444-4444-444444444444"),
+            CreatedTime = DateTime.UtcNow
+        },
+        new User
+        {
+            Id = Guid.NewGuid(),
+            EmploymentCode = "CH-0001",
+            UserName = "chef",
+            Password = hashedPassword,
+            FullName = "Le Chef",
+            Avartar = "https://i.pinimg.com/222x/2a/65/f9/2a65f948b71ff3a70e21c64bca10a312.jpg",
+            Email = "chef@example.com",
+            PhoneNumber = "0900000003",
+            IsActive = true,
+            RoleId = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+            CreatedTime = DateTime.UtcNow
+        },
+        new User
+        {
+            Id = Guid.NewGuid(),
+            EmploymentCode = "WA-0001",
+            UserName = "waiter",
+            Password = hashedPassword,
+            FullName = "Pham Waiter",
+            Avartar = "https://i.pinimg.com/222x/2a/65/f9/2a65f948b71ff3a70e21c64bca10a312.jpg",
+            Email = "waiter@example.com",
+            PhoneNumber = "0900000004",
+            IsActive = true,
+            RoleId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            CreatedTime = DateTime.UtcNow
+        }
+    };
         }
 
     }
+}
 
