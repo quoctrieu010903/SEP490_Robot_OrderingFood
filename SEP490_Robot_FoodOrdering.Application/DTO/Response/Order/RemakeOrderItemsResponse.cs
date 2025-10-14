@@ -1,4 +1,5 @@
 ﻿using SEP490_Robot_FoodOrdering.Application.DTO.Response.Topping;
+using SEP490_Robot_FoodOrdering.Domain.Entities;
 
 public class RemakeOrderItemsResponse
 {
@@ -8,7 +9,6 @@ public class RemakeOrderItemsResponse
     // ===== Thông tin món ăn chính =====
     public string ProductName { get; set; } = string.Empty;
     public string ProductSize { get; set; } = string.Empty;
-    public decimal ProductPrice { get; set; } // Giá món chính
 
     // ===== Topping =====
     public List<ToppingResponse> Toppings { get; set; } = new(); // Danh sách topping đi kèm

@@ -16,6 +16,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Utils
             _env = env;
         }
 
+        public string GenerateEmploymentCode(RoleNameEnums role, int length = 4)
+        {
+            string prefix = role switch
+            {
+                RoleNameEnums.Admin => "AD",
+                RoleNameEnums.Chef => "CH",
+                RoleNameEnums.Waiter => "WA",
+                RoleNameEnums.Moderator => "MO",
+                _ => throw new ArgumentException("Invalid role", nameof(role))
+            };
+            string guidPart = Guid.NewGuid().ToString("N").ToUpper().Substring(0, length);
+            return $"{prefix}-{guidPart}";
+        }
 
         public string GenerateRandomOtp(int length)
         {

@@ -137,6 +137,28 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
 
                 .ForMember(dest => dest.CancelledByUserName, opt => opt.MapFrom(src => src.CancelledByUser.FullName));
 
+            CreateMap<RemakeOrderItem, RemakeOrderItemsResponse>()
+            .ForMember(dest => dest.RemakeOrderItemId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.OriginalOrderItemId, opt => opt.MapFrom(src => src.OrderItemId))
+            .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.OrderItem.Product.Name))
+            .ForMember(dest => dest.ProductSize, opt => opt.MapFrom(src => src.OrderItem.ProductSize.Price))
+            .ForMember(dest => dest.Toppings,
+                            opt => opt.MapFrom(src =>
+                                string.Join(", ",
+                                    src.OrderItem.Product.AvailableToppings
+                                        .Select(t => t.Topping.Name)
+                                )))
+        .ForMember(dest => dest.RemakeCount, opt => opt.MapFrom(src => src.OrderItem.RemakeOrderItems.Count()))
+            .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.RemakeNote))
+            .ForMember(dest => dest.PreviousStatus, opt => opt.MapFrom(src => src.PreviousStatus))
+            .ForMember(dest => dest.CurrentStatus, opt => opt.MapFrom(src => src.AfterStatus))
+            .ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(src => src.CreatedTime))
+            
+            .ForMember(dest => dest.LastUpdatedTime, opt => opt.MapFrom(src => src.LastUpdatedTime))
+            .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.OrderItem.OrderId))
+            .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.OrderItem.Order.Table.Name))
+            .ForMember(dest => dest.OrderCreatedTime, opt => opt.MapFrom(src => src.OrderItem.Order.CreatedTime));
+
 
 
             CreateMap<Invoice, InvoiceResponse>()
