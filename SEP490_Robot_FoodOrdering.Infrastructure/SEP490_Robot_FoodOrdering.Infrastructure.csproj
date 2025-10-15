@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="BackgroundJob\" />
     <Folder Include="NewFolder\" />
   </ItemGroup>
 

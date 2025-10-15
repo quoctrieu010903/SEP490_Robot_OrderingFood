@@ -176,7 +176,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.TotalMoney, opt => opt.MapFrom(src => src.totalMoney));
 
             #region user - authentication mapping
-            CreateMap<User, UserProfileResponse>()
+            CreateMap<User  , UserProfileResponse>()
                 .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.Name.ToString()))
                 .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Avartar))
                 .ReverseMap()
