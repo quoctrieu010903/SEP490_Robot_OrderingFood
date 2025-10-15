@@ -12,7 +12,9 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public bool IsQrLocked { get; set; } = false;  
         public DateTime? LockedAt { get; set; } 
         public string? DeviceId { get; set; } 
-        public DateTime? LastAccessedAt { get; set; } 
+        public DateTime? LastAccessedAt { get; set; }
+        public string? ShareToken { get; set; }
+        public bool isShared { get; set; } = false;
 
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         public virtual ICollection<Feedback> Feedbacks { get; set; }

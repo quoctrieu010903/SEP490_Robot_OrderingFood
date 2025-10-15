@@ -209,10 +209,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 .GetWithSpecAsync(new BaseSpecification<Table>(x => x.DeviceId == deviceId && x.Status == TableEnums.Occupied)));
             if (currentTable != null && currentTable.Id != id)
             {
-                var unpaidInvoices = await _unitOfWork.Repository<Invoice, Guid>()
-                    .GetWithSpecAsync(new BaseSpecification<Invoice>(
-                        i => i.TableId == currentTable.Id &&
-                             (i.status == PaymentStatusEnums.Pending)
+                var unpaidInvoices = await _unitOfWork.Repository<Payment, Guid>()
+                    .GetWithSpecAsync(new BaseSpecification<Payment>(
+                        i => i.Order.TableId == currentTable.Id &&
+                             (i.PaymentStatus == PaymentStatusEnums.Pending)
                     ));
 
                 if (unpaidInvoices != null)

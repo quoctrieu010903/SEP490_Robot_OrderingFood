@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Cloudinary;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Email;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.JWT;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Options;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
@@ -13,6 +14,7 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Cloudinary;
 using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 using SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Options;
 using SEP490_Robot_FoodOrdering.Infrastructure.Email;
+using SEP490_Robot_FoodOrdering.Infrastructure.Jwt;
 using SEP490_Robot_FoodOrdering.Infrastructure.Repository;
 using SEP490_Robot_FoodOrdering.Infrastructure.Seeder;
 
@@ -41,6 +43,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             // Add Scope for the third 's  Service
             services.AddScoped<IRobotFoodSeeder, RobotFoodSeeder>();
+            services.AddScoped<IJwtService, JwtService>();
 
             services.AddScoped<IUtilsService, UtilService>();
 

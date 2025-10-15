@@ -12,8 +12,8 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public virtual OrderItem OrderItem { get; set; }
 
         public string Title { get; set; } = string.Empty; // ví dụ: “Món nguội”, “Phục vụ chậm”
-        public string Description { get; set; } = string.Empty; // chi tiết khiếu nại
-        public ComplainStatusEnum Status { get; set; } = ComplainStatusEnum.Pending;
+        public string Description { get; set; } = string.Empty; // chi tiết khiếu nạ
+        public bool isPending { get; set; } = false; 
 
         public Guid? HandledBy { get; set; } // Nhân viên hoặc admin xử lý
         public virtual User? Handler { get; set; }

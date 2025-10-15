@@ -22,12 +22,18 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
         [Authorize]
-
         [HttpPatch("update-profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {
             var response = await _authenticationService.UpdateProfileAsync(request);
             return Ok();
+        }
+        [Authorize]
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var response = await _authenticationService.GetProfileAsync();
+            return StatusCode(response.StatusCode, response);
         }
     }
 }

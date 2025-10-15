@@ -22,6 +22,63 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.CancelledOrderItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CancelledByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DeletedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("ItemPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("LastUpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("LastUpdatedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("OrderItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("OrderTotalAfter")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("OrderTotalBefore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CancelledByUserId");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.ToTable("CancelledOrderItems", (string)null);
+                });
+
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
@@ -53,6 +110,72 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Complain", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DeletedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("HandledBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LastUpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("LastUpdatedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrderItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ResolutionNote")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TableId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("isPending")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HandledBy");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.HasIndex("TableId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Complain");
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Invoice", b =>
@@ -207,6 +330,11 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsUrgent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text");
 
@@ -225,7 +353,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<Guid>("ProductSizeId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("RemarkNote")
+                    b.Property<string>("RemakeNote")
                         .HasColumnType("text");
 
                     b.Property<int>("Status")
@@ -490,6 +618,153 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.ToTable("ProductToppings");
                 });
 
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.RemakeOrderItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AfterStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DeletedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsUrgent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("LastUpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("LastUpdatedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrderItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("PreviousStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RemakeNote")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<Guid>("RemakedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.HasIndex("RemakedByUserId");
+
+                    b.ToTable("RemakeOrderItems", (string)null);
+                });
+
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Role", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DeletedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("LastUpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("LastUpdatedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles", (string)null);
+                });
+
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.SEP490_Robot_FoodOrdering.Domain.Entities.Feedback", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DeletedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastUpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("LastUpdatedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrderItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TableId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.HasIndex("TableId");
+
+                    b.ToTable("Feedback");
+                });
+
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Table", b =>
                 {
                     b.Property<Guid>("Id")
@@ -530,8 +805,14 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("ShareToken")
+                        .HasColumnType("text");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("isShared")
+                        .HasColumnType("boolean");
 
                     b.HasKey("Id");
 
@@ -576,6 +857,126 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Toppings");
+                });
+
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Avartar")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DeletedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("EmploymentCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LastUpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("LastUpdatedTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.CancelledOrderItem", b =>
+                {
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.User", "CancelledByUser")
+                        .WithMany("CancelledItems")
+                        .HasForeignKey("CancelledByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.OrderItem", "OrderItem")
+                        .WithMany("CancelledOrderItems")
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CancelledByUser");
+
+                    b.Navigation("OrderItem");
+                });
+
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Complain", b =>
+                {
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.User", "Handler")
+                        .WithMany("HandledComplaints")
+                        .HasForeignKey("HandledBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.OrderItem", "OrderItem")
+                        .WithMany("Complains")
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Table", "Table")
+                        .WithMany("Complains")
+                        .HasForeignKey("TableId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.User", null)
+                        .WithMany("CustomerComplaints")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Handler");
+
+                    b.Navigation("OrderItem");
+
+                    b.Navigation("Table");
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Invoice", b =>
@@ -724,6 +1125,61 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Navigation("Topping");
                 });
 
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.RemakeOrderItem", b =>
+                {
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.OrderItem", "OrderItem")
+                        .WithMany("RemakeOrderItems")
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.User", "RemakedByUser")
+                        .WithMany("RemakeItems")
+                        .HasForeignKey("RemakedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OrderItem");
+
+                    b.Navigation("RemakedByUser");
+                });
+
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.SEP490_Robot_FoodOrdering.Domain.Entities.Feedback", b =>
+                {
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.User", "Customer")
+                        .WithMany("Feedbacks")
+                        .HasForeignKey("CustomerId");
+
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.OrderItem", "OrderItem")
+                        .WithMany("Feedbacks")
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Table", "Table")
+                        .WithMany("Feedbacks")
+                        .HasForeignKey("TableId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("OrderItem");
+
+                    b.Navigation("Table");
+                });
+
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.User", b =>
+                {
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Role", "Role")
+                        .WithMany("Users")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+                });
+
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Category", b =>
                 {
                     b.Navigation("ProductCategories");
@@ -744,7 +1200,15 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.OrderItem", b =>
                 {
+                    b.Navigation("CancelledOrderItems");
+
+                    b.Navigation("Complains");
+
+                    b.Navigation("Feedbacks");
+
                     b.Navigation("OrderItemTopping");
+
+                    b.Navigation("RemakeOrderItems");
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Product", b =>
@@ -756,14 +1220,36 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Navigation("Sizes");
                 });
 
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Role", b =>
+                {
+                    b.Navigation("Users");
+                });
+
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Table", b =>
                 {
+                    b.Navigation("Complains");
+
+                    b.Navigation("Feedbacks");
+
                     b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Topping", b =>
                 {
                     b.Navigation("ProductToppings");
+                });
+
+            modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.User", b =>
+                {
+                    b.Navigation("CancelledItems");
+
+                    b.Navigation("CustomerComplaints");
+
+                    b.Navigation("Feedbacks");
+
+                    b.Navigation("HandledComplaints");
+
+                    b.Navigation("RemakeItems");
                 });
 #pragma warning restore 612, 618
         }
