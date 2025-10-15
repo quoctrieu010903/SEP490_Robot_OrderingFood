@@ -490,7 +490,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             table.LockedAt = DateTime.UtcNow;
             table.LastAccessedAt = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
-            var shareUrl = ServerEndpoint.FrontendBase + $"/{tableId}/share?token={sharetoken}";
+            var shareUrl = ServerEndpoint.FrontendBase + $"/{tableId}/share?token={sharetoken}?devided";
             string qrCodeBase64 = "data:image/png;base64," + GenerateQrCodeBase64_NoDrawing(shareUrl);
 
             var data = new QrShareResponse
