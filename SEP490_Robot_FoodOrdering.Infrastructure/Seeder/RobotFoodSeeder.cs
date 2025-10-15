@@ -58,7 +58,11 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     var roles = GetRoles();
                     await _dbContext.Roles.AddRangeAsync(roles);
                 }
-
+                if (!_dbContext.Users.Any())
+                {
+                    var users = GetUsers();
+                    await _dbContext.Users.AddRangeAsync(users);
+                }
 
                 await _dbContext.SaveChangesAsync();
 

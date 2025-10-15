@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
+using System.Reflection.Emit;
 
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
 {
@@ -20,6 +21,12 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
             builder.HasOne(c => c.OrderItem)
                    .WithMany(oi => oi.Complains)
                    .HasForeignKey(c => c.OrderItemId);
+            builder.HasOne(c => c.Handler)
+         .WithMany(u => u.HandledComplaints)
+         .HasForeignKey(c => c.HandledBy)
+         .OnDelete(DeleteBehavior.Restrict);
+
+
         }
 
     }

@@ -8,6 +8,7 @@ using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Table;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Topping;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.User;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 
@@ -29,7 +30,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
 
 
             CreateMap<ProductSize, ProductSizeResponse>();
-                
+
             CreateMap<Product, ProductDetailResponse>()
        .ForMember(dest => dest.Price, opt =>
            opt.MapFrom(src => src.Sizes != null && src.Sizes.Any()
@@ -38,7 +39,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
            .ForMember(dest => dest.UrlImg, opt => opt.MapFrom(src => src.ImageUrl))
            .ForMember(dest => dest.Sizes, opt => opt.MapFrom(src => src.Sizes));
-          
+
 
 
 
@@ -58,18 +59,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
             CreateMap<ProductSize, ProductSizeResponse>().ReverseMap();
             CreateMap<CreateProductSizeRequest, ProductSize>().ReverseMap();
             CreateMap<ProductTopping, ProductToppingResponse>()
-                .ForMember(dest => dest.ProductName , opt => opt.MapFrom(src => src.Product.Name))
-                .ForMember(dest => dest.ToppingName , opt => opt.MapFrom(src => src.Topping.Name))
-                .ForMember(dest => dest.Price , opt => opt.MapFrom(src => src.Topping.Price))
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.ToppingName, opt => opt.MapFrom(src => src.Topping.Name))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Topping.Price))
                 .ReverseMap();
             CreateMap<CreateProductToppingRequest, ProductTopping>().ReverseMap();
             CreateMap<Table, TableResponse>().ReverseMap();
             CreateMap<CreateTableRequest, Table>().ReverseMap();
 
 
-            CreateMap<Topping,ToppingResponse>().ReverseMap();
+            CreateMap<Topping, ToppingResponse>().ReverseMap();
             CreateMap<CreateToppingRequest, Topping>()
-                .ForMember(dest => dest.ImageUrl, opt => opt.Ignore()) 
+                .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
                 .ReverseMap();
 
             //CreateMap<Product, ProductWithToppingsResponse>()
@@ -113,7 +114,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                         (src.OrderItemTopping != null ? src.OrderItemTopping.Sum(t => t.Price) : 0)
                       : 0)
                  ))
-                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Product != null ? src.Product.ImageUrl : null)) 
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Product != null ? src.Product.ImageUrl : null))
 
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.Note))
                 .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src =>
@@ -122,7 +123,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                         : new List<Topping>())); // Direct Top  ping entities
 
             CreateMap<CancelledOrderItem, CancelledItemResponse>()
-    
+
         .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.OrderItem.ProductSize.Product.Name))
         .ForMember(dest => dest.SizeName, opt => opt.MapFrom(src => src.OrderItem.ProductSize.SizeName))
         .ForMember(
@@ -153,7 +154,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
             .ForMember(dest => dest.PreviousStatus, opt => opt.MapFrom(src => src.PreviousStatus))
             .ForMember(dest => dest.CurrentStatus, opt => opt.MapFrom(src => src.AfterStatus))
             .ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(src => src.CreatedTime))
-            
+
             .ForMember(dest => dest.LastUpdatedTime, opt => opt.MapFrom(src => src.LastUpdatedTime))
             .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.OrderItem.OrderId))
             .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.OrderItem.Order.Table.Name))
@@ -165,7 +166,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
             .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.Table != null ? src.Table.Name : string.Empty))
             .ForMember(dest => dest.TotalMoney, opt => opt.MapFrom(src => src.totalMoney))
             .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => src.status.ToString()))
-       
+
             .ForMember(dest => dest.Details, opt => opt.MapFrom(src => src.Details))
             .ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(src => src.CreatedTime));
 
@@ -173,9 +174,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.OrderItem.Product.Name))
                 .ForMember(dest => dest.UnitPrice, opt => opt.MapFrom(src => src.OrderItem.ProductSize.Price))
                 .ForMember(dest => dest.TotalMoney, opt => opt.MapFrom(src => src.totalMoney));
-                
+
+            #region user - authentication mapping
+            CreateMap<User, UserProfileResponse>()
+                .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.Name.ToString()))
+                .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Avartar))
+                .ReverseMap()
+                .ForMember(dest => dest.Role, opt => opt.Ignore()); // Prevent circular reference
+
+            #endregion
+
+
         }
 
-    
+
     }
 }

@@ -719,47 +719,21 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return result;
         }
 
-        private static OrderStaticsResponse CalculateOrderStats(List<Order> orders)
+        private static OrderStaticsResponse CalculateOrderStats(IEnumerable<Order> orders)
         {
-            int deliveredCount = 0;
-            int paidCount = 0;
-            int servedCount = 0;
-            int totalOrderItems = 0;
-
-            foreach (var order in orders)
-            {
-                if (order.OrderItems != null)
-                {
-                    foreach (var item in order.OrderItems)
-                    {
-                        totalOrderItems++;
-                        if ((item.Status == OrderItemStatus.Ready || item.Status == OrderItemStatus.Served || item.Status == OrderItemStatus.Remark || item.Status == OrderItemStatus.Completed))
-                        {
-                            deliveredCount++;
-                        }
-                        if (item.Status == OrderItemStatus.Served || item.Status == OrderItemStatus.Completed)
-                        {
-                            servedCount++;
-                        }
-
-                        if (order.PaymentStatus == PaymentStatusEnums.Paid &&
-                             item.Status == OrderItemStatus.Completed)
-                        {
-                            paidCount++;
-                        }
-
-                    }
-                }
-
-
-            }
+            var allItems = orders
+                .Where(o => o.OrderItems != null)
+                .SelectMany(o => o.OrderItems.Select(item => new { o.PaymentStatus, item.Status }));
 
             return new OrderStaticsResponse
             {
-                ServedCount = servedCount,
-                DeliveredCount = deliveredCount,
-                TotalOrderItems = totalOrderItems,
-                PaidCount = paidCount
+                TotalOrderItems = allItems.Count(),
+                DeliveredCount = allItems.Count(x =>
+                    x.Status is OrderItemStatus.Ready or OrderItemStatus.Served or OrderItemStatus.Remark or OrderItemStatus.Completed),
+                ServedCount = allItems.Count(x =>
+                    x.Status is OrderItemStatus.Served or OrderItemStatus.Completed),
+                PaidCount = allItems.Count(x =>
+                    x.PaymentStatus == PaymentStatusEnums.Paid && x.Status == OrderItemStatus.Completed)
             };
         }
 
@@ -776,8 +750,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         //     var response = _mapper.Map<List<OrderResponse>>(listas);
         //     return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         // }
-        
-        
+
+
         public async Task<BaseResponseModel<OrderResponse>> GetOrderByDeviceToken(string idTable, string token)
         {
             // var temp = await _unitOfWork.Repository<Order, Guid>()

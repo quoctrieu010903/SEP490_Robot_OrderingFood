@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class initial_Database : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -51,6 +51,25 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Roles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true),
+                    CreatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastUpdatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DeletedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Roles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Tables",
                 columns: table => new
                 {
@@ -61,6 +80,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     LockedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeviceId = table.Column<string>(type: "text", nullable: true),
                     LastAccessedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ShareToken = table.Column<string>(type: "text", nullable: true),
+                    isShared = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
                     DeletedBy = table.Column<string>(type: "text", nullable: true),
@@ -148,6 +169,38 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    EmploymentCode = table.Column<string>(type: "text", nullable: false),
+                    UserName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Password = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    FullName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Avartar = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Email = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    PhoneNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    RoleId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true),
+                    CreatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastUpdatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DeletedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Users_Roles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "Roles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -246,7 +299,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     ProductSizeId = table.Column<Guid>(type: "uuid", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     Note = table.Column<string>(type: "text", nullable: true),
-                    RemarkNote = table.Column<string>(type: "text", nullable: true),
+                    RemakeNote = table.Column<string>(type: "text", nullable: true),
+                    IsUrgent = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
                     DeletedBy = table.Column<string>(type: "text", nullable: true),
@@ -302,6 +356,131 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CancelledOrderItems",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Reason = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Note = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    ItemPrice = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    OrderTotalBefore = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    OrderTotalAfter = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    OrderItemId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CancelledByUserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true),
+                    CreatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastUpdatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DeletedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CancelledOrderItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CancelledOrderItems_OrderItems_OrderItemId",
+                        column: x => x.OrderItemId,
+                        principalTable: "OrderItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_CancelledOrderItems_Users_CancelledByUserId",
+                        column: x => x.CancelledByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Complain",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TableId = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderItemId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Title = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    isPending = table.Column<bool>(type: "boolean", nullable: false),
+                    HandledBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    ResolvedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ResolutionNote = table.Column<string>(type: "text", nullable: true),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true),
+                    CreatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastUpdatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DeletedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Complain", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Complain_OrderItems_OrderItemId",
+                        column: x => x.OrderItemId,
+                        principalTable: "OrderItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Complain_Tables_TableId",
+                        column: x => x.TableId,
+                        principalTable: "Tables",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Complain_Users_HandledBy",
+                        column: x => x.HandledBy,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Complain_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Feedback",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TableId = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderItemId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Rating = table.Column<int>(type: "integer", nullable: false),
+                    Comment = table.Column<string>(type: "text", nullable: true),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
+                    CustomerId = table.Column<Guid>(type: "uuid", nullable: true),
+                    LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true),
+                    CreatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastUpdatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DeletedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Feedback", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Feedback_OrderItems_OrderItemId",
+                        column: x => x.OrderItemId,
+                        principalTable: "OrderItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Feedback_Tables_TableId",
+                        column: x => x.TableId,
+                        principalTable: "Tables",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Feedback_Users_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -368,6 +547,86 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "RemakeOrderItems",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderItemId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RemakeNote = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
+                    PreviousStatus = table.Column<int>(type: "integer", nullable: false),
+                    AfterStatus = table.Column<int>(type: "integer", nullable: false),
+                    RemakedByUserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IsUrgent = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true),
+                    CreatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastUpdatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DeletedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RemakeOrderItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RemakeOrderItems_OrderItems_OrderItemId",
+                        column: x => x.OrderItemId,
+                        principalTable: "OrderItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RemakeOrderItems_Users_RemakedByUserId",
+                        column: x => x.RemakedByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CancelledOrderItems_CancelledByUserId",
+                table: "CancelledOrderItems",
+                column: "CancelledByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CancelledOrderItems_OrderItemId",
+                table: "CancelledOrderItems",
+                column: "OrderItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Complain_HandledBy",
+                table: "Complain",
+                column: "HandledBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Complain_OrderItemId",
+                table: "Complain",
+                column: "OrderItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Complain_TableId",
+                table: "Complain",
+                column: "TableId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Complain_UserId",
+                table: "Complain",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Feedback_CustomerId",
+                table: "Feedback",
+                column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Feedback_OrderItemId",
+                table: "Feedback",
+                column: "OrderItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Feedback_TableId",
+                table: "Feedback",
+                column: "TableId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InvoiceDetail_InvoiceId",
@@ -444,11 +703,35 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 name: "IX_ProductToppings_ToppingId",
                 table: "ProductToppings",
                 column: "ToppingId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RemakeOrderItems_OrderItemId",
+                table: "RemakeOrderItems",
+                column: "OrderItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RemakeOrderItems_RemakedByUserId",
+                table: "RemakeOrderItems",
+                column: "RemakedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_RoleId",
+                table: "Users",
+                column: "RoleId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "CancelledOrderItems");
+
+            migrationBuilder.DropTable(
+                name: "Complain");
+
+            migrationBuilder.DropTable(
+                name: "Feedback");
+
             migrationBuilder.DropTable(
                 name: "InvoiceDetail");
 
@@ -465,10 +748,10 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 name: "ProductToppings");
 
             migrationBuilder.DropTable(
-                name: "Invoices");
+                name: "RemakeOrderItems");
 
             migrationBuilder.DropTable(
-                name: "OrderItems");
+                name: "Invoices");
 
             migrationBuilder.DropTable(
                 name: "Categories");
@@ -477,10 +760,19 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 name: "Toppings");
 
             migrationBuilder.DropTable(
+                name: "OrderItems");
+
+            migrationBuilder.DropTable(
+                name: "Users");
+
+            migrationBuilder.DropTable(
                 name: "Orders");
 
             migrationBuilder.DropTable(
                 name: "ProductSizes");
+
+            migrationBuilder.DropTable(
+                name: "Roles");
 
             migrationBuilder.DropTable(
                 name: "Tables");

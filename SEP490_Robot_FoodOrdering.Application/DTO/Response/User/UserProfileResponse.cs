@@ -8,6 +8,7 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.User
 {
     public class UserProfileResponse
     {
+        public string EmploymentCode { get; set; }
         public string FullName { get; set; }    
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
