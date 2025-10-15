@@ -25,7 +25,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IMapper _mapper;
         private readonly INotificationService _notificationService;
         private readonly IInvoiceService _invoiceService;
-        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService , IInvoiceService invoiceService)
+        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IInvoiceService invoiceService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -35,15 +35,15 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<BaseResponseModel> Create(CreateTableRequest request)
         {
             var entity = _mapper.Map<Table>(request);
-           
-            
-            
-            
+
+
+
+
             entity.Name = request.Name;
             entity.Status = TableEnums.Available; // Mặc định trạng thái là Available
-            entity.IsQrLocked = false; 
-            entity.LockedAt = null; 
-            
+            entity.IsQrLocked = false;
+            entity.LockedAt = null;
+
             entity.CreatedBy = "";
 
             entity.CreatedTime = DateTime.UtcNow;
@@ -66,9 +66,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Xoá thành công");
         }
-        public async Task<PaginatedList<TableResponse>> GetAll(PagingRequestModel paging , TableEnums? status , string? tableName)
-         {
-            var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecAsync( new TableSpecification(paging.PageNumber , paging.PageSize,status , tableName));
+        public async Task<PaginatedList<TableResponse>> GetAll(PagingRequestModel paging, TableEnums? status, string? tableName)
+        {
+            var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecAsync(new TableSpecification(paging.PageNumber, paging.PageSize, status, tableName));
             var mapped = _mapper.Map<List<TableResponse>>(list);
             mapped = mapped
                         .OrderBy(t =>
@@ -86,7 +86,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 table.QRCode = "data:image/png;base64," + GenerateQrCodeBase64_NoDrawing(url);
 
             }
-            
+
 
             return PaginatedList<TableResponse>.Create(mapped, paging.PageNumber, paging.PageSize);
         }
@@ -105,18 +105,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel> Update(UpdateStatusTable request, Guid id)
         {
-               var existed = await _unitOfWork.Repository<Table, Guid>()
-                    .GetByIdWithIncludeAsync(
-                        t => t.Id == id,
-                        true,
-                        t => t.Orders
-                    );
+            var existed = await _unitOfWork.Repository<Table, Guid>()
+                 .GetByIdWithIncludeAsync(
+                     t => t.Id == id,
+                     true,
+                     t => t.Orders
+                 );
 
             if (existed == null)
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Table không tìm thấy");
 
             existed.Status = request.Status;
-           
+
 
 
             existed.LastUpdatedBy = "";
@@ -152,7 +152,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var allItems = orders.SelectMany(o => o.OrderItems).ToList();
 
             // Lưu trạng thái cũ để log
-                var oldStatus = table.Status;
+            var oldStatus = table.Status;
 
             switch (table.Status, newStatus)
             {
@@ -295,7 +295,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     // Send notification for each item status change
 
                 }
-            
+
             }
 
             foreach (var order in orders)
@@ -326,7 +326,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 }
                 if (orderChanged)
                 {
-                    
+
                     order.LastUpdatedTime = DateTime.UtcNow;
                     order.LastUpdatedBy = updatedBy;
                     _unitOfWork.Repository<Order, Order>().Update(order);
@@ -478,5 +478,57 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return (newOrderStatus, newPaymentStatus);
         }
 
+        public async Task<BaseResponseModel<QrShareResponse>> ShareTableAsync(Guid tableId, string CurrentDevideId)
+        {
+            var table = await _unitOfWork.Repository<Table, Guid>().GetWithSpecAsync(new BaseSpecification<Table>(x => x.Id == tableId && x.DeviceId == CurrentDevideId));
+            if (table == null)
+                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, $"Không tìm thấy người dùng hiện tại ở bàn {table.Name} ");
+            var sharetoken = Guid.NewGuid().ToString("N");
+
+            table.ShareToken = sharetoken;
+            table.isShared = true;
+            table.LockedAt = DateTime.UtcNow;
+            table.LastAccessedAt = DateTime.UtcNow;
+            await _unitOfWork.SaveChangesAsync();
+            var shareUrl = ServerEndpoint.FrontendBase + $"/{tableId}/share?token={sharetoken}";
+            string qrCodeBase64 = "data:image/png;base64," + GenerateQrCodeBase64_NoDrawing(shareUrl);
+
+            var data = new QrShareResponse
+            {
+                QrCodeBase64 = qrCodeBase64,
+                ShareToken = sharetoken,
+                ShareUrl = shareUrl,
+                ExpireAt = DateTime.UtcNow.AddMinutes(15)
+            };
+
+            return new BaseResponseModel<QrShareResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, data, null, "Chia sẻ bàn thành công,");
+        }
+
+        public Task<BaseResponseModel<TableResponse>> TransferTableAsync(Guid tableId, Guid transferToUserId, string? reason = null, string transferredBy = "System")
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<BaseResponseModel<TableResponse>> AcceptSharedTableAsync(Guid tableId, string shareToken, string newDeviceId)
+        {
+            var table = _unitOfWork.Repository<Table, Guid>().GetWithSpecAsync(new BaseSpecification<Table>(x => x.Id == tableId && x.ShareToken == shareToken && x.isShared == true));
+            if (table == null)
+                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Không tìm thấy bàn hoặc token không hợp lệ");
+            if (table.Result.LockedAt == null || table.Result.LockedAt.Value.AddMinutes(15) < DateTime.UtcNow)
+            {
+                throw new ErrorException(StatusCodes.Status403Forbidden, ResponseCodeConstants.FORBIDDEN, "Token đã hết hạn");
+            }
+            else
+            {
+                table.Result.DeviceId = newDeviceId;
+                table.Result.isShared = false;
+                table.Result.ShareToken = null;
+                table.Result.LastAccessedAt = DateTime.UtcNow;
+                table.Result.LastUpdatedTime = DateTime.UtcNow;
+                _unitOfWork.Repository<Table, Guid>().Update(table.Result);
+                await _unitOfWork.SaveChangesAsync();
+                return (new BaseResponseModel<TableResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, _mapper.Map<TableResponse>(table.Result), null, "Chấp nhận chia sẻ bàn thành công"));
+            }
+        }
     }
-} 
+}

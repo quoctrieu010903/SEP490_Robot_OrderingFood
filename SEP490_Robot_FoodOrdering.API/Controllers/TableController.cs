@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Table;
+using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
+using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 using System;
 using System.Threading.Tasks;
@@ -79,6 +82,21 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         public async Task<IActionResult> ScanQrCode(Guid id, string DevidedId)
         {
             var result = await _service.ScanQrCode(id, DevidedId);
+            return Ok(result);
+        }
+        // Endpoint to share table and get QR code
+        [HttpPost("{tableId}/share")]
+        public async Task<ActionResult<BaseResponseModel<QrShareResponse>>> ShareTable(Guid tableId, [FromQuery] string currentDeviceId)
+        {
+            var result = await _service.ShareTableAsync(tableId, currentDeviceId);
+            return Ok(result);
+        }
+
+        // Endpoint to accept shared table using QR token
+        [HttpPost("{tableId}/accept-share")]
+        public async Task<ActionResult<BaseResponseModel<TableResponse>>> AcceptSharedTable(Guid tableId, [FromQuery] string shareToken, [FromQuery] string newDeviceId)
+        {
+            var result = await _service.AcceptSharedTableAsync(tableId, shareToken, newDeviceId);
             return Ok(result);
         }
 
