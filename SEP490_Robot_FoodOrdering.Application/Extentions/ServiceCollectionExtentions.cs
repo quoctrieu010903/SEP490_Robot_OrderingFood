@@ -14,7 +14,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Extentions
         public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration configuration)
         {
            
-             services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IProductService, ProductService>();
             services.AddScoped<ITableService, TableService>();
             services.AddScoped<IProductCategoryService, ProductCategoryService>();
             services.AddScoped<ICategoryService, CategoryService>();
@@ -23,13 +23,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Extentions
             services.AddScoped<ICancelledItemService, CancelledItemService>();
             services.AddScoped<IRemakeItemService, RemakeOrderItemService>();   
             services.AddScoped<IAuthenticationService, AuthenticationService>();
+            services.AddScoped<IPayOSService, PayOSService>();
             
             services.AddHttpContextAccessor();
 
             services.AddScoped<IProductToppingService, ProductToppingService>();
             services.AddScoped<IOrderService, OrderService>();
             
-             services.AddScoped<IProductSizeService, ProductSizeService>();
+            services.AddScoped<IProductSizeService, ProductSizeService>();
             services.AddScoped<IToppingService, ToppingService>();
 
            

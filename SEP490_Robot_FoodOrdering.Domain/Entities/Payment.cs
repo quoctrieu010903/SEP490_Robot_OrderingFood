@@ -11,6 +11,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public PaymentStatusEnums PaymentStatus { get; set; } // Paid, Failed, Pending
 
         public Guid OrderId { get; set; }
+        public int? PayOSOrderCode { get; set; }
         public virtual Order Order { get; set; }
     }
 }

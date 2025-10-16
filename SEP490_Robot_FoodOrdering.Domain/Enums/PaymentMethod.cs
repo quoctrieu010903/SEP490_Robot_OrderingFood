@@ -8,7 +8,8 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
 {
     public enum PaymentMethodEnums
     {
-        COD = 1,         // Tiền mặt 
-        VNPay = 2,       // Cổng thanh toán VNPa
+        COD = 1,         // Cash 
+        VNPay = 2,       // VNPay
+        PayOS = 3
     }
 }
