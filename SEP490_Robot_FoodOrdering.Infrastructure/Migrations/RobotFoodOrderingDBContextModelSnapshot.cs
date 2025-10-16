@@ -439,6 +439,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
 
+                    b.Property<int?>("PayOSOrderCode")
+                        .HasColumnType("integer");
+
                     b.Property<int>("PaymentMethod")
                         .HasColumnType("integer");
 
