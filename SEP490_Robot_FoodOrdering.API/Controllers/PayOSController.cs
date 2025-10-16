@@ -3,6 +3,7 @@ using Net.payOS.Types;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
+using System;
 
 namespace SEP490_Robot_FoodOrdering.API.Controllers
 {
@@ -32,6 +33,15 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         {
             await _payOSService.HandleWebhook(body);
             return Ok();
+        }
+
+        // Manual sync to fix orders if webhook missed
+        [HttpPost("sync/{orderId}")]
+        [ProducesResponseType(typeof(BaseResponseModel<OrderPaymentResponse>), 200)]
+        public async Task<ActionResult<BaseResponseModel>> Sync(Guid orderId)
+        {
+            var result = await _payOSService.SyncOrderPaymentStatus(orderId);
+            return StatusCode(result.StatusCode, result);
         }
     }
 }

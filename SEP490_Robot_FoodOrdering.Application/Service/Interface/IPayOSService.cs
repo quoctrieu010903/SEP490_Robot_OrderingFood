@@ -8,4 +8,5 @@ public interface IPayOSService
 {
     Task<BaseResponseModel<OrderPaymentResponse>> CreatePaymentLink(Guid orderId);
     Task HandleWebhook(WebhookType body);
+    Task<BaseResponseModel<OrderPaymentResponse>> SyncOrderPaymentStatus(Guid orderId);
 }

@@ -10,6 +10,6 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
     {
         COD = 1,         // Cash 
         VNPay = 2,       // VNPay
-        PayOS = 3
+        PayOS = 3       // PayOS    
     }
 }
