@@ -14,6 +14,17 @@ var builder = WebApplication.CreateBuilder(args);
 // Load .env and bind to configuration via extension
 builder.LoadDotEnv();
 
+// Add PayOS PayOS SDK client
+var payOS = new Net.payOS.PayOS(
+    builder.Configuration["Environment:PAYOS_CLIENT_ID"] ?? throw new Exception("Missing PAYOS_CLIENT_ID"),
+    builder.Configuration["Environment:PAYOS_API_KEY"] ?? throw new Exception("Missing PAYOS_API_KEY"),
+    builder.Configuration["Environment:PAYOS_CHECKSUM_KEY"] ?? throw new Exception("Missing PAYOS_CHECKSUM_KEY")
+);
+builder.Services.AddSingleton(payOS);
+
+// Needed if you build return/cancel URLs from the current request
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddControllers();
 
 
@@ -33,7 +44,7 @@ builder.Services.AddSignalRNotifications();
 builder.Services.AddOpenApi();
 
 
-     var app = builder.Build();
+    var app = builder.Build();
 
     var scope = app.Services.CreateScope();
     var seeder = scope.ServiceProvider.GetRequiredService<IRobotFoodSeeder>();

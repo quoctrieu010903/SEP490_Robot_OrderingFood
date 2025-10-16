@@ -229,7 +229,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// * Served (4)
         /// * Completed (5)
         /// * Cancelled (6)
-        /// * Remark (7) : lam lại món an chua phuc vụ
+        /// * Remake (7)
         /// 
         /// This endpoint supports:
         /// * Individual item status updates
@@ -244,7 +244,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// <response code="400">Invalid status or request data</response>
         /// <response code="404">Order or item not found</response>
         /// <response code="500">Internal server error</response>
-        [Authorize()]
+        //[Authorize()]
         [HttpPatch("{orderId}/items/{itemId}/status")]
         [ProducesResponseType(typeof(BaseResponseModel<OrderItemResponse>), 200)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 400)]
@@ -399,5 +399,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             var res = await _orderService.GetOrderByDeviceToken(idTable, token);
             return StatusCode(res.StatusCode, res);
         }
+        
+        
     }
 }
