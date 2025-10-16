@@ -342,7 +342,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<BaseResponseModel<OrderItemResponse>> UpdateOrderItemStatusAsync(Guid orderId,
             Guid orderItemId, UpdateOrderItemStatusRequest request)
         {
-            var userid = Guid.Parse(_httpContextAccessor.HttpContext?.User?.FindFirst("Id")?.Value);
+            // var userid = Guid.Parse(_httpContextAccessor.HttpContext?.User?.FindFirst("Id")?.Value);
             var order = await _unitOfWork.Repository<Order, Guid>()
                 .GetWithSpecAsync(new OrderSpecification(orderId, true), true);
             if (order == null)
@@ -371,7 +371,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status400BadRequest, "NOTE_REQUIRED",
                         "Note is required when status is Cancelled.");
                 }   
-                await _cancelledItemService.CreateCancelledItemAsync(orderItemId, request.RemarkNote ?? "", userid);
+               // await _cancelledItemService.CreateCancelledItemAsync(orderItemId, request.RemarkNote ?? "", userid);
             }
             if(request.Status == OrderItemStatus.Remark)
             {
@@ -381,7 +381,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         "Note is required when status is Remarked.");
                 }
                 // Call remake service to create remake item
-                await _remakeItemService.CreateRemakeItemAsync(orderItemId, request.RemarkNote ?? "", userid);
+               // await _remakeItemService.CreateRemakeItemAsync(orderItemId, request.RemarkNote ?? "", userid);
             }
 
             var oldStatus = item.Status;
