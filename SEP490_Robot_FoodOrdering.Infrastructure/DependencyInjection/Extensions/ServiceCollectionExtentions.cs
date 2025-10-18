@@ -35,7 +35,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
 
             services.AddScoped<IToppingRepository, ToppingRepository>();
             services.AddScoped<IOrderItemReposotory, OrderItemReposotory>();
-            services.AddScoped<IFeedbackService, FeedbackService>();
+            services.AddScoped<IComplainService, ComplainService>();
             services.AddSingleton<FeedbackMemoryStore>();
 
             // services.AddSingleton<IFeedbackService, FeedbackService>();

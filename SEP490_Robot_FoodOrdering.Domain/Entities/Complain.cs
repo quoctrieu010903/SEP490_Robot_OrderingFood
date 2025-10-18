@@ -18,7 +18,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public Guid? HandledBy { get; set; } // Nhân viên hoặc admin xử lý
         public virtual User? Handler { get; set; }
 
-        public DateTime? ResolvedAt { get; set; } // Thời điểm xử lý xong
+        public DateTime? ResolvedAt { get; set; } // Thời điểm xử lý xong       
         public string? ResolutionNote { get; set; } // Ghi chú xử lý
     }
 

@@ -693,7 +693,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
 
         public async Task<Dictionary<Guid, OrderStaticsResponse>> GetOrderStatsByTableIds(IEnumerable<Guid> tableIds)
-                    {
+         {
             var tableIdsList = tableIds.ToList();
             if (!tableIdsList.Any())
                 return new Dictionary<Guid, OrderStaticsResponse>();
