@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.Category;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request.Complain;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.CancelledItem;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Category;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Complain;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Invouce;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
@@ -176,7 +178,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.TotalMoney, opt => opt.MapFrom(src => src.totalMoney));
 
             #region user - authentication mapping
-            CreateMap<User  , UserProfileResponse>()
+            CreateMap<User, UserProfileResponse>()
                 .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.Name.ToString()))
                 .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Avartar))
                 .ReverseMap()
@@ -184,9 +186,48 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
 
             #endregion
 
+            #region Complain Mapping - feedback controller 
+            CreateMap<ComplainRequest, Complain>()
+                  .ForMember(dest => dest.TableId, opt => opt.MapFrom(src => src.IdTable))
+
+                  .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.ComplainNote))
+                  .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
+                  .ForMember(dest => dest.isPending, opt => opt.MapFrom(_ => true))
+                  .ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                  .ForMember(dest => dest.Title, opt => opt.Ignore())           // set sau
+                  .ForMember(dest => dest.OrderItemId, opt => opt.Ignore())    // set sau
+                  .ForMember(dest => dest.Table, opt => opt.Ignore())
+                  .ForMember(dest => dest.OrderItem, opt => opt.Ignore())
+                  .ForMember(dest => dest.HandledBy, opt => opt.Ignore())
+                  .ForMember(dest => dest.Handler, opt => opt.Ignore())
+                  .ForMember(dest => dest.ResolvedAt, opt => opt.Ignore())
+                  .ForMember(dest => dest.ResolutionNote, opt => opt.Ignore());
+
+           
+            CreateMap<Complain, ComplainResponse>()
+                .ForMember(dest => dest.ComplainId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.IdTable, opt => opt.MapFrom(src => src.TableId))
+                .ForMember(dest => dest.FeedBack, opt => opt.MapFrom(src => src.Description))
+                .ForMember(dest => dest.IsPending, opt => opt.MapFrom(src => src.isPending))
+                .ForMember(dest => dest.CreateData, opt => opt.MapFrom(src => src.CreatedTime))
+                .ForMember(dest => dest.Dtos, opt => opt.MapFrom(src => src.OrderItem)); // tạm thời bỏ qua nếu chưa có mapping OrderItem
+
+            CreateMap<OrderItem, OrderItemDTO>()
+                .ForMember(dest => dest.OrderItemId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.OrderItemName, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ProductSize.Product.ImageUrl))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
+
+            #endregion
 
         }
 
 
+
+
+
     }
+
+
 }
+
