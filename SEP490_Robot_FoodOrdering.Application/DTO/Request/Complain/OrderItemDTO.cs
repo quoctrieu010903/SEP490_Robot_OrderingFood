@@ -1,6 +1,6 @@
 ﻿using SEP490_Robot_FoodOrdering.Domain.Enums;
 
-namespace SEP490_Robot_FoodOrdering.Application.DTO.Request.fedback;
+namespace SEP490_Robot_FoodOrdering.Application.DTO.Request.Complain;
 
 public class OrderItemDTO
 {
