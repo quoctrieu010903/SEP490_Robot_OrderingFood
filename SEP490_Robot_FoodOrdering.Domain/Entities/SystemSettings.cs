@@ -1,0 +1,12 @@
+using SEP490_Robot_FoodOrdering.Core.Base;
+using SEP490_Robot_FoodOrdering.Domain.Enums;
+
+namespace SEP490_Robot_FoodOrdering.Domain.Entities
+{
+    public class SystemSettings : BaseEntity
+    {
+        public PaymentPolicy PaymentPolicy { get; set; }
+    }
+}
+
+
