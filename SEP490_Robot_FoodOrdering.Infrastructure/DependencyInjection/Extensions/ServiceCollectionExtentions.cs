@@ -52,6 +52,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
             services.Configure<EmailOptions>(configuration.GetSection(nameof(EmailOptions)));
             services.Configure<VNPayOptions>(configuration.GetSection("VNPay"));
             services.AddScoped<IPaymentService, PaymentService>();
+            services.AddScoped<ISettingsService, SettingsService>();
            
 
 

@@ -64,6 +64,18 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     await _dbContext.Users.AddRangeAsync(users);
                 }
 
+                // Ensure default system settings row exists
+                if (!_dbContext.SystemSettings.Any())
+                {
+                    _dbContext.SystemSettings.Add(new SystemSettings
+                    {
+                        Id = Guid.NewGuid(),
+                        PaymentPolicy = PaymentPolicy.Postpay,
+                        CreatedBy = "seeder",
+                        LastUpdatedBy = "seeder"
+                    });
+                }
+
                 await _dbContext.SaveChangesAsync();
 
             }
