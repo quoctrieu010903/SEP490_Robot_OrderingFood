@@ -96,11 +96,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (existed == null)
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Table không tìm thấy");
 
-            await _unitOfWork.Repository<Table, Guid>().UpdateAsync(existed);
-            await _unitOfWork.SaveChangesAsync();
+             string url = $"{ServerEndpoint.FrontendBase}/{existed.Id}";
 
+                // Sinh QR code dạng Base64
+              
+            var response = _mapper.Map<TableResponse>(existed);
+            response.QRCode = "data:image/png;base64," + GenerateQrCodeBase64_NoDrawing(url);
+            return response;
 
-            return _mapper.Map<TableResponse>(existed);
         }
 
         public async Task<BaseResponseModel> Update(UpdateStatusTable request, Guid id)
