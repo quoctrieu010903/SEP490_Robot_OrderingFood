@@ -27,6 +27,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence
         public DbSet<Topping> Toppings { get; set; }
 
         public DbSet<Invoice> Invoices { get; set; }
+        public DbSet<SystemSettings> SystemSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
