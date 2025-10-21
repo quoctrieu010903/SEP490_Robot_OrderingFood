@@ -90,7 +90,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     OrderItemId = existedComplain,
                     Title = request.Title,
                     Description = request.ComplainNote,
-                    isPending = true,
+                    isPending = false,
                     CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 };
