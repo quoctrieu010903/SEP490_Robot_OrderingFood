@@ -42,5 +42,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Abstractions.Utils
         /// <exception cref="FileNotFoundException">Thrown when the template file does not exist at the specified location.</exception>
         Task<string> GetEmailTemplateAsync(string templateName, string folder);
         string GenerateEmploymentCode(RoleNameEnums role, int length = 4);
+        string GenerateQrCodeBase64_NoDrawing(string text);
     }
 }

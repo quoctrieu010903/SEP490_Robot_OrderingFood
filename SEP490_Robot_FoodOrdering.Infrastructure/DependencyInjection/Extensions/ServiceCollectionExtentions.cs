@@ -5,6 +5,7 @@ using SEP490_Robot_FoodOrdering.Application.Abstractions.Cloudinary;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Email;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.JWT;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Options;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.ServerEndPoint;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
@@ -17,6 +18,7 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Email;
 using SEP490_Robot_FoodOrdering.Infrastructure.Jwt;
 using SEP490_Robot_FoodOrdering.Infrastructure.Repository;
 using SEP490_Robot_FoodOrdering.Infrastructure.Seeder;
+using SEP490_Robot_FoodOrdering.Infrastructure.ServerEndpoints;
 
 
 namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extensions
@@ -50,13 +52,16 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
 
             services.Configure<CloudinaryOptions>(configuration.GetSection(nameof(CloudinaryOptions)));
             services.Configure<EmailOptions>(configuration.GetSection(nameof(EmailOptions)));
+            services.Configure<ServerEndpointOptions>(configuration.GetSection(nameof(ServerEndpointOptions)));
             services.Configure<VNPayOptions>(configuration.GetSection("VNPay"));
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<ISettingsService, SettingsService>();
-           
+
+            services.AddScoped<IServerEndpointService, ServerEndpointService>();
 
 
-                services.AddScoped<IEmailService, EmailService>();
+
+            services.AddScoped<IEmailService, EmailService>();
                 services.AddSingleton<ICloudinaryService, CloudinaryService>();
 
 

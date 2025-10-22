@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.Extensions.Hosting;
+using QRCoder;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
@@ -83,6 +84,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Utils
         public bool VerifyPassword(string content, string hashedContent)
         {
             return BCrypt.Net.BCrypt.Verify(content, hashedContent);
+        }
+        public string GenerateQrCodeBase64_NoDrawing(string text)
+        {
+            using var qrGenerator = new QRCodeGenerator();
+            var qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
+            using var qrCode = new PngByteQRCode(qrCodeData);
+            var qrCodeImage = qrCode.GetGraphic(20);
+            return Convert.ToBase64String(qrCodeImage);
         }
 
         //public string GetEmailTemplate(string templateName, string folder)
