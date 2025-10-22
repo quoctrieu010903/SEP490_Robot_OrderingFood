@@ -16,6 +16,9 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
 using SEP490_Robot_FoodOrdering.Domain.Specifications;
 using ZXing.QrCode.Internal;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.invoice;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.ServerEndPoint;
+using static System.Net.WebRequestMethods;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -25,12 +28,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IMapper _mapper;
         private readonly INotificationService _notificationService;
         private readonly IInvoiceService _invoiceService;
-        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IInvoiceService invoiceService)
+        private readonly IUtilsService _utill;
+        private readonly IServerEndpointService _enpointService;
+        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IInvoiceService invoiceService , IUtilsService utils , IServerEndpointService endpointService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _notificationService = notificationService;
             _invoiceService = invoiceService;
+            _utill = utils;
+            _enpointService = endpointService;
         }
         public async Task<BaseResponseModel> Create(CreateTableRequest request)
         {
@@ -80,10 +87,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             foreach (var table in mapped)
             {
                 // Tạo URL chứa id của bàn
-                string url = $"{ServerEndpoint.FrontendBase}/{table.Id}";
+                //string url = $"{ServerEndpoint.}/{table.Id}";
 
-                // Sinh QR code dạng Base64
-                table.QRCode = "data:image/png;base64," + GenerateQrCodeBase64_NoDrawing(url);
+                //// Sinh QR code dạng Base64
+                //table.QRCode = "data:image/png;base64," + GenerateQrCodeBase64_NoDrawing(url);
 
             }
 
@@ -96,12 +103,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (existed == null)
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Table không tìm thấy");
 
-             string url = $"{ServerEndpoint.FrontendBase}/{existed.Id}";
+             string url = _enpointService.GetFrontendUrl() + $"/{existed.Id}";
 
                 // Sinh QR code dạng Base64
               
             var response = _mapper.Map<TableResponse>(existed);
-            response.QRCode = "data:image/png;base64," + GenerateQrCodeBase64_NoDrawing(url);
+            response.QRCode = "data:image/png;base64," +_utill.GenerateQrCodeBase64_NoDrawing(url);
             return response;
 
         }
@@ -128,14 +135,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Cập nhật thành công");
         }
-        private string GenerateQrCodeBase64_NoDrawing(string text)
-        {
-            using var qrGenerator = new QRCodeGenerator();
-            var qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
-            using var qrCode = new PngByteQRCode(qrCodeData);
-            var qrCodeImage = qrCode.GetGraphic(20);
-            return Convert.ToBase64String(qrCodeImage);
-        }
+     
 
         public async Task<TableResponse> ChangeTableStatus(Guid tableId, TableEnums newStatus, string? reason = null, string updatedBy = "System")
         {
@@ -493,12 +493,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             table.LockedAt = DateTime.UtcNow;
             table.LastAccessedAt = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
-            var shareUrl = ServerEndpoint.FrontendBase + $"/{tableId}/share?token={sharetoken}?devided";
-            string qrCodeBase64 = "data:image/png;base64," + GenerateQrCodeBase64_NoDrawing(shareUrl);
+            var newdevidedtoken = Guid.NewGuid();
+            var shareUrl = _enpointService.GetBackendUrl() + $"/Table/{tableId}/accept-share?shareToken={sharetoken}?newDeviceId=";
+            string qrCodeBase64 = "data:image/png;base64," + _utill.GenerateQrCodeBase64_NoDrawing(shareUrl);
 
             var data = new QrShareResponse
             {
-                QrCodeBase64 = qrCodeBase64,
+                QrCodeBase64 = "qrCodeBase64",
                 ShareToken = sharetoken,
                 ShareUrl = shareUrl,
                 ExpireAt = DateTime.UtcNow.AddMinutes(15)
