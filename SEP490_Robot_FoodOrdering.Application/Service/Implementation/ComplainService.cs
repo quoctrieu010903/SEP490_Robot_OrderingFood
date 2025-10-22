@@ -131,7 +131,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     {
                         Key = table.Id.ToString(),
                         Value = new ComplainPeedingInfo(
+
                             TableName: table.Name,
+                            tableStatus: table.Status,
                             Counter: pendingCount,
                             DeliveredCount: stats.DeliveredCount,
                             ServeredCount: stats.ServedCount,
