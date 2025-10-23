@@ -70,6 +70,24 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SystemSettings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    PaymentPolicy = table.Column<int>(type: "integer", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true),
+                    CreatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastUpdatedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DeletedTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SystemSettings", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Tables",
                 columns: table => new
                 {
@@ -209,9 +227,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     TableId = table.Column<Guid>(type: "uuid", nullable: false),
-                    totalMoney = table.Column<decimal>(type: "numeric", nullable: false),
-                    status = table.Column<int>(type: "integer", nullable: false),
-                    PhuongThucThanhToan = table.Column<int>(type: "integer", nullable: false),
+                    TotalMoney = table.Column<decimal>(type: "numeric", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    PaymentMethod = table.Column<int>(type: "integer", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
                     DeletedBy = table.Column<string>(type: "text", nullable: true),
@@ -340,6 +358,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     PaymentMethod = table.Column<int>(type: "integer", nullable: false),
                     PaymentStatus = table.Column<int>(type: "integer", nullable: false),
                     OrderId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PayOSOrderCode = table.Column<int>(type: "integer", nullable: true),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
                     DeletedBy = table.Column<string>(type: "text", nullable: true),
@@ -400,14 +419,13 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     TableId = table.Column<Guid>(type: "uuid", nullable: false),
-                    OrderItemId = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderItemId = table.Column<Guid>(type: "uuid", nullable: true),
                     Title = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
                     isPending = table.Column<bool>(type: "boolean", nullable: false),
                     HandledBy = table.Column<Guid>(type: "uuid", nullable: true),
                     ResolvedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ResolutionNote = table.Column<string>(type: "text", nullable: true),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
                     DeletedBy = table.Column<string>(type: "text", nullable: true),
@@ -423,7 +441,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         column: x => x.OrderItemId,
                         principalTable: "OrderItems",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_Complain_Tables_TableId",
                         column: x => x.TableId,
@@ -436,11 +454,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Complain_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -489,7 +502,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     OrderItemId = table.Column<Guid>(type: "uuid", nullable: false),
-                    totalMoney = table.Column<decimal>(type: "numeric", nullable: false),
+                    TotalMoney = table.Column<decimal>(type: "numeric", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     InvoiceId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
@@ -607,11 +620,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                 name: "IX_Complain_TableId",
                 table: "Complain",
                 column: "TableId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Complain_UserId",
-                table: "Complain",
-                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Feedback_CustomerId",
@@ -749,6 +757,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "RemakeOrderItems");
+
+            migrationBuilder.DropTable(
+                name: "SystemSettings");
 
             migrationBuilder.DropTable(
                 name: "Invoices");

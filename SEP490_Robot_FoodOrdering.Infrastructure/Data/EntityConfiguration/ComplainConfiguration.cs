@@ -19,12 +19,17 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
                    .HasForeignKey(c => c.TableId);
 
             builder.HasOne(c => c.OrderItem)
-                   .WithMany(oi => oi.Complains)
-                   .HasForeignKey(c => c.OrderItemId);
+                    .WithMany(oi => oi.Complains)
+                    .HasForeignKey(c => c.OrderItemId)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+            // ✅ Handler - cho phép null và không sinh UserId1
             builder.HasOne(c => c.Handler)
-         .WithMany(u => u.HandledComplaints)
-         .HasForeignKey(c => c.HandledBy)
-         .OnDelete(DeleteBehavior.Restrict);
+                   .WithMany(u => u.HandledComplaints)
+                   .HasForeignKey(c => c.HandledBy)
+                   .IsRequired(false)
+                   .OnDelete(DeleteBehavior.Restrict);
 
 
         }

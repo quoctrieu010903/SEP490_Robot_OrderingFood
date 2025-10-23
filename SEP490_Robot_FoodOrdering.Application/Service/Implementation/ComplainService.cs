@@ -78,30 +78,66 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<ComplainCreate>> CreateComplainAsyns(ComplainRequests request)
         {
+            // ✅ 1. Kiểm tra bàn có tồn tại không
             var existedTable = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
             if (existedTable == null)
-                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Không tìm thất table");
-            foreach (var existedComplain in request.OrderItemIds)
+                throw new ErrorException(
+                    StatusCodes.Status404NotFound,
+                    ResponseCodeConstants.NOT_FOUND,
+                    "Không tìm thấy bàn (table).");
+
+            
+            if (request.OrderItemIds == null || !request.OrderItemIds.Any())
             {
-                var complain = new Complain()
+                var complain = new Complain
                 {
                     Id = Guid.NewGuid(),
                     TableId = request.TableId,
-                    OrderItemId = existedComplain,
                     Title = request.Title,
                     Description = request.ComplainNote,
-                    isPending = false,
+                    isPending = true, 
                     CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 };
+
                 await _unitOfWork.Repository<Complain, Guid>().AddAsync(complain);
-                await _unitOfWork.SaveChangesAsync();
-
             }
-            var response = new ComplainCreate(DateTime.UtcNow, true, "Tạo complain thành công");
-            return new BaseResponseModel<ComplainCreate>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, response);
+            else
+            {
+                // 🔹 Case 2: Khiếu nại theo từng OrderItem cụ thể
+                foreach (var orderItemId in request.OrderItemIds)
+                {
+                    var existedItem = await _unitOfWork.Repository<OrderItem, Guid>().GetByIdAsync(orderItemId);
+                    if (existedItem == null)
+                        throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, $"Không tìm thấy OrderItem: {orderItemId}");
 
+                    var complain = new Complain
+                    {
+                        Id = Guid.NewGuid(),
+                        TableId = request.TableId,
+                        OrderItemId = orderItemId,
+                        Title = request.Title,
+                        Description = request.ComplainNote,
+                        isPending = true, // ❗ pending để waiter/bếp xử lý
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    };
+
+                    await _unitOfWork.Repository<Complain, Guid>().AddAsync(complain);
+                }
+            }
+
+            // ✅ 4. Lưu thay đổi
+            await _unitOfWork.SaveChangesAsync();
+
+            // ✅ 5. Trả kết quả
+            var response = new ComplainCreate(DateTime.UtcNow, true, "Tạo complain thành công");
+            return new BaseResponseModel<ComplainCreate>(
+                StatusCodes.Status200OK,
+                ResponseCodeConstants.SUCCESS,
+                response);
         }
+
 
         public async Task<BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>> GetAllComplainIsPending()
         {

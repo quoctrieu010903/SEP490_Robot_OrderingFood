@@ -25,7 +25,6 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public virtual ICollection<CancelledOrderItem> CancelledItems { get; set; } = new List<CancelledOrderItem>();
         public virtual ICollection<RemakeOrderItem> RemakeItems { get; set; } = new List<RemakeOrderItem>();
         public virtual ICollection<Complain> HandledComplaints { get; set; } = new List<Complain>();
-        public virtual ICollection<Complain> CustomerComplaints { get; set; } = new List<Complain>();
         public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback    >();
     }
 }
