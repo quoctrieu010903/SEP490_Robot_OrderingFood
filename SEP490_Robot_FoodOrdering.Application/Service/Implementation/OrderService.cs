@@ -320,6 +320,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         {
             var orders = await _unitOfWork.Repository<Order, Order>()
                 .GetAllWithSpecAsync(new OrderSpecification(tableId, status), true);
+            
 
             // Debug: Log the orders to see what data is being returned
             foreach (var order in orders)
@@ -727,6 +728,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             return new OrderStaticsResponse
             {
+                PaymentStatus = allItems.Select(x => x.PaymentStatus).FirstOrDefault(),
                 TotalOrderItems = allItems.Count(),
                 DeliveredCount = allItems.Count(x =>
                     x.Status is OrderItemStatus.Ready or OrderItemStatus.Served or OrderItemStatus.Remark or OrderItemStatus.Completed),
