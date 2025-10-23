@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -45,7 +46,8 @@ public class PayOSService: IPayOSService
                 Id = Guid.NewGuid(),
                 OrderId = order.Id,
                 PaymentMethod = PaymentMethodEnums.PayOS,
-                PaymentStatus = PaymentStatusEnums.Pending,
+                PaymentStatus = PaymentStatusEnums.Paid,
+               // PaymentStatus = PaymentStatusEnums.Pending,
                 CreatedTime = DateTime.UtcNow,
                 LastUpdatedTime = DateTime.UtcNow
             };
@@ -117,7 +119,18 @@ public class PayOSService: IPayOSService
 
     public async Task HandleWebhook(WebhookType body)
     {
-        var data = _payOS.verifyPaymentWebhookData(body);
+        _logger.LogInformation("PayOS webhook: start handling");
+        WebhookData data;
+        try
+        {
+            data = _payOS.verifyPaymentWebhookData(body);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "PayOS webhook: signature verification failed");
+            return; // cannot trust payload
+        }
+        _logger.LogInformation("PayOS webhook: verified payload = {Payload}", JsonSerializer.Serialize(data));
 
         // Tìm payment theo PayOS order code, include Order
         var payment = await _unitOfWork.Repository<Payment, Guid>()
@@ -138,27 +151,45 @@ public class PayOSService: IPayOSService
             return;
         }
 
-        // Idempotency
-        if (payment.PaymentStatus == PaymentStatusEnums.Paid)
+        // Idempotency: if we've already marked Paid at either level, do nothing
+        if (payment.PaymentStatus == PaymentStatusEnums.Paid || order.PaymentStatus == PaymentStatusEnums.Paid)
+        {
+            _logger.LogInformation("PayOS webhook: skip, already paid for orderId {OrderId} (orderCode {OrderCode})", order.Id, data.orderCode);
             return;
+        }
 
-        var isSuccess = string.Equals(data.description, "Ma giao dich thu nghiem", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(data.desc, "Ma giao dich thu nghiem", StringComparison.OrdinalIgnoreCase)
-                        || data.code == "00";
+        // Determine payment success status from verified payload (code "00" indicates success)
+        var isSuccess = string.Equals(data.code, "00", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(body.code, "00", StringComparison.OrdinalIgnoreCase);
 
         if (isSuccess)
         {
             order.PaymentStatus = PaymentStatusEnums.Paid;
+            payment.PaymentStatus = PaymentStatusEnums.Paid;
+            payment.PaymentMethod = PaymentMethodEnums.PayOS;
         }
         else
         {
+            _logger.LogInformation(
+                "PayOS webhook: non-success code for orderId {OrderId} (orderCode {OrderCode}) - data.code={DataCode}, body.code={BodyCode}, data.desc={DataDesc}, body.desc={BodyDesc}, data.description={DataDescription}",
+                order.Id,
+                data.orderCode,
+                data.code,
+                body.code,
+                data.desc,
+                body.desc,
+                data.description
+            );
             order.PaymentStatus = PaymentStatusEnums.Failed;
+            payment.PaymentStatus = PaymentStatusEnums.Failed;
+            payment.PaymentMethod = PaymentMethodEnums.PayOS;
         }
 
         // ensure order reflects PayOS as the method used
         order.paymentMethod = PaymentMethodEnums.PayOS;
 
         await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
+        await _unitOfWork.Repository<Payment, Guid>().UpdateAsync(payment);
         await _unitOfWork.SaveChangesAsync();
     }
 
