@@ -32,6 +32,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Extentions
             
             services.AddScoped<IProductSizeService, ProductSizeService>();
             services.AddScoped<IToppingService, ToppingService>();
+            services.AddScoped<IFeedbackService, FeedbackService>();
 
            
                 services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
