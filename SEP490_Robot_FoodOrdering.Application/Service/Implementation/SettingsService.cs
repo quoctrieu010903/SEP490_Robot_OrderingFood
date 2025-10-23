@@ -21,28 +21,43 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<PaymentPolicy>> GetPaymentPolicyAsync()
         {
-            var settings = (await _unitOfWork.Repository<SystemSettings, Guid>().GetAllAsync()).FirstOrDefault();
+            var settings = (await _unitOfWork.Repository<SystemSettings, Guid>().GetAllAsync())
+                .FirstOrDefault(s => s.Key == "PaymentPolicy");
             if (settings == null)
             {
                 // Lazy create default if missing
-                settings = new SystemSettings { Id = Guid.NewGuid(), PaymentPolicy = PaymentPolicy.Postpay };
+                settings = new SystemSettings 
+                { 
+                    Id = Guid.NewGuid(), 
+                    Key = "PaymentPolicy",
+                    Value = PaymentPolicy.Postpay.ToString(),
+                    Type = SettingType.String
+                };
                 await _unitOfWork.Repository<SystemSettings, Guid>().AddAsync(settings);
                 await _unitOfWork.SaveChangesAsync();
             }
-            return new BaseResponseModel<PaymentPolicy>(StatusCodes.Status200OK, "SUCCESS", settings.PaymentPolicy);
+            var policy = Enum.Parse<PaymentPolicy>(settings.Value);
+            return new BaseResponseModel<PaymentPolicy>(StatusCodes.Status200OK, "SUCCESS", policy);
         }
 
         public async Task<BaseResponseModel<PaymentPolicy>> UpdatePaymentPolicyAsync(PaymentPolicy policy)
         {
-            var settings = (await _unitOfWork.Repository<SystemSettings, Guid>().GetAllAsync()).FirstOrDefault();
+            var settings = (await _unitOfWork.Repository<SystemSettings, Guid>().GetAllAsync())
+                .FirstOrDefault(s => s.Key == "PaymentPolicy");
             if (settings == null)
             {
-                settings = new SystemSettings { Id = Guid.NewGuid(), PaymentPolicy = policy };
+                settings = new SystemSettings 
+                { 
+                    Id = Guid.NewGuid(), 
+                    Key = "PaymentPolicy",
+                    Value = policy.ToString(),
+                    Type = SettingType.String
+                };
                 await _unitOfWork.Repository<SystemSettings, Guid>().AddAsync(settings);
             }
             else
             {
-                settings.PaymentPolicy = policy;
+                settings.Value = policy.ToString();
                 await _unitOfWork.Repository<SystemSettings, Guid>().UpdateAsync(settings);
             }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -65,16 +65,16 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                 }
 
                 // Ensure default system settings row exists
-                if (!_dbContext.SystemSettings.Any())
-                {
-                    _dbContext.SystemSettings.Add(new SystemSettings
-                    {
-                        Id = Guid.NewGuid(),
-                        PaymentPolicy = PaymentPolicy.Postpay,
-                        CreatedBy = "seeder",
-                        LastUpdatedBy = "seeder"
-                    });
-                }
+                    // if (!_dbContext.SystemSettings.Any())
+                    // {
+                    //     _dbContext.SystemSettings.Add(new SystemSettings
+                    //     {
+                    //         Id = Guid.NewGuid(),
+                    //         PaymentPolicy = PaymentPolicy.Postpay,
+                    //         CreatedBy = "seeder",
+                    //         LastUpdatedBy = "seeder"
+                    //     });
+                    // }
 
                 await _dbContext.SaveChangesAsync();
 
