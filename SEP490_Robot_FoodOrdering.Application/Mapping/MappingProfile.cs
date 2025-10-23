@@ -13,6 +13,9 @@ using SEP490_Robot_FoodOrdering.Application.DTO.Response.Topping;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.User;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request.Feedback;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Feedback;
+using SEP490_Robot_FoodOrdering.Domain.Entities.SEP490_Robot_FoodOrdering.Domain.Entities;
 
 namespace SEP490_Robot_FoodOrdering.Application.Mapping
 {
@@ -218,6 +221,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ProductSize.Product.ImageUrl))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
 
+            #endregion
+
+            #region Feedback Mapping
+            CreateMap<CreateFeedbackRequest, Feedback>()
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => (FeedbackTypeEnum)src.Type));
+
+            CreateMap<Feedback, FeedbackResponse>()
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(src => (int)src.Type));
             #endregion
 
         }
