@@ -33,7 +33,7 @@ public class ComplainController
     [HttpPut("{idTable}")]
     public Task<BaseResponseModel<List<ComplainCreate>>> ConfirmFeedback(
         Guid idTable,
-        [FromQuery] List<Guid> idFeedback,
+        [FromQuery] List<Guid>? idFeedback,
         [FromQuery] string content,
         [FromQuery] bool isPeeding)
         => FeedbackService.ComfirmComplain(idTable, idFeedback, isPeeding, content);
