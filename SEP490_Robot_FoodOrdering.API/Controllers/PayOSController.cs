@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using Net.payOS.Types;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Response;
@@ -12,10 +14,12 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
     public class PayOSController : ControllerBase
     {
         private readonly IPayOSService _payOSService;
+        private readonly ILogger<PayOSController> _logger;
 
-        public PayOSController(IPayOSService payOSService)
+        public PayOSController(IPayOSService payOSService, ILogger<PayOSController> logger)
         {
             _payOSService = payOSService;
+            _logger = logger;
         }
 
         // FE gọi để lấy URL thanh toán
@@ -31,7 +35,30 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         [HttpPost("webhook")]
         public async Task<IActionResult> Webhook([FromBody] WebhookType body)
         {
-            await _payOSService.HandleWebhook(body);
+            _logger.LogInformation(
+                "PayOS webhook hit: code={Code}, success={Success}, orderCode={OrderCode}",
+                body.code,
+                body.success,
+                body.data != null ? body.data.orderCode : null
+            );
+
+            // also dump compact JSON for diagnostic
+            try
+            {
+                _logger.LogInformation("PayOS webhook raw body: {Body}", JsonSerializer.Serialize(body));
+            }
+            catch { /* ignore serialization issues */ }
+
+            try
+            {
+                await _payOSService.HandleWebhook(body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "PayOS webhook handling failed");
+                // Return 200 so PayOS doesn't retry aggressively while we investigate
+            }
+
             return Ok();
         }
 
