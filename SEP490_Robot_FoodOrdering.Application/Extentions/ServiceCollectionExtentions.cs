@@ -40,5 +40,5 @@ namespace SEP490_Robot_FoodOrdering.Application.Extentions
 
             return services;
         }
-    } 
+    }   
 }
