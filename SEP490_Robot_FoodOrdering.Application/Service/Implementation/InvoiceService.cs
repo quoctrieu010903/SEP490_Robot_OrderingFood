@@ -128,7 +128,7 @@ public class InvoiceService : IInvoiceService
                 {
                     OrderItem = orderItem,
                     CreatedTime = DateTime.UtcNow,
-                    totalMoney = orderItem.ProductSize.Price + toppingPrice
+                    TotalMoney = orderItem.ProductSize.Price + toppingPrice
                 });
             }
 
@@ -152,7 +152,7 @@ public class InvoiceService : IInvoiceService
                 {
                     OrderItem = orderItem,
                     CreatedTime = DateTime.UtcNow,
-                    totalMoney = 0
+                    TotalMoney = 0
                 });
             }
         }
@@ -163,7 +163,7 @@ public class InvoiceService : IInvoiceService
         }
 
         invoice.Details = details;
-        invoice.totalMoney = details.Sum(d => d.totalMoney);
+        invoice.TotalMoney = details.Sum(d => d.TotalMoney);
         invoice.Table = table;
 
         _unitOfWork.Repository<Invoice, Guid>().Add(invoice);
@@ -174,7 +174,7 @@ public class InvoiceService : IInvoiceService
             Id = invoice.Id,
             TableName = table.Name ?? "Unknown Table",
             CreatedTime = invoice.CreatedTime,
-            TotalMoney = invoice.totalMoney,
+            TotalMoney = invoice.TotalMoney,
             PaymentStatus = order.Payment.PaymentStatus.ToString(),
             Details = details.Select(d => CreateInvoiceDetailResponse(d)).Where(d => d != null).ToList()
         };
@@ -218,7 +218,7 @@ public class InvoiceService : IInvoiceService
                     .Where(t => t?.Topping != null)
                     .Select(t => t.Topping.Name ?? "Unknown Topping")
                     .ToList() ?? new List<string>(),
-                TotalMoney = detail.totalMoney
+                TotalMoney = detail.TotalMoney
             };
         }
         catch (Exception ex)
@@ -230,7 +230,7 @@ public class InvoiceService : IInvoiceService
                 ProductName = "Error Loading Product",
                 UnitPrice = 0,
                 Toppings = new List<string>(),
-                TotalMoney = detail?.totalMoney ?? 0
+                TotalMoney = detail?.TotalMoney ?? 0
             };
         }
     }
