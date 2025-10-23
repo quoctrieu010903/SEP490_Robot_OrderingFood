@@ -694,23 +694,23 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
 
         public async Task<Dictionary<Guid, OrderStaticsResponse>> GetOrderStatsByTableIds(IEnumerable<Guid> tableIds)
-         {
+        {
             var tableIdsList = tableIds.ToList();
             if (!tableIdsList.Any())
                 return new Dictionary<Guid, OrderStaticsResponse>();
 
-            // Lấy tất cả orders cho các table ids trong 1 query
+            // 🔹 Lấy tất cả orders của các bàn trong 1 query duy nhất
             var allOrders = await _unitOfWork.Repository<Order, Guid>()
                 .GetAllWithSpecAsync(new OrdersByTableIdsSpecification(tableIdsList), true);
 
-            // Group orders theo TableId
+            // 🔹 Gom nhóm order theo TableId
             var ordersByTableId = allOrders
                 .GroupBy(o => o.TableId)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
             var result = new Dictionary<Guid, OrderStaticsResponse>(tableIdsList.Count);
 
-            // Xử lý tuần tự
+            // 🔹 Xử lý từng bàn
             foreach (var tableId in tableIdsList)
             {
                 var orders = ordersByTableId.GetValueOrDefault(tableId, new List<Order>());
@@ -722,12 +722,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         private static OrderStaticsResponse CalculateOrderStats(IEnumerable<Order> orders)
         {
+            // 🧩 Bàn chưa có order nào
             if (orders == null || !orders.Any())
             {
-                // 🔹 Bàn trống => set Pending hoặc bạn tự đặt quy ước
                 return new OrderStaticsResponse
                 {
-                    PaymentStatus = 0,
+                    PaymentStatus = PaymentStatusEnums.None,
                     TotalOrderItems = 0,
                     DeliveredCount = 0,
                     ServedCount = 0,
@@ -735,55 +735,71 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 };
             }
 
+            // 🔹 Gom tất cả item của các order
             var allItems = orders
                 .Where(o => o.OrderItems != null)
-                .SelectMany(o => o.OrderItems.Select(item => new { o.PaymentStatus, item.Status }));
+                .SelectMany(o => o.OrderItems.Select(item => new
+                {
+                    OrderPaymentStatus = o.PaymentStatus,
+                    OrderStatus = o.Status,
+                    ItemStatus = item.Status
+                }))
+                .ToList();
 
-            var totalItems = allItems.Count();
+            var totalItems = allItems.Count;
+
+            // 🔹 Đếm số món đã thanh toán (Completed + Order đã Paid)
             var paidItems = allItems.Count(x =>
-                x.PaymentStatus == PaymentStatusEnums.Paid &&
-                x.Status == OrderItemStatus.Completed);
+                x.OrderPaymentStatus == PaymentStatusEnums.Paid &&
+                x.ItemStatus == OrderItemStatus.Completed);
+
+            // 🔹 Xác định trạng thái tổng hợp của các order
+            bool allCancelledOrders = orders.All(o => o.Status == OrderStatus.Cancelled);
+            bool allCompletedOrders = orders.All(o => o.Status == OrderStatus.Completed);
+            bool hasActiveOrder = orders.Any(o =>
+                o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled);
 
             PaymentStatusEnums finalPaymentStatus;
 
-            if (totalItems == 0)
+            // ✅ 1️⃣ Nếu toàn bộ order bị huỷ → bàn không còn thanh toán nào
+            if (allCancelledOrders)
             {
-                finalPaymentStatus = PaymentStatusEnums.Pending;
+                finalPaymentStatus = PaymentStatusEnums.None;
             }
-            else if (paidItems == 0)
-            {
-                finalPaymentStatus = PaymentStatusEnums.Pending;
-            }
-            else if (paidItems == totalItems)
+            // ✅ 2️⃣ Nếu toàn bộ order đã hoàn tất → đã thanh toán
+            else if (allCompletedOrders)
             {
                 finalPaymentStatus = PaymentStatusEnums.Paid;
             }
+            // ✅ 3️⃣ Nếu bàn còn order đang hoạt động
+            else if (hasActiveOrder)
+            {
+                if (paidItems == 0)
+                    finalPaymentStatus = PaymentStatusEnums.Pending; // chưa có món nào thanh toán
+                else if (paidItems == totalItems)
+                    finalPaymentStatus = PaymentStatusEnums.Paid; // tất cả món đã thanh toán
+                else
+                    finalPaymentStatus = PaymentStatusEnums.Pending; // đang dở chừng
+            }
+            // ✅ 4️⃣ Nếu không còn order hoạt động (tức tất cả done hoặc cancel)
             else
             {
-                finalPaymentStatus = PaymentStatusEnums.Pending;
+                finalPaymentStatus = PaymentStatusEnums.None;
             }
 
-            var hasActiveOrder = orders.Any(o =>
-                o.Status != OrderStatus.Completed &&
-                o.Status != OrderStatus.Cancelled);
-
-            if (!hasActiveOrder)
-            {
-                // 🔹 Nếu tất cả order đã xong => bàn trống => reset lại "Pending"
-                finalPaymentStatus = PaymentStatusEnums.Pending;
-            }
-
+            // 🔹 Trả về kết quả thống kê
             return new OrderStaticsResponse
             {
                 PaymentStatus = finalPaymentStatus,
                 TotalOrderItems = totalItems,
                 DeliveredCount = allItems.Count(x =>
-                    x.Status is OrderItemStatus.Ready or OrderItemStatus.Served or OrderItemStatus.Remark or OrderItemStatus.Completed),
+                    x.ItemStatus is OrderItemStatus.Ready or OrderItemStatus.Served or OrderItemStatus.Remark or OrderItemStatus.Completed),
                 ServedCount = allItems.Count(x =>
-                    x.Status is OrderItemStatus.Served or OrderItemStatus.Completed),
+                    x.ItemStatus is OrderItemStatus.Served or OrderItemStatus.Completed),
                 PaidCount = paidItems
             };
         }
+
 
         // public async Task<BaseResponseModel<List<OrderResponse>>> GetOrderByDeviceToken(string idTable, string token)
         // {

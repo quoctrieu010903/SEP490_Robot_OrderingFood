@@ -8,6 +8,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
 {
     public enum PaymentStatusEnums
     {
+        None = 0,
         Pending = 1,     // Chưa thanh toán
         Paid = 2,        // Thanh toán thành công
         Failed = 3,      // Thất bại

@@ -9,5 +9,5 @@ public interface IComplainService
     Task<BaseResponseModel<ComplainCreate>> CreateComplainAsyns(ComplainRequests request);
     Task<BaseResponseModel<List<ComplainResponse>>> GetComplainByTable(Guid idTable);
     Task<BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>> GetAllComplainIsPending();
-    Task<BaseResponseModel<List<ComplainCreate>>> ComfirmComplain(Guid idTable, List<Guid> IDFeedback, bool isPeeding,string content);
+    Task<BaseResponseModel<List<ComplainCreate>>> ComfirmComplain(Guid idTable, List<Guid>? IDFeedback, bool isPeeding,string content);
 }

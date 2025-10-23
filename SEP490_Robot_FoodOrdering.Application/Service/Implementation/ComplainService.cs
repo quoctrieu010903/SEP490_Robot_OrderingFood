@@ -28,48 +28,63 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
 
         public async Task<BaseResponseModel<List<ComplainCreate>>> ComfirmComplain(
-                             Guid idTable,
-                             List<Guid> IDFeedback,
-                             bool isPending,
-                             string content)
+        Guid idTable,
+        List<Guid>? IDFeedback,
+        bool isPending,
+        string content)
         {
-            // Lấy tất cả feedback (Complain) từ DB theo table
+            // 🔹 1️⃣ Lấy tất cả complain theo bàn
             var feedbackEntities = await _unitOfWork.Repository<Complain, Guid>()
-                .GetAllWithSpecAsync(new BaseSpecification<Complain>(f => f.TableId == idTable));
+                .GetAllWithSpecWithInclueAsync(
+                    new BaseSpecification<Complain>(f => f.TableId == idTable),
+                    true,
+                    f => f.OrderItem, // include nếu có, vẫn null-safe
+                    f => f.OrderItem.Product
+                );
 
             if (feedbackEntities == null || !feedbackEntities.Any())
-                throw new ErrorException(404, "No feedbacks found for this table");
+                throw new ErrorException(404, "Không tìm thấy khiếu nại cho bàn này.");
 
+            // 🔹 2️⃣ Xác định tập complain cần xử lý
+            var targetFeedbacks = (IDFeedback == null || !IDFeedback.Any())
+                ? feedbackEntities // Xử lý tất cả
+                : feedbackEntities.Where(f => IDFeedback.Contains(f.Id)).ToList();
+
+            if (!targetFeedbacks.Any())
+                throw new ErrorException(404, "Không tìm thấy khiếu nại với các ID đã cho.");
+
+            // 🔹 3️⃣ Cập nhật trạng thái từng complain
             var updatedFeedbacks = new List<ComplainCreate>();
-            bool found = false;
 
-            foreach (var feedback in feedbackEntities.Where(f => IDFeedback.Contains(f.Id)))
+            foreach (var feedback in targetFeedbacks)
             {
-                found = true;
+                // ✅ Không cần quan tâm có OrderItemId hay không
                 feedback.isPending = isPending;
                 feedback.ResolutionNote = content;
                 feedback.ResolvedAt = DateTime.UtcNow;
 
                 await _unitOfWork.Repository<Complain, Guid>().UpdateAsync(feedback);
 
+                // 🧩 Mapping ra DTO an toàn
                 updatedFeedbacks.Add(new ComplainCreate(
-                    feedback.CreatedTime ,
+                    feedback.CreatedTime,
                     feedback.isPending,
-                    feedback.Description
+                    feedback.Description +
+                    (feedback.OrderItem != null ? $" (Món: {feedback.OrderItem.Product?.Name})" : "")
                 ));
             }
 
-            if (!found)
-                throw new ErrorException(404, "No feedbacks found with given IDs");
-
+            // 🔹 4️⃣ Lưu thay đổi
             await _unitOfWork.SaveChangesAsync();
 
+            // 🔹 5️⃣ Trả kết quả
             return new BaseResponseModel<List<ComplainCreate>>(
                 StatusCodes.Status200OK,
                 ResponseCodeConstants.SUCCESS,
                 updatedFeedbacks
             );
         }
+
 
 
 

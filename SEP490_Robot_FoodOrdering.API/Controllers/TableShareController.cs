@@ -7,6 +7,6 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
     [ApiController]
     public class TableShareController : ControllerBase
     {
-
+        
     }
 }

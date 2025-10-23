@@ -13,7 +13,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
 
         public string Title { get; set; } = string.Empty; // ví dụ: “Món nguội”, “Phục vụ chậm”
         public string Description { get; set; } = string.Empty; // chi tiết khiếu nạ
-        public bool isPending { get; set; } = true;
+        public bool isPending { get; set; } = false;
 
         public Guid? HandledBy { get; set; }
         public virtual User? Handler { get; set; }

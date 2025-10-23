@@ -271,9 +271,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         // ===== HELPER METHODS =====
         private async Task HandleOccupiedToAvailable(Table table, List<OrderItem> allItems, List<Order> orders, string updatedBy)
         {
+            // 🧩 1️⃣ Xử lý từng OrderItem
             foreach (var item in allItems)
             {
-                var oldItemStatus = item.Status;
+                var oldStatus = item.Status;
 
                 switch (item.Status)
                 {
@@ -282,75 +283,102 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     case OrderItemStatus.Ready:
                         item.Status = OrderItemStatus.Cancelled;
                         break;
+                    // Các trạng thái đã hoàn thành thì giữ nguyên
                     case OrderItemStatus.Served:
                     case OrderItemStatus.Completed:
                     case OrderItemStatus.Cancelled:
                     case OrderItemStatus.RequestCancel:
-                        // Giữ nguyên trạng thái
                         break;
                 }
 
-                if (item.Status != oldItemStatus)
+                if (item.Status != oldStatus)
                 {
                     item.LastUpdatedTime = DateTime.UtcNow;
+                    item.LastUpdatedBy = updatedBy;
                     _unitOfWork.Repository<OrderItem, Guid>().Update(item);
 
-                    // Send notification for each item status change
-
+                    // TODO: Gửi thông báo real-time nếu cần (ví dụ tới bếp / waiter)
                 }
-
             }
 
+            // 🧩 2️⃣ Xử lý từng Order
             foreach (var order in orders)
             {
-                var orderItems = allItems.Where(item => item.OrderId == order.Id).ToList();
-                if (!orderItems.Any()) continue;
+                var relatedItems = allItems.Where(i => i.OrderId == order.Id).ToList();
+                if (!relatedItems.Any()) continue;
 
-                var (newOrderStatus, newPaymentStatus) = CalculateOrderAndPaymentStatus(orderItems, order);
+                // Tính lại trạng thái order và payment
+                var (newOrderStatus, newPaymentStatus) = CalculateOrderAndPaymentStatus(relatedItems, order);
 
-                var orderChanged = false;
+                var changed = false;
+
+                // 🔹 Nếu khách chưa thanh toán mà bàn bị chuyển trống → đánh dấu Failed
+                if (newPaymentStatus == PaymentStatusEnums.Pending)
+                    newPaymentStatus = PaymentStatusEnums.Failed;
+
                 if (order.Status != newOrderStatus)
                 {
                     order.Status = newOrderStatus;
-                    orderChanged = true;
+                    changed = true;
                 }
 
                 if (order.PaymentStatus != newPaymentStatus)
                 {
                     order.PaymentStatus = newPaymentStatus;
-                    orderChanged = true;
+                    changed = true;
                 }
-                // ✅ Tính lại tổng tiền, bỏ qua các item Cancelled
-                var newTotal = CalculateOrderTotal(orderItems);
+
+                // 🔹 Tính lại tổng tiền
+                var newTotal = CalculateOrderTotal(relatedItems);
                 if (order.TotalPrice != newTotal)
                 {
                     order.TotalPrice = newTotal;
-                    orderChanged = true;
+                    changed = true;
                 }
-                if (orderChanged)
-                {
 
+                if (changed)
+                {
                     order.LastUpdatedTime = DateTime.UtcNow;
                     order.LastUpdatedBy = updatedBy;
                     _unitOfWork.Repository<Order, Order>().Update(order);
                 }
+
+                // Đánh dấu order đã đóng lại (vì bàn đã được giải phóng)
+                order.LastUpdatedBy = "";
+                order.LastUpdatedTime = DateTime.UtcNow;
+                order.PaymentStatus = PaymentStatusEnums.None;
+                _unitOfWork.Repository<Order, Order>().Update(order);
             }
+
             await _unitOfWork.SaveChangesAsync();
 
-
+            // 🧩 3️⃣ Cập nhật lại thông tin bàn
             table.Status = TableEnums.Available;
+           
             table.DeviceId = null;
             table.IsQrLocked = false;
             table.LockedAt = null;
             table.LastAccessedAt = null;
+            table.LastUpdatedBy = updatedBy;
+            table.LastUpdatedTime = DateTime.UtcNow;
+
+            _unitOfWork.Repository<Table, Guid>().Update(table);
         }
         private decimal CalculateOrderTotal(List<OrderItem> orderItems)
         {
-            return orderItems.Any(i => i.Status != OrderItemStatus.Cancelled)
-                ? orderItems.Where(i => i.Status != OrderItemStatus.Cancelled)
-                    .Sum(i => i.ProductSize.Price + i.OrderItemTopping.Sum(t => t.Topping.Price))
-                : 0;
+            // Lọc bỏ các món bị hủy
+            var validItems = orderItems.Where(i => i.Status != OrderItemStatus.Cancelled);
+
+            if (!validItems.Any())
+                return 0;
+
+            // Tính tổng giá từng món (base + topping)
+            return validItems.Sum(i =>
+                i.ProductSize.Price + i.OrderItemTopping.Sum(t => t.Topping.Price)
+            );
         }
+
+
 
 
 
