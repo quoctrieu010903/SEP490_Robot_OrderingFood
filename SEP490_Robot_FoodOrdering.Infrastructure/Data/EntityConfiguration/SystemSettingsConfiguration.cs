@@ -8,9 +8,19 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
     {
         public void Configure(EntityTypeBuilder<SystemSettings> builder)
         {
-            builder.Property(s => s.PaymentPolicy)
+            builder.Property(s => s.Key)
+                   .IsRequired()
+                   .HasMaxLength(100);
+
+            builder.Property(s => s.Value)
+                   .IsRequired();
+
+            builder.Property(s => s.Type)
                    .IsRequired()
                    .HasConversion<int>();
+
+            builder.HasIndex(s => s.Key)
+                   .IsUnique();
         }
     }
 }
