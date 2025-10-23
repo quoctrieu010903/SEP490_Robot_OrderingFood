@@ -722,20 +722,66 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         private static OrderStaticsResponse CalculateOrderStats(IEnumerable<Order> orders)
         {
+            if (orders == null || !orders.Any())
+            {
+                // 🔹 Bàn trống => set Pending hoặc bạn tự đặt quy ước
+                return new OrderStaticsResponse
+                {
+                    PaymentStatus = 0,
+                    TotalOrderItems = 0,
+                    DeliveredCount = 0,
+                    ServedCount = 0,
+                    PaidCount = 0
+                };
+            }
+
             var allItems = orders
                 .Where(o => o.OrderItems != null)
                 .SelectMany(o => o.OrderItems.Select(item => new { o.PaymentStatus, item.Status }));
 
+            var totalItems = allItems.Count();
+            var paidItems = allItems.Count(x =>
+                x.PaymentStatus == PaymentStatusEnums.Paid &&
+                x.Status == OrderItemStatus.Completed);
+
+            PaymentStatusEnums finalPaymentStatus;
+
+            if (totalItems == 0)
+            {
+                finalPaymentStatus = PaymentStatusEnums.Pending;
+            }
+            else if (paidItems == 0)
+            {
+                finalPaymentStatus = PaymentStatusEnums.Pending;
+            }
+            else if (paidItems == totalItems)
+            {
+                finalPaymentStatus = PaymentStatusEnums.Paid;
+            }
+            else
+            {
+                finalPaymentStatus = PaymentStatusEnums.Pending;
+            }
+
+            var hasActiveOrder = orders.Any(o =>
+                o.Status != OrderStatus.Completed &&
+                o.Status != OrderStatus.Cancelled);
+
+            if (!hasActiveOrder)
+            {
+                // 🔹 Nếu tất cả order đã xong => bàn trống => reset lại "Pending"
+                finalPaymentStatus = PaymentStatusEnums.Pending;
+            }
+
             return new OrderStaticsResponse
             {
-                PaymentStatus = allItems.Select(x => x.PaymentStatus).FirstOrDefault(),
-                TotalOrderItems = allItems.Count(),
+                PaymentStatus = finalPaymentStatus,
+                TotalOrderItems = totalItems,
                 DeliveredCount = allItems.Count(x =>
                     x.Status is OrderItemStatus.Ready or OrderItemStatus.Served or OrderItemStatus.Remark or OrderItemStatus.Completed),
                 ServedCount = allItems.Count(x =>
                     x.Status is OrderItemStatus.Served or OrderItemStatus.Completed),
-                PaidCount = allItems.Count(x =>
-                    x.PaymentStatus == PaymentStatusEnums.Paid && x.Status == OrderItemStatus.Completed)
+                PaidCount = paidItems
             };
         }
 
