@@ -12,8 +12,8 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
-    [Migration("20251023093056_UpdateSystemSettings")]
-    partial class UpdateSystemSettings
+    [Migration("20251023132134_InitialDatabase")]
+    partial class InitialDatabase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -146,7 +146,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<DateTime>("LastUpdatedTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("OrderItemId")
+                    b.Property<Guid?>("OrderItemId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("ResolutionNote")
@@ -162,9 +162,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
                     b.Property<bool>("isPending")
                         .HasColumnType("boolean");
 
@@ -175,8 +172,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasIndex("OrderItemId");
 
                     b.HasIndex("TableId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Complain");
                 });
@@ -205,16 +200,16 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<DateTime>("LastUpdatedTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("PhuongThucThanhToan")
+                    b.Property<int>("PaymentMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
                         .HasColumnType("integer");
 
                     b.Property<Guid>("TableId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("status")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("totalMoney")
+                    b.Property<decimal>("TotalMoney")
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
@@ -257,7 +252,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("totalMoney")
+                    b.Property<decimal>("TotalMoney")
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
@@ -1009,18 +1004,13 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.OrderItem", "OrderItem")
                         .WithMany("Complains")
                         .HasForeignKey("OrderItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Table", "Table")
                         .WithMany("Complains")
                         .HasForeignKey("TableId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.User", null)
-                        .WithMany("CustomerComplaints")
-                        .HasForeignKey("UserId");
 
                     b.Navigation("Handler");
 
@@ -1292,8 +1282,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.User", b =>
                 {
                     b.Navigation("CancelledItems");
-
-                    b.Navigation("CustomerComplaints");
 
                     b.Navigation("Feedbacks");
 
