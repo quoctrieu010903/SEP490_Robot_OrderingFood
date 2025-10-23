@@ -106,7 +106,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>> GetAllComplainIsPending()
         {
             // Lấy tất cả dữ liệu cần thiết
-            var tables = await _unitOfWork.Repository<Table, Guid>().GetAllAsync();
+            var tables = await _unitOfWork.Repository<Table, Guid>().GetAllWithIncludeAsync(true , t=> t.Orders);
             var complains = await _unitOfWork.Repository<Complain, Guid>()
                 .GetAllWithSpecAsync(new BaseSpecification<Complain>(x => x.isPending));
 
@@ -134,6 +134,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                             TableName: table.Name,
                             tableStatus: table.Status,
+                            paymentStatus : stats.PaymentStatus,
                             Counter: pendingCount,
                             DeliveredCount: stats.DeliveredCount,
                             ServeredCount: stats.ServedCount,
