@@ -29,7 +29,7 @@ public class PayOSService: IPayOSService
         _logger = logger;
     }
 
-    public async Task<BaseResponseModel<OrderPaymentResponse>> CreatePaymentLink(Guid orderId)
+    public async Task<BaseResponseModel<OrderPaymentResponse>> CreatePaymentLink(Guid orderId, bool isCustomer)
     {
         var order = await _unitOfWork.Repository<Order, Guid>()
             .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.Table, o => o.OrderItems);
@@ -77,9 +77,20 @@ public class PayOSService: IPayOSService
         {
             new ItemData(shortLabel, 1, amount)
         };
-        var returnUrl = _config["Environment:PAYOS_RETURN_URL"] ?? throw new Exception("Missing PAYOS_RETURN_URL");
-        var cancelUrl = _config["Environment:PAYOS_CANCEL_URL"] ?? throw new Exception("Missing PAYOS_CANCEL_URL");
-
+        var returnUrl = "";
+        var cancelUrl = "";
+        
+        if (isCustomer)
+        {
+            returnUrl = _config["Environment:PAYOS_RETURN_URL"] ?? throw new Exception("Missing PAYOS_RETURN_URL");
+            cancelUrl = _config["Environment:PAYOS_CANCEL_URL"] ?? throw new Exception("Missing PAYOS_CANCEL_URL");
+        }
+        else
+        {
+            returnUrl = _config["Environment:PAYOS_MODERATOR_RETURN_URL"] ?? throw new Exception("Missing PAYOS_RETURN_URL");
+            cancelUrl = _config["Environment:PAYOS_MODERATOR_CANCEL_URL"] ?? throw new Exception("Missing PAYOS_CANCEL_URL");
+        }
+        
         var paymentData = new PaymentData(
             payOsOrderCode,
             amount,

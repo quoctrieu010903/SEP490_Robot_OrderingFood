@@ -21,9 +21,9 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         // FE gọi để lấy URL thanh toán
         [HttpPost("create-link/{orderId}")]
         [ProducesResponseType(typeof(BaseResponseModel<OrderPaymentResponse>), 200)]
-        public async Task<ActionResult<BaseResponseModel>> CreateLink(Guid orderId)
+        public async Task<ActionResult<BaseResponseModel>> CreateLink(Guid orderId, bool isCustomer)
         {
-            var result = await _payOSService.CreatePaymentLink(orderId);
+            var result = await _payOSService.CreatePaymentLink(orderId,  isCustomer);
             return StatusCode(result.StatusCode, result);
         }
 

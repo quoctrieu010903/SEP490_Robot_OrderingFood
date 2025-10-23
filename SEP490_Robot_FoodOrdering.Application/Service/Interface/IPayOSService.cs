@@ -6,7 +6,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface;
 
 public interface IPayOSService
 {
-    Task<BaseResponseModel<OrderPaymentResponse>> CreatePaymentLink(Guid orderId);
+    Task<BaseResponseModel<OrderPaymentResponse>> CreatePaymentLink(Guid orderId, bool isCustomer);
     Task HandleWebhook(WebhookType body);
     Task<BaseResponseModel<OrderPaymentResponse>> SyncOrderPaymentStatus(Guid orderId);
 }
