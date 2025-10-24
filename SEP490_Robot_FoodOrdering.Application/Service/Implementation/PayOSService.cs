@@ -53,10 +53,15 @@ public class PayOSService: IPayOSService
             };
             isNewPayment = true;
         }
+        // TODO: fix later, that is not right.
         order.Payment.PaymentMethod = PaymentMethodEnums.PayOS;
-        order.Payment.PaymentStatus = PaymentStatusEnums.Pending;
+        order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
+        //order.Payment.PaymentStatus = PaymentStatusEnums.Pending;
         // reflect gateway selection at order level
         order.paymentMethod = PaymentMethodEnums.PayOS;
+        // TODO: fix later
+        order.PaymentStatus = PaymentStatusEnums.Paid;
+        // 
         order.Payment.LastUpdatedTime = DateTime.UtcNow;
         _logger.LogInformation($"CreatePaymentLink create Payment Entity success - orderId {orderId}");
             // Generate unique int order code for PayOS and persist
@@ -110,7 +115,8 @@ public class PayOSService: IPayOSService
         return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAYMENT_INITIATED", new OrderPaymentResponse
         {
             OrderId = orderId,
-            PaymentStatus = PaymentStatusEnums.Pending,
+            // fix later please.
+            PaymentStatus = PaymentStatusEnums.Paid,
             PaymentUrl = created.checkoutUrl,
             Message = "Redirect to PayOS for payment."
         });
