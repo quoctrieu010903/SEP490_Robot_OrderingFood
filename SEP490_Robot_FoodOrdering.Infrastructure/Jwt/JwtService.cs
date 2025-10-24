@@ -28,7 +28,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Jwt
             var claims = new[]{
                  new Claim("Id", user.Id.ToString()),
                  new Claim("Name", user.FullName),
-                 new Claim("Role", user.Role.ToString()),
+                 new Claim("Role", user.Role.Name.ToString()),
                  new Claim("Email", user?.Email ?? ""),
                  new Claim("Phone", user?.PhoneNumber ?? "")
          };
