@@ -774,12 +774,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // ✅ 3️⃣ Nếu bàn còn order đang hoạt động
             else if (hasActiveOrder)
             {
-                if (paidItems == 0)
-                    finalPaymentStatus = PaymentStatusEnums.Pending; // chưa có món nào thanh toán
-                else if (paidItems == totalItems)
-                    finalPaymentStatus = PaymentStatusEnums.Paid; // tất cả món đã thanh toán
-                else
-                    finalPaymentStatus = PaymentStatusEnums.Pending; // đang dở chừng
+                var currentOrder = orders
+                   .Where(o => o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled)
+                   .OrderByDescending(o => o.CreatedTime) // nếu có thuộc tính CreatedOn
+                   .FirstOrDefault();
+
+                // Nếu không có CreatedOn thì dùng ID lớn nhất (hoặc logic khác)
+                finalPaymentStatus = currentOrder?.PaymentStatus ?? PaymentStatusEnums.None;
             }
             // ✅ 4️⃣ Nếu không còn order hoạt động (tức tất cả done hoặc cancel)
             else
@@ -825,14 +826,30 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 .GetAllWithSpecWithInclueAsync(new OrderWithDetailsSpecification(token, idTable),
                     true);
 
-            // Lấy order mới nhất theo CreatedTime
-            var latestOrder = listas
+            var now = DateTime.UtcNow.AddHours(7);
+            var startOfDay = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);     // 00:00
+            var endOfDay = new DateTime(now.Year, now.Month, now.Day, 23, 59, 59);    // 23:59
+
+            // 🔍 Lọc ra các order trong khung giờ đó
+            var latestOrderToday = listas
+                .Where(o => o.TableId.ToString() == idTable
+                         && (o.Table.DeviceId == token)
+                         && o.CreatedTime >= startOfDay
+                         && o.CreatedTime <= endOfDay)
                 .OrderByDescending(o => o.CreatedTime)
                 .FirstOrDefault();
-            if (latestOrder == null)
+
+            // ❌ Không có order trong ngày
+            if (latestOrderToday == null)
+                return new BaseResponseModel<OrderResponse>(
+                    StatusCodes.Status404NotFound,
+                    "NOT_FOUND",
+                    "Hiện tại bạn chưa có đơn hàng nào được tạo trong ngày hôm nay."
+                );
+            if (latestOrderToday == null)
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status404NotFound, "NOT_FOUND",
-                    "Order not found.");
-            var response = _mapper.Map<OrderResponse>(latestOrder);
+                    "Không tìm thấy đơn hàng của bàn này.");
+            var response = _mapper.Map<OrderResponse>(latestOrderToday);
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 

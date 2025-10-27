@@ -19,7 +19,7 @@ public class ComplainController
 
 
     [HttpPost]
-    public Task<BaseResponseModel<ComplainCreate>> CreateFeedback([FromBody] ComplainRequests request)
+    public Task<BaseResponseModel<ComplainCreate>> CreateComplain([FromBody] ComplainRequests request)
     {
        var response =  FeedbackService.CreateComplainAsyns(request);
         return response;
@@ -27,11 +27,11 @@ public class ComplainController
 
 
     [HttpGet("{idTable}")]
-    public Task<BaseResponseModel<List<ComplainResponse>>> GetFeedbackTable(Guid idTable)
+    public Task<BaseResponseModel<List<ComplainResponse>>> GetComplainByTable(Guid idTable)
         => FeedbackService.GetComplainByTable(idTable);
 
     [HttpPut("{idTable}")]
-    public Task<BaseResponseModel<List<ComplainCreate>>> ConfirmFeedback(
+    public Task<BaseResponseModel<List<ComplainCreate>>> ConfirmComplain(
         Guid idTable,
         [FromQuery] List<Guid>? idFeedback,
         [FromQuery] string content,
@@ -40,6 +40,6 @@ public class ComplainController
 
 
     [HttpGet]
-    public Task<BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>> GetAllFeedbackIsPeeding()
+    public Task<BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>> GetAllComplainIsPeeding()
         => FeedbackService.GetAllComplainIsPending();
 }

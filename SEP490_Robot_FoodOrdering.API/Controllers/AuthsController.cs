@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.User;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 
@@ -34,6 +35,18 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         {
             var response = await _authenticationService.GetProfileAsync();
             return StatusCode(response.StatusCode, response);
+        }
+        [Authorize]
+        [HttpGet()]
+        public async Task<IActionResult> GetAllUser([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            var paging = new PagingRequestModel
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+            var response = await _authenticationService.GetAllUser(paging);
+            return Ok(response);
         }
     }
 }

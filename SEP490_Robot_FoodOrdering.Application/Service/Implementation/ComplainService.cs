@@ -12,6 +12,7 @@ using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
+using SEP490_Robot_FoodOrdering.Domain.Specifications;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -158,8 +159,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         {
             // Lấy tất cả dữ liệu cần thiết
             var tables = await _unitOfWork.Repository<Table, Guid>().GetAllWithIncludeAsync(true , t=> t.Orders);
+          
             var complains = await _unitOfWork.Repository<Complain, Guid>()
-                .GetAllWithSpecAsync(new BaseSpecification<Complain>(x => x.isPending));
+                .GetAllWithSpecAsync(new ComplainSpecification(isPendingOnly: true));
 
             if (tables == null || !tables.Any())
                 throw new ErrorException(404, "No tables found");

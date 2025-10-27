@@ -42,6 +42,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _cloudinaryService = cloudinaryService;
         }
 
+        public async Task<PaginatedList<UserProfileResponse>> GetAllUser(PagingRequestModel paging)
+        {
+            var response = await _unitOfWork.Repository<User, Guid>().GetAllWithIncludeAsync(true , u=>u.Role);
+            var mappedResponse = _mapper.Map<List<UserProfileResponse>>(response);
+            return PaginatedList<UserProfileResponse>.Create(mappedResponse, paging.PageNumber, paging.PageSize);
+        }
+
         public async Task<BaseResponseModel<UserProfileResponse>> GetProfileAsync()
         {
             var userid = Guid.Parse(_httpContextAccessor.HttpContext?.User?.FindFirst("Id")?.Value);
