@@ -26,15 +26,15 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly INotificationService _notificationService;
+        //private readonly INotificationService _notificationService;
         private readonly IInvoiceService _invoiceService;
         private readonly IUtilsService _utill;
         private readonly IServerEndpointService _enpointService;
-        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IInvoiceService invoiceService , IUtilsService utils , IServerEndpointService endpointService)
+        public TableService(IUnitOfWork unitOfWork, IMapper mapper,  IInvoiceService invoiceService , IUtilsService utils , IServerEndpointService endpointService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _notificationService = notificationService;
+            //_notificationService = notificationService;
             _invoiceService = invoiceService;
             _utill = utils;
             _enpointService = endpointService;

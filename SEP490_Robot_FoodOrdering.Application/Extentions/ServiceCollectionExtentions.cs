@@ -3,6 +3,7 @@ using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Hub;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.JWT;
 using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
@@ -24,7 +25,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Extentions
             services.AddScoped<IRemakeItemService, RemakeOrderItemService>();   
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IPayOSService, PayOSService>();
-            
+            services.AddScoped<IComplainService, ComplainService>();
+
+
+            services.AddScoped<OrderItemNotificationClient>();
+
             services.AddHttpContextAccessor();
 
             services.AddScoped<IProductToppingService, ProductToppingService>();

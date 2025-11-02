@@ -8,7 +8,7 @@ public class Invoice: BaseEntity
     public Guid TableId { get; set; }
     public virtual Table Table { get; set; }
     public decimal TotalMoney { get; set; }        
-    public PaymentStatusEnums Status { get; set; }        
+    public PaymentStatusEnums Status { get; set; }          
     public PaymentMethodEnums PaymentMethod { get; set; }
     public ICollection<InvoiceDetail>  Details { get; set; }
     

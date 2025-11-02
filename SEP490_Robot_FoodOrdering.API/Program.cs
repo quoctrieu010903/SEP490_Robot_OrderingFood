@@ -5,6 +5,7 @@ using SEP490_Robot_FoodOrdering.API.Extensions;
 using SEP490_Robot_FoodOrdering.API.Extentions;
 using SEP490_Robot_FoodOrdering.API.Hubs;
 using SEP490_Robot_FoodOrdering.API.Middleware;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Hub;
 using SEP490_Robot_FoodOrdering.Application.Extentions;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 using SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extensions;
@@ -29,8 +30,11 @@ builder.Services.AddControllers();
 
 
 builder.Services.AddInfrastructure(builder.Configuration)
+              
                 .AddApplication(builder.Configuration)
+                  .AddSignalRNotifications()
                 .AddJwtAuthentication(builder.Configuration)
+                
                 .AddSwagger();
 builder.Services.AddSingleton<IConfigureOptions<JsonOptions>, JsonOptionsConfigurator>();
 
@@ -69,13 +73,14 @@ app.UseCors(x => x
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseAppSignalR();
 
 app.UseStaticFiles();
 
 app.UseMiddleware<CustomExceptionHandlerMiddleware>();
 
 // Map SignalR Hub
-app.MapHub<OrderNotificationHub>("/orderNotificationHub");
+//app.MapHub<OrderItemNotificationClient>("/orderNotificationHub"); 
 
 app.MapControllers();
 app.Logger.LogInformation("ContentRootPath: {ContentRoot}", app.Environment.ContentRootPath);
