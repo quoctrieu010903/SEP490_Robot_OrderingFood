@@ -522,7 +522,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             table.LastAccessedAt = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
             var newdevidedtoken = Guid.NewGuid();
-            var shareUrl = _enpointService.GetBackendUrl() + $"/Table/{tableId}/accept-share?shareToken={sharetoken}?newDeviceId=";
+            var shareUrl = _enpointService.GetBackendUrl() + $"/Table/{tableId}/accept-share?shareToken={sharetoken}&newDeviceId=";
             string qrCodeBase64 = "data:image/png;base64," + _utill.GenerateQrCodeBase64_NoDrawing(shareUrl);
 
             var data = new QrShareResponse
