@@ -1,4 +1,4 @@
-﻿using SEP490_Robot_FoodOrdering.Domain.Entities;
+using SEP490_Robot_FoodOrdering.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace SEP490_Robot_FoodOrdering.Domain.Specifications;

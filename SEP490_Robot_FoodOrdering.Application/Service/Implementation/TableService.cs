@@ -227,7 +227,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
             // Kiểm tra bàn đã bị sử dụng bởi thiết bị khác
             if (existed.Status == TableEnums.Occupied && existed.DeviceId != deviceId)
-                throw new ErrorException(StatusCodes.Status403Forbidden, ResponseCodeConstants.FORBIDDEN, "Bàn đã có người sử dụng, vui lòng chuyển sang bàn khác");
+                throw new ErrorException(StatusCodes.Status403Forbidden, ResponseCodeConstants.FORBIDDEN, "Bàn đã có người sử dụng, hoặc thiết bị này đã quét một bàn khác");
 
             // Nếu cùng thiết bị scan lại -> cho phép tiếp tục sử dụng (refresh session)
             if (existed.Status == TableEnums.Occupied && existed.DeviceId == deviceId)
