@@ -16,10 +16,15 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
             public Guid ProductSizeId { get; set; }
             public virtual ProductSize ProductSize { get; set; }
 
+            public PaymentStatusEnums PaymentStatus { get; set; }
             public OrderItemStatus Status { get; set; } // Pending, Preparing, Ready, Served, Completed, Cancelled , Returned
             public string? Note { get; set; }
             public string? RemakeNote { get; set; }
-            public bool IsUrgent { get; set; } = false; 
+            public bool IsUrgent { get; set; } = false;
+            public decimal ? Price { get; set; }
+            public decimal ? TotalPrice { get; set; } // tong tien giua size va OrderItemTopping
+
+
 
 
         public virtual ICollection<OrderItemTopping> OrderItemTopping { get; set; }
@@ -28,6 +33,10 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public virtual ICollection<Feedback> Feedbacks { get; set; }
         
         public virtual ICollection<Complain> Complains { get; set; } = new List<Complain>();
+
+        public virtual ICollection<InvoiceDetail> InvoiceDetails { get; set; }
+        public bool IsPaid => (PaymentStatus == PaymentStatusEnums.Paid)
+                         || (InvoiceDetails != null && InvoiceDetails.Any());
 
 
 

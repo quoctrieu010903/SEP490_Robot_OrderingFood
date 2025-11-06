@@ -6,7 +6,8 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications;
 public class OrderWithDetailsSpecification : BaseSpecification<Order>
 {
     public OrderWithDetailsSpecification(string token , string idTable)
-        : base(order => order.Table.DeviceId == token && order.TableId.ToString() == idTable)
+        : base(order => order.Table.DeviceId == token && order.TableId.ToString() == idTable &&
+    order.CreatedTime.Date == DateTime.UtcNow.Date)
     {
         AddIncludes();
     }

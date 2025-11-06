@@ -411,7 +411,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     Id = Guid.NewGuid(),
                     ProductId = Guid.Parse("4AE13A6B-EEB1-4089-BA41-CC661DA91D4A"),
                     SizeName = SizeNameEnum.Small,
-                    Price = 15000,
+                    Price = 1000,
                       CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 },
@@ -420,7 +420,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     Id = Guid.NewGuid(),
                     ProductId = Guid.Parse("4AE13A6B-EEB1-4089-BA41-CC661DA91D4A"),
                     SizeName = SizeNameEnum.Medium,
-                    Price = 20000,
+                    Price = 1000,
                       CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 },
@@ -429,7 +429,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     Id = Guid.NewGuid(),
                     ProductId = Guid.Parse("4AE13A6B-EEB1-4089-BA41-CC661DA91D4A"),
                     SizeName = SizeNameEnum.Large,
-                    Price = 25000,
+                    Price = 1000,
                       CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 },
@@ -440,7 +440,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     Id = Guid.NewGuid(),
                     ProductId = Guid.Parse("20513572-9DB1-4325-A67E-0778B683B9F9"),
                     SizeName = SizeNameEnum.Small,
-                    Price = 16000,
+                    Price = 1000,
                       CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 },
@@ -449,7 +449,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     Id = Guid.NewGuid(),
                     ProductId = Guid.Parse("20513572-9DB1-4325-A67E-0778B683B9F9"),
                     SizeName = SizeNameEnum.Medium,
-                    Price = 21000,
+                    Price = 1000,
                       CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 },
@@ -458,7 +458,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     Id = Guid.NewGuid(),
                     ProductId = Guid.Parse("20513572-9DB1-4325-A67E-0778B683B9F9"),
                     SizeName = SizeNameEnum.Large,
-                    Price = 26000,
+                    Price = 1000,
                       CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 },
@@ -469,7 +469,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     Id = Guid.NewGuid(),
                     ProductId = Guid.Parse("AEDCCCA1-7419-4884-B3D1-E3FBDC87C97F"),
                     SizeName = SizeNameEnum.Medium,
-                    Price = 22000,
+                    Price = 1000,
                     CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 },
@@ -478,7 +478,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     Id = Guid.NewGuid(),
                     ProductId = Guid.Parse("AEDCCCA1-7419-4884-B3D1-E3FBDC87C97F"),
                     SizeName = SizeNameEnum.Large,
-                    Price = 27000,
+                    Price = 1000,
                      CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 },
@@ -489,7 +489,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     Id =Guid.NewGuid(),
                     ProductId = Guid.Parse("E6E394C0-2226-4F4F-8DD2-A623975C13FB"),
                     SizeName = SizeNameEnum.Small,
-                    Price = 18000,
+                    Price = 1000,
                       CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 },
@@ -498,7 +498,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     Id = Guid.NewGuid(),
                     ProductId = Guid.Parse("E6E394C0-2226-4F4F-8DD2-A623975C13FB"),
                     SizeName = SizeNameEnum.Large,
-                    Price = 23000,
+                    Price = 1000,
                       CreatedTime = DateTime.UtcNow,
                     LastUpdatedTime = DateTime.UtcNow
                 },
@@ -509,14 +509,14 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     Id = Guid.NewGuid(),
                     ProductId = Guid.Parse("56B31EDA-6E96-41B4-A7D6-0C1284A13E8B"),
                     SizeName = SizeNameEnum.Medium,
-                    Price = 19000
+                    Price = 10000
                 },
                 new ProductSize
                 {
                     Id = Guid.NewGuid(),
                     ProductId = Guid.Parse("56B31EDA-6E96-41B4-A7D6-0C1284A13E8B"),
                     SizeName = SizeNameEnum.Large,
-                    Price = 24000
+                    Price = 1000
                 },
 
                 new ProductSize
@@ -524,7 +524,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("9757A503-E801-469E-980C-5FBEE99AACCE"),
                         SizeName = SizeNameEnum.Small,
-                        Price = 35000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -533,7 +533,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("9757A503-E801-469E-980C-5FBEE99AACCE"),
                         SizeName = SizeNameEnum.Medium,
-                        Price = 45000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -542,7 +542,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("9757A503-E801-469E-980C-5FBEE99AACCE"),
                         SizeName = SizeNameEnum.Large,
-                        Price = 55000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -553,7 +553,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("3198FC44-CE8C-49B9-BC54-86915BED805C"),
                         SizeName = SizeNameEnum.Small,
-                        Price = 35000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -562,7 +562,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("3198FC44-CE8C-49B9-BC54-86915BED805C"),
                         SizeName = SizeNameEnum.Medium,
-                        Price = 45000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -571,7 +571,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("3198FC44-CE8C-49B9-BC54-86915BED805C"),
                         SizeName = SizeNameEnum.Large,
-                        Price = 55000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -582,7 +582,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("BA3DE89B-1FC4-4156-A259-79B977731CF2"),
                         SizeName = SizeNameEnum.Small,
-                        Price = 35000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -591,7 +591,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("BA3DE89B-1FC4-4156-A259-79B977731CF2"),
                         SizeName = SizeNameEnum.Medium,
-                        Price = 45000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -600,7 +600,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("BA3DE89B-1FC4-4156-A259-79B977731CF2"),
                         SizeName = SizeNameEnum.Large,
-                        Price = 55000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -611,7 +611,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("1DEBE98E-C358-4729-A44E-A3442455733B"),
                         SizeName = SizeNameEnum.Small,
-                        Price = 35000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -620,7 +620,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("1DEBE98E-C358-4729-A44E-A3442455733B"),
                         SizeName = SizeNameEnum.Medium,
-                        Price = 45000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -629,7 +629,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("1DEBE98E-C358-4729-A44E-A3442455733B"),
                         SizeName = SizeNameEnum.Large,
-                        Price = 55000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -640,7 +640,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("3B8EBE7C-8948-4D9A-AC47-BE85EE7CF085"),
                         SizeName = SizeNameEnum.Small,
-                        Price = 35000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -649,7 +649,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("3B8EBE7C-8948-4D9A-AC47-BE85EE7CF085"),
                         SizeName = SizeNameEnum.Medium,
-                        Price = 45000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -658,7 +658,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                         Id = Guid.NewGuid(),
                         ProductId = Guid.Parse("3B8EBE7C-8948-4D9A-AC47-BE85EE7CF085"),
                         SizeName = SizeNameEnum.Large,
-                        Price = 55000,
+                        Price = 1000,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     },
@@ -669,7 +669,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                             Id = Guid.NewGuid(),
                             ProductId = Guid.Parse("8F69CBB1-817D-4192-8ED0-B284FE4B1297"), // Chè đậu đỏ
                             SizeName = SizeNameEnum.Small,
-                            Price = 25000,
+                            Price = 1000,
                             CreatedTime = DateTime.UtcNow,
                             LastUpdatedTime = DateTime.UtcNow
                         },
@@ -678,7 +678,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                             Id = Guid.NewGuid(),
                             ProductId = Guid.Parse("F3E3697B-757D-4E64-BB82-3F5EBC7F3E6F"), // Bánh flan
                             SizeName = SizeNameEnum.Small,
-                            Price = 25000,
+                            Price = 1000,
                             CreatedTime = DateTime.UtcNow,
                             LastUpdatedTime = DateTime.UtcNow
                         },
@@ -687,7 +687,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                             Id = Guid.NewGuid(),
                             ProductId = Guid.Parse("CF21F6AA-1215-4EC2-BACD-C601FF76D26B"), // Chè sương sáo
                             SizeName = SizeNameEnum.Small,
-                            Price = 25000,
+                            Price = 1000,
                             CreatedTime = DateTime.UtcNow,
                             LastUpdatedTime = DateTime.UtcNow
                         },
@@ -696,7 +696,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                             Id = Guid.NewGuid(),
                             ProductId = Guid.Parse("25084817-29F4-42FD-BD60-081ECC90931C"), // Chè bưởi
                             SizeName = SizeNameEnum.Small,
-                            Price = 25000,
+                            Price = 1000,
                             CreatedTime = DateTime.UtcNow,
                             LastUpdatedTime = DateTime.UtcNow
                         },
@@ -705,7 +705,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                             Id = Guid.NewGuid(),
                             ProductId = Guid.Parse("35014A99-5664-4063-8BEB-83B80B2EEADB"), // Rau câu dừa
                             SizeName = SizeNameEnum.Small,
-                            Price = 25000,
+                            Price = 1000,
                             CreatedTime = DateTime.UtcNow,
                             LastUpdatedTime = DateTime.UtcNow
                         },

@@ -35,7 +35,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
                    .WithOne(oit => oit.OrderItem)
                    .HasForeignKey(oit => oit.OrderItemId)
                    .OnDelete(DeleteBehavior.Cascade); // ✅ Delete Toppings when OrderItem is deleted
-          
+
+          builder.Ignore(oi => oi.IsPaid);
         }
     }
 }

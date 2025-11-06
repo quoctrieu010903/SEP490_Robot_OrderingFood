@@ -16,6 +16,5 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public virtual User RemakedByUser { get; set; }
         public bool IsUrgent { get; set; } = true;
 
-
     }
 }

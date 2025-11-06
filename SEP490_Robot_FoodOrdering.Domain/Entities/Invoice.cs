@@ -5,6 +5,8 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities;
 
 public class Invoice: BaseEntity
 {
+    public Guid OrderId { get; set; }
+    public virtual Order Order { get; set; }
     public Guid TableId { get; set; }
     public virtual Table Table { get; set; }
     public decimal TotalMoney { get; set; }        
@@ -16,10 +18,12 @@ public class Invoice: BaseEntity
 
 public class InvoiceDetail : BaseEntity
 {
-    // neu ma khach chon thi set OrderStatus thanh da huy va totol monney = 0 OK 
-   public Guid OrderItemId { get; set; }
+   public Guid InvoiceId { get; set; }
+    public virtual Invoice Invoices { get; set; }
+
+    public Guid OrderItemId { get; set; }
     public virtual OrderItem OrderItem { get; set; }
     public decimal TotalMoney { get; set; }
     public OrderStatus Status { get; set; }
-    public Invoice Invoice { get; set; }
+
 }

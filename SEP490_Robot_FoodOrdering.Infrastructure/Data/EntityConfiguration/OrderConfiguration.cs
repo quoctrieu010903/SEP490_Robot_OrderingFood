@@ -31,6 +31,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
                    .WithOne(p => p.Order)
                    .HasForeignKey<Payment>(p => p.OrderId)
                    .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Ignore(o => o.TotalPaid);
+            builder.Ignore(o => o.IsFullyPaid);
         }
     }
 }

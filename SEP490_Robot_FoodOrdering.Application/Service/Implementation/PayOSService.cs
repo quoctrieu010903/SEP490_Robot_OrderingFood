@@ -61,6 +61,7 @@ public class PayOSService: IPayOSService
         order.paymentMethod = PaymentMethodEnums.PayOS;
         // TODO: fix later
         order.PaymentStatus = PaymentStatusEnums.Paid;
+        
         // 
         order.Payment.LastUpdatedTime = DateTime.UtcNow;
         _logger.LogInformation($"CreatePaymentLink create Payment Entity success - orderId {orderId}");
@@ -71,9 +72,14 @@ public class PayOSService: IPayOSService
         if (isNewPayment)
         {
             await _unitOfWork.Repository<Payment, Guid>().AddAsync(order.Payment);
-        }    
-            // Amount: PayOS expects int (VND)
-        var amount = Convert.ToInt32(Math.Round(order.TotalPrice, 0, MidpointRounding.AwayFromZero));
+        }
+        var unpaidItems = order.OrderItems
+                .Where(oi => oi.Status != OrderItemStatus.Cancelled
+                          && oi.PaymentStatus != PaymentStatusEnums.Paid)
+                .ToList();
+
+        var unpaidAmount = unpaidItems.Sum(oi => oi.TotalPrice) ?? 0;
+        var amount = Convert.ToInt32(Math.Round(unpaidAmount, 0, MidpointRounding.AwayFromZero));
         
         // Description: "ORD payOsOrderCode". Eg: "ORD 841803"
         // Description must be <= 25 chars per PayOS; use short code
@@ -129,7 +135,7 @@ public class PayOSService: IPayOSService
         WebhookData data;
         try
         {
-            data = _payOS.verifyPaymentWebhookData(body);
+            data =  _payOS.verifyPaymentWebhookData(body);
         }
         catch (Exception ex)
         {
@@ -227,6 +233,13 @@ public class PayOSService: IPayOSService
 
         // reflect payment method from Payment
         order.paymentMethod = payment.PaymentMethod;
+       
+        foreach (var item in order.OrderItems)
+        {
+            // just in case, ensure each item also reflects PayOS as payment method
+            item.PaymentStatus = PaymentStatusEnums.Paid;
+            await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
+        }
 
         await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
         await _unitOfWork.SaveChangesAsync();

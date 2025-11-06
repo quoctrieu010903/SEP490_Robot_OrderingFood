@@ -1,4 +1,4 @@
-using SEP490_Robot_FoodOrdering.Application.DTO.Request;
+    using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Notification;
 using SEP490_Robot_FoodOrdering.Core.Response;
@@ -91,6 +91,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     Product = product,
                     ProductSizeId = itemReq.ProductSizeId,
                     ProductSize = productSize,
+                    Price = productSize.Price,
                     Note = itemReq.Note,
                     Status = OrderItemStatus.Pending,
                     CreatedTime = DateTime.UtcNow,
@@ -124,13 +125,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     });
+                    
 
                     total += topping.Price;
+                    orderItem.TotalPrice = total;
                 }
                 
             }
 
             order.TotalPrice = total;
+            
             await _unitOfWork.Repository<Order, Guid>().AddAsync(order);
             await _unitOfWork.SaveChangesAsync();
             var response = _mapper.Map<OrderResponse>(order);
@@ -175,14 +179,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_PRODUCT_OR_SIZE",
                             "Invalid product or size.");
 
-                    //for (int i = 0; i < itemReq.Quantity; i++)
-                    //{
+
                     var orderItem = new OrderItem
                     {
                         OrderId = existingOrder.Id,
                         ProductId = itemReq.ProductId,
                         ProductSizeId = itemReq.ProductSizeId,
                         Note = itemReq.Note,
+                        Price = productSize.Price,
                         Status = OrderItemStatus.Pending,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow,
@@ -215,7 +219,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         });
 
                         addedTotal += topping.Price;
+                        
                     }
+                    orderItem.TotalPrice = addedTotal;
                 }
 
                 existingOrder.TotalPrice += addedTotal;

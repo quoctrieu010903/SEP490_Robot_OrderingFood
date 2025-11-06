@@ -21,12 +21,11 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Order
         public Guid Id { get; set; }
         public Guid ProductId { get; set; }
         public string ProductName { get; set; }
-
         public Guid ProductSizeId { get; set; }
         public string SizeName { get; set; }
         public string Note { get; set; }
         public string RemarkNote { get; set; } = string.Empty;
-
+        public string PaymentStatus { get; set; }
         public decimal Price { get; set; } // Price field for individual item
         public string Status { get; set; }
         public string? ImageUrl { get; set; }
