@@ -11,6 +11,7 @@ using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Application.Utils;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
+using SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob;
 using SEP490_Robot_FoodOrdering.Infrastructure.Cloudinary;
 using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 using SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Options;
@@ -54,10 +55,14 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
             services.Configure<EmailOptions>(configuration.GetSection(nameof(EmailOptions)));
             services.Configure<ServerEndpointOptions>(configuration.GetSection(nameof(ServerEndpointOptions)));
             services.Configure<VNPayOptions>(configuration.GetSection("VNPay"));
-            services.AddScoped<IPaymentService, PaymentService>();
+            //services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<ISettingsService, SettingsService>();
+           services.AddHostedService<TableReleaseBackgroundService>(); 
+                
 
             services.AddScoped<IServerEndpointService, ServerEndpointService>();
+            services.AddHostedService<TableReleaseBackgroundService>();
+
 
 
 

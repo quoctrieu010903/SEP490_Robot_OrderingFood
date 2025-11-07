@@ -14,7 +14,7 @@ using SEP490_Robot_FoodOrdering.Domain.Specifications.Params;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 
-public class InvoiceService : IInvoiceService
+public class InvoiceService 
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
@@ -26,159 +26,159 @@ public class InvoiceService : IInvoiceService
     }
 
 
-    public async Task<InvoiceResponse> createInvoice(InvoiceCreatRequest request)
-    {
-        Console.WriteLine($"Request received: request is null = {request == null}");
-        if (request != null)
-        {
-            Console.WriteLine($"TableId: {request.tableId}, Status: {request.status}");
-        }
+    //public async Task<InvoiceResponse> createInvoice(InvoiceCreatRequest request)
+    //{
+    //    Console.WriteLine($"Request received: request is null = {request == null}");
+    //    if (request != null)
+    //    {
+    //        Console.WriteLine($"TableId: {request.tableId}, Status: {request.status}");
+    //    }
 
-        if (request == null)
-            throw new ArgumentNullException(nameof(request), "Request cannot be null");
+    //    if (request == null)
+    //        throw new ArgumentNullException(nameof(request), "Request cannot be null");
 
-        if (request.tableId == Guid.Empty)
-            throw new ArgumentException("Table ID cannot be empty", nameof(request.tableId));
+    //    if (request.tableId == Guid.Empty)
+    //        throw new ArgumentException("Table ID cannot be empty", nameof(request.tableId));
 
-        var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.tableId);
+    //    var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.tableId);
 
-        if (table == null)
-            throw new Exception("Table not found");
+    //    if (table == null)
+    //        throw new Exception("Table not found");
 
-        Invoice invoice = new Invoice();
-        Order order = null;
+    //    Invoice invoice = new Invoice();
+    //    Order order = null;
 
-        var temp = await _unitOfWork.Repository<Order, Order>()
-            .GetAllWithSpecAsync(new OrdersByTableIdsSpecification(request.tableId));
+    //    var temp = await _unitOfWork.Repository<Order, Order>()
+    //        .GetAllWithSpecAsync(new OrdersByTableIdsSpecification(request.tableId));
 
-        Console.WriteLine($"Found {temp?.Count() ?? 0} orders");
+    //    Console.WriteLine($"Found {temp?.Count() ?? 0} orders");
 
-        if (temp == null || !temp.Any())
-        {
-            throw new Exception("No orders found for this table");
-        }
+    //    if (temp == null || !temp.Any())
+    //    {
+    //        throw new Exception("No orders found for this table");
+    //    }
 
-        foreach (var tableOrder in temp)
-        {
-            if (tableOrder?.PaymentStatus == PaymentStatusEnums.Pending)
-            {
-                order = tableOrder;
-                break;
-            }
-        }
+    //    foreach (var tableOrder in temp)
+    //    {
+    //        if (tableOrder?.PaymentStatus == PaymentStatusEnums.Pending)
+    //        {
+    //            order = tableOrder;
+    //            break;
+    //        }
+    //    }
 
-        if (order == null)
-        {
-            throw new Exception("Order not found or no pending order available");
-        }
+    //    if (order == null)
+    //    {
+    //        throw new Exception("Order not found or no pending order available");
+    //    }
 
 
-        if (order.OrderItems == null || !order.OrderItems.Any())
-            throw new Exception("Order has no items");
+    //    if (order.OrderItems == null || !order.OrderItems.Any())
+    //        throw new Exception("Order has no items");
 
-        List<InvoiceDetail> details = new List<InvoiceDetail>();
+    //    List<InvoiceDetail> details = new List<InvoiceDetail>();
 
-        if (order.Payment == null)
-        {
-            order.Payment = new Payment()
-            {
-                CreatedTime = DateTime.UtcNow,
-                Order = order,
-                PaymentStatus = PaymentStatusEnums.Pending,
-                PaymentMethod = request.MethodEnums == null ? PaymentMethodEnums.COD : request.MethodEnums,
-            };
-        }
+    //    if (order.Payment == null)
+    //    {
+    //        order.Payment = new Payment()
+    //        {
+    //            CreatedTime = DateTime.UtcNow,
+    //            Order = order,
+    //            PaymentStatus = PaymentStatusEnums.Pending,
+    //            PaymentMethod = request.MethodEnums == null ? PaymentMethodEnums.COD : request.MethodEnums,
+    //        };
+    //    }
 
-        if (request.status == StatusInvoice.Payment)
-        {
-            order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
+    //    if (request.status == StatusInvoice.Payment)
+    //    {
+    //        order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
 
-            foreach (var orderItem in order.OrderItems)
-            {
-                // Kiểm tra null cho từng orderItem
-                if (orderItem == null)
-                {
-                    Console.WriteLine("Warning: Found null order item, skipping...");
-                    continue;
-                }
+    //        foreach (var orderItem in order.OrderItems)
+    //        {
+    //            // Kiểm tra null cho từng orderItem
+    //            if (orderItem == null)
+    //            {
+    //                Console.WriteLine("Warning: Found null order item, skipping...");
+    //                continue;
+    //            }
 
-                if (orderItem.ProductSize == null)
-                {
-                    Console.WriteLine($"Warning: OrderItem {orderItem.Id} has null ProductSize, skipping...");
-                    continue;
-                }
+    //            if (orderItem.ProductSize == null)
+    //            {
+    //                Console.WriteLine($"Warning: OrderItem {orderItem.Id} has null ProductSize, skipping...");
+    //                continue;
+    //            }
 
-                decimal toppingPrice = 0;
-                try
-                {
-                    if (orderItem.OrderItemTopping != null && orderItem.OrderItemTopping.Any())
-                    {
-                        toppingPrice = orderItem.OrderItemTopping
-                            .Where(t => t != null)
-                            .Sum(topping => topping.Price);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error calculating topping price for OrderItem {orderItem.Id}: {ex.Message}");
-                    toppingPrice = 0;
-                }
+    //            decimal toppingPrice = 0;
+    //            try
+    //            {
+    //                if (orderItem.OrderItemTopping != null && orderItem.OrderItemTopping.Any())
+    //                {
+    //                    toppingPrice = orderItem.OrderItemTopping
+    //                        .Where(t => t != null)
+    //                        .Sum(topping => topping.Price);
+    //                }
+    //            }
+    //            catch (Exception ex)
+    //            {
+    //                Console.WriteLine($"Error calculating topping price for OrderItem {orderItem.Id}: {ex.Message}");
+    //                toppingPrice = 0;
+    //            }
 
-                details.Add(new InvoiceDetail()
-                {
-                    OrderItem = orderItem,
-                    CreatedTime = DateTime.UtcNow,
-                    TotalMoney = orderItem.ProductSize.Price + toppingPrice
-                });
-            }
+    //            details.Add(new InvoiceDetail()
+    //            {
+    //                OrderItem = orderItem,
+    //                CreatedTime = DateTime.UtcNow,
+    //                TotalMoney = orderItem.ProductSize.Price + toppingPrice
+    //            });
+    //        }
 
-            invoice.CreatedTime = DateTime.UtcNow;
-            _unitOfWork.Repository<Order, Guid>().Update(order);
-        }
-        else
-        {
-            order.Payment.PaymentStatus = PaymentStatusEnums.Failed;
-            order.Status = OrderStatus.Cancelled;
+    //        invoice.CreatedTime = DateTime.UtcNow;
+    //        _unitOfWork.Repository<Order, Guid>().Update(order);
+    //    }
+    //    else
+    //    {
+    //        order.Payment.PaymentStatus = PaymentStatusEnums.Failed;
+    //        order.Status = OrderStatus.Cancelled;
 
-            foreach (var orderItem in order.OrderItems)
-            {
-                if (orderItem == null)
-                {
-                    Console.WriteLine("Warning: Found null order item in failed payment, skipping...");
-                    continue;
-                }
+    //        foreach (var orderItem in order.OrderItems)
+    //        {
+    //            if (orderItem == null)
+    //            {
+    //                Console.WriteLine("Warning: Found null order item in failed payment, skipping...");
+    //                continue;
+    //            }
 
-                details.Add(new InvoiceDetail()
-                {
-                    OrderItem = orderItem,
-                    CreatedTime = DateTime.UtcNow,
-                    TotalMoney = 0
-                });
-            }
-        }
+    //            details.Add(new InvoiceDetail()
+    //            {
+    //                OrderItem = orderItem,
+    //                CreatedTime = DateTime.UtcNow,
+    //                TotalMoney = 0
+    //            });
+    //        }
+    //    }
 
-        if (!details.Any())
-        {
-            throw new Exception("No valid order items found to create invoice");
-        }
+    //    if (!details.Any())
+    //    {
+    //        throw new Exception("No valid order items found to create invoice");
+    //    }
 
-        invoice.Details = details;
-        invoice.TotalMoney = details.Sum(d => d.TotalMoney);
-        invoice.Table = table;
+    //    invoice.Details = details;
+    //    invoice.TotalMoney = details.Sum(d => d.TotalMoney);
+    //    invoice.Table = table;
 
-        _unitOfWork.Repository<Invoice, Guid>().Add(invoice);
-        _unitOfWork.SaveChanges();
+    //    _unitOfWork.Repository<Invoice, Guid>().Add(invoice);
+    //    _unitOfWork.SaveChanges();
 
-        return new InvoiceResponse()
-        {
-            Id = invoice.Id,
-            TableName = table.Name ?? "Unknown Table",
-            CreatedTime = invoice.CreatedTime,
-            TotalMoney = invoice.TotalMoney,
-            PaymentStatus = order.Payment.PaymentStatus.ToString(),
-            Details = details.Select(d => CreateInvoiceDetailResponse(d)).Where(d => d != null).ToList()
-        };
-    }
+    //    return new InvoiceResponse()
+    //    {
+    //        Id = invoice.Id,
+    //        TableName = table.Name ?? "Unknown Table",
+    //        CreatedTime = invoice.CreatedTime,
+    //        TotalMoney = invoice.TotalMoney,
+    //        PaymentStatus = order.Payment.PaymentStatus.ToString(),
+    //        Details = details.Select(d => CreateInvoiceDetailResponse(d)).Where(d => d != null).ToList()
+    //    };
+    //}
 
     public Task<PaginatedList<InvoiceResponse>> getAllInvoice(PagingRequestModel pagingRequest )
     {

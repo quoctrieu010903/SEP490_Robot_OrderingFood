@@ -27,15 +27,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly INotificationService _notificationService;
-        private readonly IInvoiceService _invoiceService;
         private readonly IUtilsService _utill;
         private readonly IServerEndpointService _enpointService;
-        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IInvoiceService invoiceService , IUtilsService utils , IServerEndpointService endpointService)
+        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService , IUtilsService utils , IServerEndpointService endpointService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _notificationService = notificationService;
-            _invoiceService = invoiceService;
+            
             _utill = utils;
             _enpointService = endpointService;
         }
@@ -209,7 +208,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (existed.Status == TableEnums.Reserved)
                 throw new ErrorException(StatusCodes.Status403Forbidden, ResponseCodeConstants.FORBIDDEN, "Bàn không khả dụng");
             var currentTable = (await _unitOfWork.Repository<Table, Guid>()
-                .GetWithSpecAsync(new BaseSpecification<Table>(x => x.DeviceId == deviceId && x.Status == TableEnums.Occupied)));
+                .GetWithSpecAsync(new BaseSpecification<Table>(x => x.DeviceId == deviceId && x.Status == TableEnums.Occupied && x.CreatedTime.Date == DateTime.UtcNow.Date) ));
             if (currentTable != null && currentTable.Id != id)
             {
                 var unpaidInvoices = await _unitOfWork.Repository<Payment, Guid>()
@@ -224,7 +223,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         ResponseCodeConstants.FORBIDDEN,
                         $"Bạn đang có hóa đơn chưa thanh toán ở bàn {currentTable.Name}, vui lòng thanh toán trước khi đổi bàn.");
                 }
+                else { 
+                        currentTable.Status = TableEnums.Available;
+                        currentTable.DeviceId = null;
+                        currentTable.IsQrLocked = false;
+                        currentTable.LockedAt = null;
+                        currentTable.LastUpdatedTime = DateTime.UtcNow;
+
+                        _unitOfWork.Repository<Table, Guid>().Update(currentTable);
             }
+        }
             // Kiểm tra bàn đã bị sử dụng bởi thiết bị khác
             if (existed.Status == TableEnums.Occupied && existed.DeviceId != deviceId)
                 throw new ErrorException(StatusCodes.Status403Forbidden, ResponseCodeConstants.FORBIDDEN, "Bàn đã có người sử dụng, hoặc thiết bị này đã quét một bàn khác");

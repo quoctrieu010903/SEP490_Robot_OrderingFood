@@ -16,6 +16,7 @@ using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.Feedback;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Feedback;
 using SEP490_Robot_FoodOrdering.Domain.Entities.SEP490_Robot_FoodOrdering.Domain.Entities;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.SystemSettings;
 
 namespace SEP490_Robot_FoodOrdering.Application.Mapping
 {
@@ -228,6 +229,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
             CreateMap<Feedback, FeedbackResponse>()
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => (int)src.Type));
             #endregion
+
+            CreateMap<SystemSettings, SystemSettingResponse>().ReverseMap();
 
         }
 

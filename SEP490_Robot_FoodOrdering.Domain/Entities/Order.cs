@@ -4,7 +4,7 @@ using SEP490_Robot_FoodOrdering.Domain.Enums;
 
 namespace SEP490_Robot_FoodOrdering.Domain.Entities
 {
-    public class Order : BaseEntity
+    public class    Order : BaseEntity
     {
         public Guid? TableId { get; set; } // nếu đặt tại quán
         public virtual Table? Table { get; set; } // nếu đặt tại quán
@@ -21,7 +21,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public bool IsFullyPaid => OrderItems
               .Where(x => x.Status != OrderItemStatus.Cancelled)
               .All(x => x.InvoiceDetails.Any());
-        public virtual Payment Payment { get; set; }
+        public virtual ICollection<Payment> Payments { get; set; }
 
     }
 

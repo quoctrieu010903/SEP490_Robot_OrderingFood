@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SEP490_Robot_FoodOrdering.Core.Constants;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
@@ -63,18 +64,23 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                     var users = GetUsers();
                     await _dbContext.Users.AddRangeAsync(users);
                 }
+                if(!_dbContext.SystemSettings.Any())
+                {
+                    var systemSettings = GetSystemSettings();
+                    await _dbContext.SystemSettings.AddRangeAsync(systemSettings);
+                }
 
                 // Ensure default system settings row exists
-                    // if (!_dbContext.SystemSettings.Any())
-                    // {
-                    //     _dbContext.SystemSettings.Add(new SystemSettings
-                    //     {
-                    //         Id = Guid.NewGuid(),
-                    //         PaymentPolicy = PaymentPolicy.Postpay,
-                    //         CreatedBy = "seeder",
-                    //         LastUpdatedBy = "seeder"
-                    //     });
-                    // }
+                // if (!_dbContext.SystemSettings.Any())
+                // {
+                //     _dbContext.SystemSettings.Add(new SystemSettings
+                //     {
+                //         Id = Guid.NewGuid(),
+                //         PaymentPolicy = PaymentPolicy.Postpay,
+                //         CreatedBy = "seeder",
+                //         LastUpdatedBy = "seeder"
+                //     });
+                // }
 
                 await _dbContext.SaveChangesAsync();
 
@@ -938,6 +944,41 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
     };
         }
 
+        public static List<SystemSettings> GetSystemSettings()
+        {
+            return new List<SystemSettings>
+        {
+            new SystemSettings
+            {
+                Id = Guid.Parse("D8A51C4B-5B94-4C4B-BB93-1B6B8769E601"),
+                Key = SystemSettingKeys.TableAccessTimeoutWithoutOrderMinutes,
+                Value = "3",
+                Type = SettingType.Int,
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            },
+            
+            new SystemSettings
+            {
+                Id = Guid.Parse("E22F43E1-9B75-4C2B-83A0-3D44C16BBF21"),
+                Key = SystemSettingKeys.PaymentTimeoutMinutes,
+                Value = "10",
+                Type = SettingType.Int,
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            },
+            new SystemSettings
+            {
+                Id = Guid.Parse("C01A62C3-77A8-42B1-AE77-9A1FBA2D4411"),
+                Key = SystemSettingKeys.PaymentPolicy,
+                Value = PaymentPolicy.Prepay.ToString(), // hoặc Prepay
+                Type = SettingType.String,
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            }
+
+        };
+        }
     }
 }
 

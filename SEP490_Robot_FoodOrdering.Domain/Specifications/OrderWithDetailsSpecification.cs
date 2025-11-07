@@ -22,6 +22,6 @@ public class OrderWithDetailsSpecification : BaseSpecification<Order>
             .ThenInclude(oi => oi.OrderItemTopping)
             .ThenInclude(oi => oi.Topping)
             .Include(o => o.Table)
-            .Include(o => o.Payment));
+            .Include(o => o.Payments));
     } 
 }
