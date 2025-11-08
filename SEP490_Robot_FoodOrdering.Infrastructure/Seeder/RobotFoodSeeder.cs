@@ -977,6 +977,10 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                 Key = SystemSettingKeys.OrderCleanupAfterDays,
                  DisplayName = "Số ngày trước khi tự động dọn bàn / xử lý feedback",
                  Description = "Số ngày để giữ các đơn hàng đã hoàn thành hoặc phản hồi trước khi chúng được tự động xóa khỏi hệ thống.",
+                 Type = SettingType.Int,
+                 Value = "1",
+                 CreatedTime = DateTime.UtcNow,
+                 LastUpdatedTime = DateTime.UtcNow
             }
 
 
