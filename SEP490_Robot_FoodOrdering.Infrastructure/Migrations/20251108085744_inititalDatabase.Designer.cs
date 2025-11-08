@@ -12,8 +12,8 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
-    [Migration("20251106190318_initial_Database")]
-    partial class initial_Database
+    [Migration("20251108085744_inititalDatabase")]
+    partial class inititalDatabase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -217,7 +217,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderId");
+                    b.HasIndex("OrderId")
+                        .IsUnique();
 
                     b.HasIndex("TableId");
 
@@ -732,17 +733,17 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Action")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Comment")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedTime")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CustomerId")
-                        .HasColumnType("uuid");
 
                     b.Property<string>("DeletedBy")
                         .HasColumnType("text");
@@ -768,13 +769,16 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
-                    b.HasKey("Id");
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
 
-                    b.HasIndex("CustomerId");
+                    b.HasKey("Id");
 
                     b.HasIndex("OrderItemId");
 
                     b.HasIndex("TableId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Feedback");
                 });
@@ -796,6 +800,13 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
                     b.Property<DateTime?>("DeletedTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Key")
                         .IsRequired()
@@ -1035,8 +1046,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Invoice", b =>
                 {
                     b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Order", "Order")
-                        .WithMany("Invoices")
-                        .HasForeignKey("OrderId")
+                        .WithOne("Invoices")
+                        .HasForeignKey("SEP490_Robot_FoodOrdering.Domain.Entities.Invoice", "OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1207,10 +1218,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.SEP490_Robot_FoodOrdering.Domain.Entities.Feedback", b =>
                 {
-                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.User", "Customer")
-                        .WithMany("Feedbacks")
-                        .HasForeignKey("CustomerId");
-
                     b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.OrderItem", "OrderItem")
                         .WithMany("Feedbacks")
                         .HasForeignKey("OrderItemId")
@@ -1223,7 +1230,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Customer");
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.User", null)
+                        .WithMany("Feedbacks")
+                        .HasForeignKey("UserId");
 
                     b.Navigation("OrderItem");
 
@@ -1253,7 +1262,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Order", b =>
                 {
-                    b.Navigation("Invoices");
+                    b.Navigation("Invoices")
+                        .IsRequired();
 
                     b.Navigation("OrderItems");
 

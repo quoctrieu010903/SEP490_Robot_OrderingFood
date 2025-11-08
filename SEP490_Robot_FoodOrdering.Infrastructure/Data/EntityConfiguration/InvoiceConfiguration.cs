@@ -15,9 +15,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
         {
 
             builder.HasOne(i => i.Order)
-              .WithMany(o => o.Invoices)
-              .HasForeignKey(i => i.OrderId)
-              .OnDelete(DeleteBehavior.Cascade);
+           .WithOne(o => o.Invoices)
+           .HasForeignKey<Invoice>(i => i.OrderId)
+           .OnDelete(DeleteBehavior.Cascade); // xoá Order sẽ xoá Invoice
 
             builder.HasOne(i => i.Table)
                .WithMany()

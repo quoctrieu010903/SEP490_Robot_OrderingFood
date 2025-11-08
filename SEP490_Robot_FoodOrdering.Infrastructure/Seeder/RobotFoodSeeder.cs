@@ -952,30 +952,33 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
             {
                 Id = Guid.Parse("D8A51C4B-5B94-4C4B-BB93-1B6B8769E601"),
                 Key = SystemSettingKeys.TableAccessTimeoutWithoutOrderMinutes,
+                DisplayName = "Thời gian giữ bàn khi chưa gọi món (phút)",
+                Description = "Thời gian tối đa (tính bằng phút) mà một bàn có thể được giữ mà không có đơn hàng nào được đặt. Sau khoảng thời gian này, bàn sẽ được giải phóng tự động.",
                 Value = "3",
                 Type = SettingType.Int,
                 CreatedTime = DateTime.UtcNow,
                 LastUpdatedTime = DateTime.UtcNow
             },
-            
+
             new SystemSettings
             {
-                Id = Guid.Parse("E22F43E1-9B75-4C2B-83A0-3D44C16BBF21"),
-                Key = SystemSettingKeys.PaymentTimeoutMinutes,
-                Value = "10",
-                Type = SettingType.Int,
+                Id = Guid.Parse("C01A62C3-77A8-42B1-AE77-9A1FBA2D4411"),
+                Key = SystemSettingKeys.PaymentPolicy,
+                DisplayName = "Chính sách thanh toán",
+                Description = "Prepay = thanh toán trước, Postpay = thanh toán sau",
+                Value = PaymentPolicy.Prepay.ToString(), // hoặc Prepay
+                Type = SettingType.String,
                 CreatedTime = DateTime.UtcNow,
                 LastUpdatedTime = DateTime.UtcNow
             },
             new SystemSettings
             {
-                Id = Guid.Parse("C01A62C3-77A8-42B1-AE77-9A1FBA2D4411"),
-                Key = SystemSettingKeys.PaymentPolicy,
-                Value = PaymentPolicy.Prepay.ToString(), // hoặc Prepay
-                Type = SettingType.String,
-                CreatedTime = DateTime.UtcNow,
-                LastUpdatedTime = DateTime.UtcNow
+                Id = Guid.Parse("E3F5D6A2-4C1B-4F8E-9C3D-2B7E8F9A0B12"),
+                Key = SystemSettingKeys.OrderCleanupAfterDays,
+                 DisplayName = "Số ngày trước khi tự động dọn bàn / xử lý feedback",
+                 Description = "Số ngày để giữ các đơn hàng đã hoàn thành hoặc phản hồi trước khi chúng được tự động xóa khỏi hệ thống.",
             }
+
 
         };
         }

@@ -11,14 +11,14 @@
             public virtual Table Table { get; set; }
 
             public Guid OrderItemId { get; set; }
-            public virtual OrderItem OrderItem { get; set; }
+            public virtual OrderItem? OrderItem { get; set; }
 
             public int Rating { get; set; } // 1–5 sao
             public string? Comment { get; set; } // “Món ngon, phục vụ tốt”
             public FeedbackTypeEnum Type { get; set; } = FeedbackTypeEnum.Food; // Food, Service, Environment,...
+            public FeedbackAction Action { get; set; } = FeedbackAction.None; // Hành động đề xuất từ phản hồi
 
-            public Guid? CreatedBy { get; set; } // Khách nào gửi (nếu có định danh)
-            public virtual User? Customer { get; set; }
+
         }
 
         public enum FeedbackTypeEnum
@@ -27,6 +27,11 @@
             Service = 1,
             Environment = 2,
             Other = 3
+        }
+        public enum FeedbackAction
+        {
+            None = 0,
+            RequestCheckOut = 1,
         }
     }
 

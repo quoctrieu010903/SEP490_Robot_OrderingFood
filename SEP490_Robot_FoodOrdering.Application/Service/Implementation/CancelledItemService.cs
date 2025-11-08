@@ -23,55 +23,85 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public CancelledItemService(IUnitOfWork unitOfWork , IMapper mapper)
+        public CancelledItemService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
-     
 
-        public async Task<bool> CreateCancelledItemAsync(Guid orderItemId, string? cancelNote, Guid cancelledByUserId)
+
+        public async Task<bool> CreateCancelledItemAsync(
+     Guid orderItemId,
+     string? cancelNote,
+     Guid cancelledByUserId)
         {
-            var orderItem = await _unitOfWork.Repository<OrderItem,Guid>().GetByIdWithIncludeAsync(x=>x.Id == orderItemId,true,o => o.Order, o=>o.ProductSize , o=> o.OrderItemTopping);
+            var orderItemRepo = _unitOfWork.Repository<OrderItem, Guid>();
+
+            var orderItem = await orderItemRepo.GetByIdWithIncludeAsync(
+                x => x.Id == orderItemId,
+                true,
+                o => o.Order,
+                o => o.ProductSize,
+                o => o.OrderItemTopping);
+
             if (orderItem == null) return false;
-            if (orderItem.Status != Domain.Enums.OrderItemStatus.Preparing && orderItem.Status != Domain.Enums.OrderItemStatus.Ready)
-                return false;
-            // ✅ Tính giá món (bao gồm topping)
-            decimal itemPrice = (orderItem.ProductSize?.Price ?? 0)
-                            + orderItem.OrderItemTopping.Sum(t => t.Price); 
-            if (itemPrice <= 0)
+
+            // Cho phép huỷ: Pending + Preparing + Ready
+            var canCancelStatuses = new[]
             {
-                itemPrice = (orderItem.ProductSize?.Price ?? 0)
-                            + orderItem.OrderItemTopping.Sum(t => t.Price);
-            }
-            // ✅ Lưu lại tổng trước khi hủy
-            decimal orderTotalBefore = orderItem.Order.TotalPrice;
-            decimal orderTotalAfter = Math.Max(0, orderTotalBefore - itemPrice);
+        Domain.Enums.OrderItemStatus.Pending,
+        Domain.Enums.OrderItemStatus.Preparing,
+        Domain.Enums.OrderItemStatus.Ready
+    };
+
+            if (!canCancelStatuses.Contains(orderItem.Status))
+                return false;
+
+            // ✅ Tính giá món (base + topping)
+            var basePrice = orderItem.ProductSize?.Price ?? 0m;
+            var toppingPrice = orderItem.OrderItemTopping?.Sum(t => t.Price) ?? 0m;
+            var itemPrice = basePrice + toppingPrice;
+
+            // Fallback: nếu vì lý do gì đó <= 0 thì dùng TotalPrice hiện tại
+            if (itemPrice <= 0m)
+                itemPrice = (decimal)orderItem.TotalPrice;
+
+            var order = orderItem.Order!;
+            var orderTotalBefore = order.TotalPrice;
+            var orderTotalAfter = Math.Max(0m, orderTotalBefore - itemPrice);
+
+            var now = DateTime.UtcNow;
 
             var cancelledItem = new CancelledOrderItem
             {
                 OrderItemId = orderItemId,
-                Reason = cancelNote ?? "Không ghi chú", 
-                Note = cancelNote ,
+                Reason = string.IsNullOrWhiteSpace(cancelNote) ? "Không ghi chú" : cancelNote,
+                Note = cancelNote,
                 CancelledByUserId = cancelledByUserId,
-                OrderTotalAfter = orderTotalAfter,
                 ItemPrice = itemPrice,
                 OrderTotalBefore = orderTotalBefore,
-                CreatedBy =cancelledByUserId.ToString(),
-                CreatedTime = DateTime.UtcNow,
-                LastUpdatedTime = DateTime.UtcNow,
+                OrderTotalAfter = orderTotalAfter,
+                CreatedBy = cancelledByUserId.ToString(),
+                CreatedTime = now,
+                LastUpdatedTime = now,
                 LastUpdatedBy = cancelledByUserId.ToString(),
-
             };
+
+            // ✅ Cập nhật OrderItem
             orderItem.Status = Domain.Enums.OrderItemStatus.Cancelled;
-            orderItem.LastUpdatedTime = DateTime.UtcNow;
-            await _unitOfWork.Repository<CancelledOrderItem, Guid>().AddAsync(cancelledItem);
+            orderItem.LastUpdatedTime = now;
+            orderItem.TotalPrice = 0m; // để tránh bị tính lại ở chỗ khác
+
+            // ✅ Cập nhật tổng tiền Order
+            order.TotalPrice = orderTotalAfter;
+
+            await _unitOfWork.Repository<CancelledOrderItem, Guid>()
+                .AddAsync(cancelledItem);
+
             await _unitOfWork.SaveChangesAsync();
 
             return true;
-
-
         }
 
         public async Task<PaginatedList<CancelledItemResponse>> getAllCancelledItems(CancelledItemFilterRequestParam request)

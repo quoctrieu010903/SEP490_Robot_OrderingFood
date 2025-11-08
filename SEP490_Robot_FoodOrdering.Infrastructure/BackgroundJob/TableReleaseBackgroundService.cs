@@ -56,12 +56,13 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob
                             {
                                 t.Status = TableEnums.Available;
                                 t.LastUpdatedTime = DateTime.UtcNow;
+                                t.LastAccessedAt = null;
                                 t.LockedAt = null;
                                 t.DeviceId = null;
                                 t.LockedAt = null;
                                 t.IsQrLocked = false;
                                 unitOfWork.Repository<Table, Guid>().Update(t);
-                                _logger.LogInformation("Released table {TableId} due to inactivity", t.Id);
+                                _logger.LogInformation("Released table {TableName} of the devided {devided} due to inactivity", t.Name, t.DeviceId );
                             }
                         }
 

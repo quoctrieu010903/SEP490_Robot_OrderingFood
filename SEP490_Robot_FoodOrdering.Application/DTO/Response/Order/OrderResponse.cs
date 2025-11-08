@@ -11,6 +11,7 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Order
         public string Status { get; set; }
         public string PaymentStatus { get; set; }
         public decimal TotalPrice { get; set; }
+        public decimal TotalPaid { get; set; }
         public DateTime CreatedTime { get; set; }
         public Guid? DeviceTokenId { get; set; }
         public List<OrderItemResponse> Items { get; set; }
