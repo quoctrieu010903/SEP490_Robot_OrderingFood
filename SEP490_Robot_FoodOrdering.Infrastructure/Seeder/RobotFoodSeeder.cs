@@ -901,7 +901,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
         },
         new User
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.Parse("b9abf60c-9c0e-4246-a846-d9ab62303b13"),
             EmploymentCode = "MO-0001",
             UserName = "moderator",
             Password = hashedPassword,

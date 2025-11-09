@@ -10,7 +10,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
     {
         None = 0,
         Pending = 1,     // Chưa thanh toán
-        Paid = 2,        // Thanh toán thành công
+        Paid = 2,        // Thanh toán thành công   
         Failed = 3,      // Thất bại
         Refunded = 4     // Đã hoàn tiền
     }

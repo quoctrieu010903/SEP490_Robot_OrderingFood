@@ -7,6 +7,7 @@ using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Constants;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain;
+using System.Threading;
 
 public class DailyCleanupJob : IJob
 {
@@ -14,7 +15,7 @@ public class DailyCleanupJob : IJob
     private readonly ISettingsService _systemSettingService;
     private readonly ICancelledItemService _cancelledItemService;
     private readonly ILogger<DailyCleanupJob> _logger;
-    private const string SystemUserId = "44444444-4444-4444-4444-444444444444";
+    private const string SystemUserId = "b9abf60c-9c0e-4246-a846-d9ab62303b13";
 
     public DailyCleanupJob(
         IUnitOfWork unitOfWork,
@@ -44,19 +45,19 @@ public class DailyCleanupJob : IJob
             {
                 cleanupDays = parsedDays;
             }
-            var thresholdDate = DateTime.Today.AddDays(-cleanupDays);
-
+        var thresholdLocal = DateTime.Today.AddDays(-cleanupDays);
+            var thresholdUtc = thresholdLocal.ToUniversalTime();
             // 2) Auto-cancel các OrderItem đang Pending quá thresholdDate
-            await AutoCancelPendingItems(thresholdDate, ct);
+            await AutoCancelPendingItems(thresholdUtc, ct);
 
             // 3) Auto xử lý Complain cũ (đánh dấu đã xử lý)
-            await AutoProcessOldComplain(thresholdDate, ct);
+            await AutoProcessOldComplain(thresholdUtc, ct);
 
             // 4) Auto close feedback cũ
             //await AutoCloseOldFeedback(thresholdDate, ct);
 
             //5) Giải phóng bàn không còn order/ complain active
-           await AutoReleaseTables(ct);
+             await AutoReleaseTables(thresholdUtc,ct);
 
             await _unitOfWork.SaveChangesAsync(ct);
 
@@ -69,22 +70,42 @@ public class DailyCleanupJob : IJob
         }
     }
 
-    private async Task AutoReleaseTables(CancellationToken ct)
+    private async Task AutoReleaseTables(DateTime thresholdDate,CancellationToken ct)
     {
         // Lấy tất cả các bàn đang occupied
-        var tables = _unitOfWork.Repository<Table, Guid>()
+        var tables = await _unitOfWork.Repository<Table, Guid>()
             .GetAllWithSpecWithInclueAsync(
                 new BaseSpecification<Table>(t => t.Status == TableEnums.Occupied),
                 true,
                 t => t.Orders,
-                t => t.Complains).Result;
+                t => t.Complains);
         _logger.LogInformation("DailyCleanupJob: found {Count} occupied tables to check for release", tables.Count());
         foreach (var table in tables)
         {
             var hasActiveOrders = table.Orders.Any(o =>
                 o.Status != OrderStatus.Completed &&
-                o.Status != OrderStatus.Cancelled);
+                o.Status != OrderStatus.Cancelled && o.CreatedTime >= thresholdDate); 
+           
             var hasActiveComplains = table.Complains.Any(c => c.isPending);
+          
+            _logger.LogInformation(
+        "DailyCleanupJob: table {TableName} - orders={OrderCount}, complains={ComplainCount}, hasActiveOrders={HasActiveOrders}, hasActiveComplains={HasActiveComplains}",
+        table.Name,
+        table.Orders.Count,
+        table.Complains.Count,
+        hasActiveOrders,
+        hasActiveComplains
+    );
+
+            foreach (var o in table.Orders)
+            {
+                _logger.LogInformation(" -> Order {OrderId} status: {Status}", o.Id, o.Status);
+            }
+
+            foreach (var c in table.Complains)
+            {
+                _logger.LogInformation(" -> Complain {ComplainId} isPending: {IsPending}", c.Id, c.isPending);
+            }
             if (!hasActiveOrders && !hasActiveComplains)
             {
                 table.Status = TableEnums.Available;
@@ -110,7 +131,7 @@ public class DailyCleanupJob : IJob
 
         foreach (var item in pendingItems)
         {
-            _cancelledItemService.CreateCancelledItemAsync(
+           _cancelledItemService.CreateCancelledItemAsync(
                 item.Id,
                 "Auto-cancelled by system daily cleanup job",
                 Guid.Parse(SystemUserId)).Wait(ct);

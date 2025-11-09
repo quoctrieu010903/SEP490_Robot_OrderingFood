@@ -21,7 +21,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
                 q.AddTrigger(t => t
                     .ForJob(jobKey)
                     .WithIdentity("DailyCleanupJob-trigger")
-                    .WithCronSchedule("0 5 0 * * ?"));
+                    .WithCronSchedule("0 21 7 * * ?"));
             });
 
             services.AddQuartzHostedService(options =>

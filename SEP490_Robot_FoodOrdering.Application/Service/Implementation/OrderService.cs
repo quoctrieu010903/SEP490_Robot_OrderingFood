@@ -754,7 +754,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 {
                     OrderPaymentStatus = o.PaymentStatus,
                     OrderStatus = o.Status,
-                    ItemStatus = item.Status
+                    ItemStatus = item.Status,
+                    PaidCount = item.PaymentStatus == PaymentStatusEnums.Paid
                 }))
                 .ToList();
 
@@ -762,8 +763,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             // 🔹 Đếm số món đã thanh toán (Completed + Order đã Paid)
             var paidItems = allItems.Count(x =>
-                x.OrderPaymentStatus == PaymentStatusEnums.Paid &&
-                x.ItemStatus == OrderItemStatus.Completed);
+                x.ItemStatus == OrderItemStatus.Completed &&
+                (x.OrderPaymentStatus == PaymentStatusEnums.Paid || x.OrderPaymentStatus == PaymentStatusEnums.Refunded));
 
             // 🔹 Xác định trạng thái tổng hợp của các order
             bool allCancelledOrders = orders.All(o => o.Status == OrderStatus.Cancelled);

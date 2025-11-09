@@ -57,11 +57,12 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
             services.Configure<VNPayOptions>(configuration.GetSection("VNPay"));
             //services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<ISettingsService, SettingsService>();
-           services.AddHostedService<TableReleaseBackgroundService>(); 
-                
+
+            services.AddRobotFoodOrderingBackgroundJobs();
 
             services.AddScoped<IServerEndpointService, ServerEndpointService>();
             services.AddHostedService<TableReleaseBackgroundService>();
+
 
 
 
