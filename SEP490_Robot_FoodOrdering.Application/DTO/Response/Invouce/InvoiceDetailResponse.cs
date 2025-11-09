@@ -20,9 +20,7 @@ public class InvoiceResponse
     public Guid TableId { get; set; }
     public string TableName { get; set; }
     public DateTime CreatedTime { get; set; }
-    public DateTime? PaymentTime { get; set; }
     public string PaymentMethod { get; set; }
-    public string Status { get; set; }
     public decimal TotalAmount { get; set; }
     public decimal Discount { get; set; }
     public decimal FinalAmount { get; set; }

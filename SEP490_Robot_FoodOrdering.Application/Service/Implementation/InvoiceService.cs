@@ -82,18 +82,22 @@ public class InvoiceService : IInvoiceService
             TableId = invoice.TableId,
             TableName = existedOrder.Table?.Name,
             CreatedTime = invoice.CreatedTime,
-            PaymentTime = DateTime.UtcNow,
             PaymentMethod = invoice.PaymentMethod.ToString(),
-            Status = invoice.Status.ToString(),
             TotalAmount = invoice.TotalMoney,
             Discount = 0,
             FinalAmount = invoice.TotalMoney,
-            CashierName = "Anonymous Cashier", // hoặc lấy từ User hiện tại
+            CashierName = "Moderator Manager", // hoặc lấy từ User hiện tại
             Details = invoice.Details.Select(d => new InvoiceDetailResponse
             {
                 OrderItemId = d.OrderItemId,
                 ProductName = d.OrderItem?.Product.Name,
                 UnitPrice = d.OrderItem?.Price ?? 0,
+                toppings = d.OrderItem?.OrderItemTopping?.Select(oit => new ToppingResponse
+                {
+                    Id = oit.Topping.Id,
+                    Name = oit.Topping.Name,
+                    Price = oit.Topping.Price
+                }).ToList() ?? new List<ToppingResponse>(),
                 TotalMoney = d.OrderItem?.TotalPrice ?? 0,
                 Status = d.Status.ToString()
             }).ToList()
@@ -115,9 +119,9 @@ public class InvoiceService : IInvoiceService
         throw new NotImplementedException();
     }
 
-    public async Task<PaginatedList<InvoiceResponse>> getInvoiceByTableId(Guid tableId, PagingRequestModel pagingRequest)
+    public async Task<PaginatedList<InvoiceResponse>> getInvoiceByTableId(Guid OrderId, PagingRequestModel pagingRequest)
     {
-        var specification = new InvoiceSpecification(tableId,pagingRequest.PageNumber,pagingRequest.PageSize);
+        var specification = new InvoiceSpecification(OrderId,pagingRequest.PageNumber,pagingRequest.PageSize);
         var invoices = await _unitOfWork.Repository<Invoice, Guid>().GetAllWithSpecAsync(specification);
         var response = _mapper.Map<List<InvoiceResponse>>(invoices);
 

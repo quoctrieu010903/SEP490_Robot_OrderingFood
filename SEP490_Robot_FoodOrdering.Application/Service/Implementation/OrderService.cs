@@ -129,8 +129,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                     total += topping.Price;
                 }
-                   orderItem.TotalPrice = total;
-               
+                   orderItem.TotalPrice = orderItem.Price + orderItem.OrderItemTopping.Sum(x=>x.Price);
             }
 
             order.TotalPrice = total;

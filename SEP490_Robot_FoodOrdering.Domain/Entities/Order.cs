@@ -22,9 +22,14 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
               .Where(x => x.Status != OrderItemStatus.Cancelled)
               .All(x => x.InvoiceDetails.Any());
         public virtual ICollection<Payment> Payments { get; set; }
-        public decimal TotalPaid => Payments
-            .Where(p => p.PaymentStatus == PaymentStatusEnums.Paid)
-            .Sum(p => (decimal) p.Order.OrderItems.Sum(x=>x.TotalPrice));
+        //public decimal TotalPaid => OrderItems    //tot
+        //    .Where(p => p.PaymentStatus != PaymentStatusEnums.Paid)
+        //    .Sum(p => (decimal) p.OrderItems.Sum(x=>x.TotalPrice));
+        public decimal TotalPaid =>
+         OrderItems
+        .Where(x => x.PaymentStatus == PaymentStatusEnums.Paid)
+        .Sum(x => (decimal) x.TotalPrice);
+
 
     }
 

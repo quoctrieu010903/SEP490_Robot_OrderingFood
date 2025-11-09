@@ -23,11 +23,12 @@
 
         public enum FeedbackTypeEnum
         {
-            Food = 0,
+            Food = 0, 
             Service = 1,
             Environment = 2,
             Other = 3
         }
+        // create 3 vs feedback action 1 -> invoice request checkout  -> thanh toans 
         public enum FeedbackAction
         {
             None = 0,
