@@ -68,7 +68,7 @@ public class PayOSService: IPayOSService
             Id = Guid.NewGuid(),
             OrderId = order.Id,
             PaymentMethod = PaymentMethodEnums.PayOS,
-            PaymentStatus = PaymentStatusEnums.Pending,
+            PaymentStatus = PaymentStatusEnums.Paid,
             PayOSOrderCode = payOsOrderCode,
             CreatedTime = DateTime.UtcNow,
             LastUpdatedTime = DateTime.UtcNow
@@ -99,6 +99,12 @@ public class PayOSService: IPayOSService
 
         var created = await _payOS.createPaymentLink(paymentData);
 
+        foreach (var item in unpaidItems)
+        {
+            item.PaymentStatus = PaymentStatusEnums.Paid;
+            await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
+        }
+        order.PaymentStatus = PaymentStatusEnums.Paid;
         payment.PaymentStatus = PaymentStatusEnums.Paid;
         payment.LastUpdatedTime = DateTime.UtcNow;
 

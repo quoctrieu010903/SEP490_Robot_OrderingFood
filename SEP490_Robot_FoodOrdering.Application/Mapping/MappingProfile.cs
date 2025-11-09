@@ -169,8 +169,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
 
             CreateMap<Invoice, InvoiceResponse>()
             .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.Table != null ? src.Table.Name : string.Empty))
-            .ForMember(dest => dest.TotalMoney, opt => opt.MapFrom(src => src.TotalMoney))
-            .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalMoney))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
 
             .ForMember(dest => dest.Details, opt => opt.MapFrom(src => src.Details))
             .ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(src => src.CreatedTime));

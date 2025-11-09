@@ -20,9 +20,9 @@ public class InvoiceController
     }
 
     [HttpPost]
-    public async Task<InvoiceResponse> createInvoice([FromForm] InvoiceCreatRequest request)
+    public async Task<InvoiceResponse> createInvoice([FromBody] InvoiceCreatRequest request)
     {
-        return await _invoiceService.createInvoice(request);
+        return await _invoiceService.CreateInvoice(request);
     }
     [HttpGet("table/{tableId}")]
     public async Task<ActionResult<PaginatedList<InvoiceResponse>>> GetInvoicesByTableId(Guid tableId, [FromQuery] PagingRequestModel pagingRequest)

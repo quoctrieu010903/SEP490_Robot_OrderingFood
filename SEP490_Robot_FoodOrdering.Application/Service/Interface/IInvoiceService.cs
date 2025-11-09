@@ -8,7 +8,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface;
 
 public interface IInvoiceService
 {
-    Task<InvoiceResponse> createInvoice(InvoiceCreatRequest request);
+    Task<InvoiceResponse> CreateInvoice(InvoiceCreatRequest request);
     Task<PaginatedList<InvoiceResponse>> getAllInvoice(PagingRequestModel pagingRequest);
     Task<InvoiceResponse> getInvoiceById(Guid id);
     Task<PaginatedList<InvoiceResponse>> getInvoiceByTableId(Guid tableId, PagingRequestModel pagingRequest);
