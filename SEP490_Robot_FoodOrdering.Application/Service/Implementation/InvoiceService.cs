@@ -7,7 +7,9 @@ using SEP490_Robot_FoodOrdering.Application.DTO.Response.Invouce;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Topping;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
+using SEP490_Robot_FoodOrdering.Core.Constants;
 using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
+using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
@@ -55,7 +57,7 @@ public class InvoiceService : IInvoiceService
         var invoice = new Invoice()
         {
             OrderId = existedOrder.Id,
-            TableId = request.TableId ,   // nếu không truyền TableId thì lấy từ order
+            TableId = request.TableId,   // nếu không truyền TableId thì lấy từ order
             CreatedTime = DateTime.UtcNow,
             TotalMoney = existedOrder.TotalPrice,               // tùy tên property trong model
             PaymentMethod = existedOrder.paymentMethod,          // chú ý tên property đúng
@@ -109,7 +111,7 @@ public class InvoiceService : IInvoiceService
     }
 
 
-    public Task<PaginatedList<InvoiceResponse>> getAllInvoice(PagingRequestModel pagingRequest )
+    public Task<PaginatedList<InvoiceResponse>> getAllInvoice(PagingRequestModel pagingRequest)
     {
         throw new NotImplementedException();
     }
@@ -119,14 +121,13 @@ public class InvoiceService : IInvoiceService
         throw new NotImplementedException();
     }
 
-    public async Task<PaginatedList<InvoiceResponse>> getInvoiceByTableId(Guid OrderId, PagingRequestModel pagingRequest)
+    public async Task<BaseResponseModel<InvoiceResponse>> getInvoiceByTableId(Guid OrderId, PagingRequestModel pagingRequest)
     {
-        var specification = new InvoiceSpecification(OrderId,pagingRequest.PageNumber,pagingRequest.PageSize);
-        var invoices = await _unitOfWork.Repository<Invoice, Guid>().GetAllWithSpecAsync(specification);
-        var response = _mapper.Map<List<InvoiceResponse>>(invoices);
+        var specification = new InvoiceSpecification(OrderId, pagingRequest.PageNumber, pagingRequest.PageSize);
+        var invoices = await _unitOfWork.Repository<Invoice, Guid>().GetWithSpecAsync(specification);
+        var response = _mapper.Map<InvoiceResponse>(invoices);
 
 
-        return PaginatedList<InvoiceResponse>.Create(response, pagingRequest.PageNumber, pagingRequest.PageSize);
+        return new BaseResponseModel<InvoiceResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, response, "Invoice retrived successfully");
     }
-
-   }
+}
