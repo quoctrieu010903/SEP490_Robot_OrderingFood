@@ -110,9 +110,12 @@ public class PayOSService: IPayOSService
 
         _unitOfWork.Repository<Payment, Guid>().Update(payment);
         await _unitOfWork.SaveChangesAsync();
-
+        
         _logger.LogInformation($"[CreatePaymentLink] Success | OrderId: {order.Id}, PaymentId: {payment.Id}, Amount: {amount}");
-
+        
+        _logger.LogInformation($"Sync payment status  OrderId: {order.Id} - start");
+        await SyncOrderPaymentStatus(orderId);
+        _logger.LogInformation($"Sync payment status  OrderId: {order.Id} - end");
         // 8️⃣ Trả về thông tin cho frontend
         return new BaseResponseModel<OrderPaymentResponse>(
             StatusCodes.Status200OK,

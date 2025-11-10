@@ -50,7 +50,7 @@ builder.Services.AddOpenApi();
     var seeder = scope.ServiceProvider.GetRequiredService<IRobotFoodSeeder>();
     await seeder.Seed();
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
  
     app.UseSwagger();

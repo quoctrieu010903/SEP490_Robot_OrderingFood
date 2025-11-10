@@ -1,4 +1,4 @@
-﻿
+﻿    
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
