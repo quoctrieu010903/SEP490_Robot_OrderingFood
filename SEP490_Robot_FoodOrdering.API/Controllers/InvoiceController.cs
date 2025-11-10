@@ -26,9 +26,9 @@ public class InvoiceController
         return await _invoiceService.CreateInvoice(request);
     }
     [HttpGet("Order/{OrderId}")]
-    public async Task<ActionResult<BaseResponseModel<InvoiceResponse>>> GetInvoicesByTableId(Guid OrderId, [FromQuery] PagingRequestModel pagingRequest)
+    public async Task<ActionResult<BaseResponseModel<InvoiceResponse>>> GetInvoicesByTableId(Guid OrderId)
     {
-        var result = await _invoiceService.getInvoiceByTableId(OrderId, pagingRequest);
+        var result = await _invoiceService.getInvoiceByTableId(OrderId);
         return result;
     }
 }

@@ -33,15 +33,16 @@ public class InvoiceService : IInvoiceService
     public async Task<InvoiceResponse> CreateInvoice(InvoiceCreatRequest request)
     {
         // 1️⃣ Lấy order từ DB kèm theo OrderItems và Table
+        //var existedOrder = await _unitOfWork.Repository<Order, Guid>()
+        //    .GetByIdWithIncludeAsync(
+        //        o => o.Id == request.OrderId,
+        //        true,
+        //        o => o.OrderItems,
+        //        o => o.OrderItems!.Select(oi => oi.Product),
+        //        o => o.Table
+        //    );
         var existedOrder = await _unitOfWork.Repository<Order, Guid>()
-            .GetByIdWithIncludeAsync(
-                o => o.Id == request.OrderId,
-                true,
-                o => o.OrderItems,
-                o => o.OrderItems!.Select(oi => oi.Product),
-                o => o.Table
-            );
-
+            .GetWithSpecAsync(new OrderSpecification(request.OrderId,true));
         if (existedOrder == null)
         {
             throw new ErrorException(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
@@ -57,7 +58,7 @@ public class InvoiceService : IInvoiceService
         var invoice = new Invoice()
         {
             OrderId = existedOrder.Id,
-            TableId = request.TableId,   // nếu không truyền TableId thì lấy từ order
+            TableId = existedOrder.TableId ?? request.TableId  ,   // nếu không truyền TableId thì lấy từ order
             CreatedTime = DateTime.UtcNow,
             TotalMoney = existedOrder.TotalPrice,               // tùy tên property trong model
             PaymentMethod = existedOrder.paymentMethod,          // chú ý tên property đúng
@@ -121,9 +122,9 @@ public class InvoiceService : IInvoiceService
         throw new NotImplementedException();
     }
 
-    public async Task<BaseResponseModel<InvoiceResponse>> getInvoiceByTableId(Guid OrderId, PagingRequestModel pagingRequest)
+    public async Task<BaseResponseModel<InvoiceResponse>> getInvoiceByTableId(Guid OrderId)
     {
-        var specification = new InvoiceSpecification(OrderId, pagingRequest.PageNumber, pagingRequest.PageSize);
+        var specification = new InvoiceSpecification(OrderId, true);
         var invoices = await _unitOfWork.Repository<Invoice, Guid>().GetWithSpecAsync(specification);
         var response = _mapper.Map<InvoiceResponse>(invoices);
 

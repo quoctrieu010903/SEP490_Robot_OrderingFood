@@ -151,6 +151,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var existingOrder = await _unitOfWork.Repository<Order, Guid>()
                 .GetWithSpecAsync(new OrderSpecification(request.TableId), true);
 
+            
             // 2. Nếu có order -> thêm item vào và cập nhật lại giá
             if (existingOrder != null)
             {
@@ -159,7 +160,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "",
                         "Thiết bị không có quyền đặt hàng");
                 }
-               
+               if(existingOrder.PaymentStatus == PaymentStatusEnums.Paid)
+                {
+                    existingOrder.PaymentStatus = PaymentStatusEnums.Pending;
+                }
                 // Ensure table is marked as occupi ed when adding items to existing order
                 var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
                 if (table != null && table.Status != TableEnums.Occupied)

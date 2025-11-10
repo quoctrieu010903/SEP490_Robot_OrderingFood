@@ -12,6 +12,6 @@ public interface IInvoiceService
     Task<InvoiceResponse> CreateInvoice(InvoiceCreatRequest request);
     Task<PaginatedList<InvoiceResponse>> getAllInvoice(PagingRequestModel pagingRequest);
     Task<InvoiceResponse> getInvoiceById(Guid id);
-    Task<BaseResponseModel<InvoiceResponse>> getInvoiceByTableId(Guid OrderId, PagingRequestModel pagingRequest);
+    Task<BaseResponseModel<InvoiceResponse>> getInvoiceByTableId(Guid OrderId);
 
 }
