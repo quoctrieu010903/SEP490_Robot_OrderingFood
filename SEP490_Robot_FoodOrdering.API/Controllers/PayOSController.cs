@@ -70,5 +70,13 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             var result = await _payOSService.SyncOrderPaymentStatus(orderId);
             return StatusCode(result.StatusCode, result);
         }
+        [HttpGet("cancel/{orderId}")]
+        [ProducesResponseType(typeof(BaseResponseModel<OrderPaymentResponse>), 200)]
+        public async Task<ActionResult<BaseResponseModel>> Cancel(Guid orderId)
+        {
+            var result = await _payOSService.CancelOrderPaymentStatus(orderId);
+            return StatusCode(result.StatusCode, result);
+        }
+        
     }
 }

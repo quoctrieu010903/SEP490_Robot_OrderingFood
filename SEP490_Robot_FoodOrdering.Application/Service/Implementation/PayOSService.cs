@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Net.payOS;
 using Net.payOS.Types;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.ServerEndPoint;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Response;
@@ -21,13 +22,14 @@ public class PayOSService: IPayOSService
     private readonly PayOS _payOS;
     private readonly IConfiguration _config;
     private readonly ILogger<PayOSService> _logger;
-    
-    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger)
+    private readonly IServerEndpointService _serverEndpointService;
+    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger, IServerEndpointService serverEndpointService)
     {
         _unitOfWork = unitOfWork;
         _payOS = payOS;
         _config = config;
         _logger = logger;
+        _serverEndpointService = serverEndpointService;
     }
 
     public async Task<BaseResponseModel<OrderPaymentResponse>> CreatePaymentLink(Guid orderId, bool isCustomer)
@@ -84,9 +86,10 @@ public class PayOSService: IPayOSService
             ? _config["Environment:PAYOS_RETURN_URL"]
             : _config["Environment:PAYOS_MODERATOR_RETURN_URL"];
 
-        var cancelUrl = isCustomer
-            ? _config["Environment:PAYOS_CANCEL_URL"]
-            : _config["Environment:PAYOS_MODERATOR_CANCEL_URL"];
+        // var cancelUrl = isCustomer
+        //     ? _config["Environment:PAYOS_CANCEL_URL"]
+        //     : _config["Environment:PAYOS_MODERATOR_CANCEL_URL"];
+        var cancelUrl = _serverEndpointService.GetBackendUrl() + $"/PayOS/cancel/{orderId}";
 
         var paymentData = new PaymentData(
             payOsOrderCode,
@@ -262,6 +265,44 @@ public class PayOSService: IPayOSService
                 OrderId = orderId,
                 PaymentStatus = order.PaymentStatus,
                 Message = "Order payment status synchronized successfully"
+            });
+    }
+    
+    
+    // Cancel api if the payment not success.
+    public async Task<BaseResponseModel<OrderPaymentResponse>> CancelOrderPaymentStatus(Guid orderId)
+    {
+        // get order by order id including payments, order items, tables
+        var order = await _unitOfWork.Repository<Order, Guid>()
+            .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payments, o => o.OrderItems, o => o.Table);
+
+        if (order == null)
+            return new BaseResponseModel<OrderPaymentResponse>(
+                StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
+        // get check the order items, if the order item paid. still get the same. 
+
+        if (order.PaymentStatus == PaymentStatusEnums.Paid)
+        {
+            order.PaymentStatus = PaymentStatusEnums.Pending;
+        }
+        
+        // Update lại order.
+        order.LastUpdatedTime = DateTime.UtcNow;
+        await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
+        await _unitOfWork.SaveChangesAsync();
+
+        var frontendCancelURL = _serverEndpointService.GetFrontendUrl() + "payment/cancel";
+        
+        
+        return new BaseResponseModel<OrderPaymentResponse>(
+            StatusCodes.Status200OK,
+            "CANCELLED",
+            new OrderPaymentResponse
+            {
+                OrderId = orderId,
+                PaymentUrl = frontendCancelURL,
+                PaymentStatus = order.PaymentStatus,
+                Message = "payment status cancelled."
             });
     }
 }
