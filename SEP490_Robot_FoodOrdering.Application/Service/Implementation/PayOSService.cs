@@ -82,14 +82,16 @@ public class PayOSService: IPayOSService
         // 6️⃣ Gọi PayOS để tạo link thanh toán
         var items = new List<ItemData> { new ItemData(shortLabel, 1, amount) };
 
-        var returnUrl = isCustomer
-            ? _config["Environment:PAYOS_RETURN_URL"]
-            : _config["Environment:PAYOS_MODERATOR_RETURN_URL"];
+        // var returnUrl = isCustomer
+        //     ? _config["Environment:PAYOS_RETURN_URL"]
+        //     : _config["Environment:PAYOS_MODERATOR_RETURN_URL"];
 
         // var cancelUrl = isCustomer
         //     ? _config["Environment:PAYOS_CANCEL_URL"]
         //     : _config["Environment:PAYOS_MODERATOR_CANCEL_URL"];
-        var cancelUrl = _serverEndpointService.GetBackendUrl() + $"/PayOS/cancel/{orderId}";
+        var returnUrl = _serverEndpointService.GetBackendUrl() + $"/PayOS/success/{orderId}?isCustomer={isCustomer}";
+
+        var cancelUrl = _serverEndpointService.GetBackendUrl() + $"/PayOS/cancel/{orderId}?isCustomer={isCustomer}";
 
         var paymentData = new PaymentData(
             payOsOrderCode,
@@ -108,7 +110,7 @@ public class PayOSService: IPayOSService
             await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
         }
         order.PaymentStatus = PaymentStatusEnums.Paid;
-        payment.PaymentStatus = PaymentStatusEnums.Paid;
+        payment.PaymentStatus = PaymentStatusEnums.Pending; 
         payment.LastUpdatedTime = DateTime.UtcNow;
 
         _unitOfWork.Repository<Payment, Guid>().Update(payment);
@@ -116,9 +118,9 @@ public class PayOSService: IPayOSService
         
         _logger.LogInformation($"[CreatePaymentLink] Success | OrderId: {order.Id}, PaymentId: {payment.Id}, Amount: {amount}");
         
-        _logger.LogInformation($"Sync payment status  OrderId: {order.Id} - start");
-        await SyncOrderPaymentStatus(orderId);
-        _logger.LogInformation($"Sync payment status  OrderId: {order.Id} - end");
+        // _logger.LogInformation($"Sync payment status  OrderId: {order.Id} - start");
+        // await SyncOrderPaymentStatus(orderId);
+        // _logger.LogInformation($"Sync payment status  OrderId: {order.Id} - end");
         // 8️⃣ Trả về thông tin cho frontend
         return new BaseResponseModel<OrderPaymentResponse>(
             StatusCodes.Status200OK,
@@ -270,7 +272,7 @@ public class PayOSService: IPayOSService
     
     
     // Cancel api if the payment not success.
-    public async Task<BaseResponseModel<OrderPaymentResponse>> CancelOrderPaymentStatus(Guid orderId)
+    public async Task<BaseResponseModel<OrderPaymentResponse>> CancelOrderPaymentStatus(Guid orderId,  bool isCustomer)
     {
         // get order by order id including payments, order items, tables
         var order = await _unitOfWork.Repository<Order, Guid>()
@@ -291,18 +293,35 @@ public class PayOSService: IPayOSService
         await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
         await _unitOfWork.SaveChangesAsync();
 
-        var frontendCancelURL = _serverEndpointService.GetFrontendUrl() + "payment/cancel";
+        //var frontendCancelURL = _serverEndpointService.GetFrontendUrl() + "payment/cancel";
         
-        
+        var cancelUrl = isCustomer
+        ? _config["Environment:PAYOS_CANCEL_URL"]
+        : _config["Environment:PAYOS_MODERATOR_CANCEL_URL"];
         return new BaseResponseModel<OrderPaymentResponse>(
             StatusCodes.Status200OK,
             "CANCELLED",
             new OrderPaymentResponse
             {
                 OrderId = orderId,
-                PaymentUrl = frontendCancelURL,
+                //PaymentUrl = frontendCancelURL,
+                PaymentUrl = cancelUrl,
                 PaymentStatus = order.PaymentStatus,
                 Message = "payment status cancelled."
             });
+    }
+
+    public async Task<BaseResponseModel<OrderPaymentResponse>> CompleteOrderPaymentStatus(Guid orderId, bool isCustomer)
+    {
+        var orderSuccessResponse = await SyncOrderPaymentStatus(orderId);
+        var returnUrl = isCustomer
+            ? _config["Environment:PAYOS_RETURN_URL"]
+            : _config["Environment:PAYOS_MODERATOR_RETURN_URL"];
+        // update return url
+        if (orderSuccessResponse.Data != null)
+        {
+            orderSuccessResponse.Data.PaymentUrl = returnUrl;
+        }
+        return orderSuccessResponse;
     }
 }

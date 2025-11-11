@@ -10,6 +10,8 @@ public interface IPayOSService
     Task HandleWebhook(WebhookType body);
     Task<BaseResponseModel<OrderPaymentResponse>> SyncOrderPaymentStatus(Guid orderId);
     
-    Task<BaseResponseModel<OrderPaymentResponse>> CancelOrderPaymentStatus(Guid orderId);
+    Task<BaseResponseModel<OrderPaymentResponse>> CancelOrderPaymentStatus(Guid orderId, bool isCustomer);
+    Task<BaseResponseModel<OrderPaymentResponse>> CompleteOrderPaymentStatus(Guid orderId, bool isCustomer);
+
 
 }
