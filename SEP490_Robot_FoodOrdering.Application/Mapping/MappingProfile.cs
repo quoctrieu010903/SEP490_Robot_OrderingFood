@@ -16,6 +16,7 @@ using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.Feedback;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Feedback;
 using SEP490_Robot_FoodOrdering.Domain.Entities.SEP490_Robot_FoodOrdering.Domain.Entities;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.SystemSettings;
 
 namespace SEP490_Robot_FoodOrdering.Application.Mapping
 {
@@ -106,6 +107,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
             CreateMap<Order, OrderResponse>()
              .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.Table.Name))
              .ForMember(dest => dest.deviderId, opt => opt.MapFrom(src => src.Table.DeviceId.ToString()))
+             .ForMember(dest => dest.TotalPaid , opt => opt.MapFrom(src => src.TotalPaid))
              .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.OrderItems)); // Items instead of OrderItems
 
             CreateMap<OrderItem, OrderItemResponse>()
@@ -115,9 +117,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src =>
                 src.Status == OrderItemStatus.Cancelled
                     ? 0
-                    : (src.ProductSize != null ? src.ProductSize.Price +
-                        (src.OrderItemTopping != null ? src.OrderItemTopping.Sum(t => t.Price) : 0)
-                      : 0)
+                    :(src.Price )
                  ))
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Product != null ? src.Product.ImageUrl : null))
 
@@ -169,8 +169,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
 
             CreateMap<Invoice, InvoiceResponse>()
             .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.Table != null ? src.Table.Name : string.Empty))
-            .ForMember(dest => dest.TotalMoney, opt => opt.MapFrom(src => src.TotalMoney))
-            .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalMoney))
 
             .ForMember(dest => dest.Details, opt => opt.MapFrom(src => src.Details))
             .ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(src => src.CreatedTime));
@@ -230,6 +229,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
             CreateMap<Feedback, FeedbackResponse>()
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => (int)src.Type));
             #endregion
+
+            CreateMap<SystemSettings, SystemSettingResponse>().ReverseMap();
 
         }
 

@@ -1,4 +1,4 @@
-using SEP490_Robot_FoodOrdering.Application.DTO.Request;
+    using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Notification;
 using SEP490_Robot_FoodOrdering.Core.Response;
@@ -45,7 +45,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         #region Order Management old , need to improve 
         public async Task<BaseResponseModel<OrderResponse>> CreateOrderAsync(CreateOrderRequest request)
-        {
+            {
             if (request.Items == null || !request.Items.Any())
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS",
                     "Order must have at least one item.");
@@ -91,6 +91,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     Product = product,
                     ProductSizeId = itemReq.ProductSizeId,
                     ProductSize = productSize,
+                    Price = productSize.Price,
                     Note = itemReq.Note,
                     Status = OrderItemStatus.Pending,
                     CreatedTime = DateTime.UtcNow,
@@ -124,13 +125,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow
                     });
+                    
 
                     total += topping.Price;
                 }
-                
+                   orderItem.TotalPrice = orderItem.Price + orderItem.OrderItemTopping.Sum(x=>x.Price);
             }
 
             order.TotalPrice = total;
+           
+            
             await _unitOfWork.Repository<Order, Guid>().AddAsync(order);
             await _unitOfWork.SaveChangesAsync();
             var response = _mapper.Map<OrderResponse>(order);
@@ -147,6 +151,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var existingOrder = await _unitOfWork.Repository<Order, Guid>()
                 .GetWithSpecAsync(new OrderSpecification(request.TableId), true);
 
+            
             // 2. Nếu có order -> thêm item vào và cập nhật lại giá
             if (existingOrder != null)
             {
@@ -155,7 +160,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "",
                         "Thiết bị không có quyền đặt hàng");
                 }
-
+               if(existingOrder.PaymentStatus == PaymentStatusEnums.Paid)
+                {
+                    existingOrder.PaymentStatus = PaymentStatusEnums.Pending;
+                }
                 // Ensure table is marked as occupi ed when adding items to existing order
                 var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
                 if (table != null && table.Status != TableEnums.Occupied)
@@ -175,14 +183,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         throw new ErrorException(StatusCodes.Status400BadRequest, "INVALID_PRODUCT_OR_SIZE",
                             "Invalid product or size.");
 
-                    //for (int i = 0; i < itemReq.Quantity; i++)
-                    //{
+
                     var orderItem = new OrderItem
                     {
                         OrderId = existingOrder.Id,
                         ProductId = itemReq.ProductId,
                         ProductSizeId = itemReq.ProductSizeId,
                         Note = itemReq.Note,
+                        Price = productSize.Price,
                         Status = OrderItemStatus.Pending,
                         CreatedTime = DateTime.UtcNow,
                         LastUpdatedTime = DateTime.UtcNow,
@@ -215,7 +223,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         });
 
                         addedTotal += topping.Price;
+                        
                     }
+                    orderItem.TotalPrice = addedTotal;
                 }
 
                 existingOrder.TotalPrice += addedTotal;
@@ -498,100 +508,100 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<List<OrderItemResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
-        public async Task<BaseResponseModel<OrderPaymentResponse>> InitiatePaymentAsync(Guid orderId,
-            OrderPaymentRequest request)
-        {
-            var order = await _unitOfWork.Repository<Order, Guid>()
-                .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.Table, o => o.OrderItems);
-            if (order == null)
-                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND",
-                    "Order not found.");
-            _logger.LogInformation($"Initiating payment for Order {orderId} with method {request.PaymentMethod}");
-            // Simulate payment logic
-            if (request.PaymentMethod == PaymentMethodEnums.COD)
-            {
-                order.PaymentStatus = PaymentStatusEnums.Paid;
-                order.Status = OrderStatus.Completed; // Update order status to Completed
-                order.LastUpdatedTime = DateTime.UtcNow;
-                if (order.Payment != null)
-                {
-                    order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
+        //public async Task<BaseResponseModel<OrderPaymentResponse>> InitiatePaymentAsync(Guid orderId,
+        //    OrderPaymentRequest request)
+        //{
+        //    var order = await _unitOfWork.Repository<Order, Guid>()
+        //        .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.Table, o => o.OrderItems);
+        //    if (order == null)
+        //        return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND",
+        //            "Order not found.");
+        //    _logger.LogInformation($"Initiating payment for Order {orderId} with method {request.PaymentMethod}");
+        //    // Simulate payment logic
+        //    if (request.PaymentMethod == PaymentMethodEnums.COD)
+        //    {
+        //        order.PaymentStatus = PaymentStatusEnums.Paid;
+        //        order.Status = OrderStatus.Completed; // Update order status to Completed
+        //        order.LastUpdatedTime = DateTime.UtcNow;
+        //        if (order.Payment != null)
+        //        {
+        //            order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
 
 
-                }
+        //        }
 
-                foreach (OrderItem item in order.OrderItems)
-                {
-                    item.Status = OrderItemStatus.Completed; // Mark all items as completed
-                    item.LastUpdatedTime = DateTime.UtcNow;
-                }
+        //        foreach (OrderItem item in order.OrderItems)
+        //        {
+        //            item.Status = OrderItemStatus.Completed; // Mark all items as completed
+        //            item.LastUpdatedTime = DateTime.UtcNow;
+        //        }
 
-                // Update table status to Available when payment is completed
-                if (order.Table != null)
-                {
-                    order.Table.Status = TableEnums.Available;
-                    await _unitOfWork.Repository<Table, Guid>().UpdateAsync(order.Table);
-                }
+        //        // Update table status to Available when payment is completed
+        //        if (order.Table != null)
+        //        {
+        //            order.Table.Status = TableEnums.Available;
+        //            await _unitOfWork.Repository<Table, Guid>().UpdateAsync(order.Table);
+        //        }
 
-                await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
-                await _unitOfWork.SaveChangesAsync();
+        //        await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
+        //        await _unitOfWork.SaveChangesAsync();
 
-                // Send payment status notification
-                if (_notificationService != null)
-                {
-                    try
-                    {
-                        var paymentNotification = new PaymentStatusNotification
-                        {
-                            OrderId = orderId,
-                            TableId = order.TableId ?? Guid.Empty,
-                            TableName = order.Table?.Name ?? "Unknown",
-                            OldStatus = PaymentStatusEnums.Pending,
-                            NewStatus = PaymentStatusEnums.Paid,
-                            PaymentMethod = request.PaymentMethod,
-                            TotalAmount = order.TotalPrice,
-                            UpdatedAt = DateTime.UtcNow
-                        };
+        //        // Send payment status notification
+        //        if (_notificationService != null)
+        //        {
+        //            try
+        //            {
+        //                var paymentNotification = new PaymentStatusNotification
+        //                {
+        //                    OrderId = orderId,
+        //                    TableId = order.TableId ?? Guid.Empty,
+        //                    TableName = order.Table?.Name ?? "Unknown",
+        //                    OldStatus = PaymentStatusEnums.Pending,
+        //                    NewStatus = PaymentStatusEnums.Paid,
+        //                    PaymentMethod = request.PaymentMethod,
+        //                    TotalAmount = order.TotalPrice,
+        //                    UpdatedAt = DateTime.UtcNow
+        //                };
 
-                        await _notificationService.SendPaymentStatusNotificationAsync(paymentNotification);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to send payment status notification");
-                    }
-                }
+        //                await _notificationService.SendPaymentStatusNotificationAsync(paymentNotification);
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                _logger.LogError(ex, "Failed to send payment status notification");
+        //            }
+        //        }
 
-                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAID",
-                    new OrderPaymentResponse
-                    {
-                        OrderId = orderId,
-                        PaymentStatus = PaymentStatusEnums.Paid,
-                        Message = "Payment successful (COD)"
-                    });
-            }
-            else if (request.PaymentMethod == PaymentMethodEnums.VNPay)
-            {
-                // Simulate VNPay payment URL
-                string paymentUrl = $"https://sandbox.vnpayment.vn/payment/{orderId}";
-                order.PaymentStatus = PaymentStatusEnums.Pending;
-                order.LastUpdatedTime = DateTime.UtcNow;
-                await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
-                await _unitOfWork.SaveChangesAsync();
-                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAYMENT_INITIATED",
-                    new OrderPaymentResponse
-                    {
-                        OrderId = orderId,
-                        PaymentStatus = PaymentStatusEnums.Pending,
-                        PaymentUrl = paymentUrl,
-                        Message = "Redirect to VNPay for payment."
-                    });
-            }
-            else
-            {
-                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status400BadRequest,
-                    "UNSUPPORTED_PAYMENT", "Unsupported payment method.");
-            }
-        }
+        //        return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAID",
+        //            new OrderPaymentResponse
+        //            {
+        //                OrderId = orderId,
+        //                PaymentStatus = PaymentStatusEnums.Paid,
+        //                Message = "Payment successful (COD)"
+        //            });
+        //    }
+        //    else if (request.PaymentMethod == PaymentMethodEnums.VNPay)
+        //    {
+        //        // Simulate VNPay payment URL
+        //        string paymentUrl = $"https://sandbox.vnpayment.vn/payment/{orderId}";
+        //        order.PaymentStatus = PaymentStatusEnums.Pending;
+        //        order.LastUpdatedTime = DateTime.UtcNow;
+        //        await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
+        //        await _unitOfWork.SaveChangesAsync();
+        //        return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAYMENT_INITIATED",
+        //            new OrderPaymentResponse
+        //            {
+        //                OrderId = orderId,
+        //                PaymentStatus = PaymentStatusEnums.Pending,
+        //                PaymentUrl = paymentUrl,
+        //                Message = "Redirect to VNPay for payment."
+        //            });
+        //    }
+        //    else
+        //    {
+        //        return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status400BadRequest,
+        //            "UNSUPPORTED_PAYMENT", "Unsupported payment method.");
+        //    }
+        //}
 
 
         public async Task<BaseResponseModel<InforBill>> CreateBill(Guid idOrder)
@@ -676,11 +686,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         protected async void updateStatus(Order order, PaymentStatusEnums status)
         {
-            if (order.Payment != null)
+            // ✅ Cập nhật tất cả Payment của Order sang cùng trạng thái
+            if (order.Payments != null && order.Payments.Any())
             {
-                order.Payment.PaymentStatus = status;
+                foreach (var payment in order.Payments)
+                {
+                    payment.PaymentStatus = status;
+                    payment.LastUpdatedTime = DateTime.UtcNow;
+                    _unitOfWork.Repository<Payment, Guid>().Update(payment);
+                }
             }
-
             order.PaymentStatus = status;
             _unitOfWork.Repository<Order, Guid>().Update(order);
             await _unitOfWork.SaveChangesAsync();
@@ -742,7 +757,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 {
                     OrderPaymentStatus = o.PaymentStatus,
                     OrderStatus = o.Status,
-                    ItemStatus = item.Status
+                    ItemStatus = item.Status,
+                    PaidCount = item.PaymentStatus == PaymentStatusEnums.Paid
                 }))
                 .ToList();
 
@@ -750,8 +766,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             // 🔹 Đếm số món đã thanh toán (Completed + Order đã Paid)
             var paidItems = allItems.Count(x =>
-                x.OrderPaymentStatus == PaymentStatusEnums.Paid &&
-                x.ItemStatus == OrderItemStatus.Completed);
+                x.ItemStatus == OrderItemStatus.Completed &&
+                (x.OrderPaymentStatus == PaymentStatusEnums.Paid || x.OrderPaymentStatus == PaymentStatusEnums.Refunded));
 
             // 🔹 Xác định trạng thái tổng hợp của các order
             bool allCancelledOrders = orders.All(o => o.Status == OrderStatus.Cancelled);

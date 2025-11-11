@@ -1,4 +1,4 @@
-﻿using SEP490_Robot_FoodOrdering.Domain.Entities;
+using SEP490_Robot_FoodOrdering.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace SEP490_Robot_FoodOrdering.Domain.Specifications;
@@ -6,7 +6,8 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications;
 public class OrderWithDetailsSpecification : BaseSpecification<Order>
 {
     public OrderWithDetailsSpecification(string token , string idTable)
-        : base(order => order.Table.DeviceId == token && order.TableId.ToString() == idTable)
+        : base(order => order.Table.DeviceId == token && order.TableId.ToString() == idTable &&
+    order.CreatedTime.Date == DateTime.UtcNow.Date)
     {
         AddIncludes();
     }
@@ -21,6 +22,6 @@ public class OrderWithDetailsSpecification : BaseSpecification<Order>
             .ThenInclude(oi => oi.OrderItemTopping)
             .ThenInclude(oi => oi.Topping)
             .Include(o => o.Table)
-            .Include(o => o.Payment));
+            .Include(o => o.Payments));
     } 
 }

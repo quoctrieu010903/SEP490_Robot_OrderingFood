@@ -88,7 +88,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
                     .ThenInclude(oi => oi.OrderItemTopping)
                         .ThenInclude(oi => oi.Topping)
                 .Include(o => o.Table)
-                .Include(o => o.Payment));
+                .Include(o => o.Payments));
         }   
     }
 

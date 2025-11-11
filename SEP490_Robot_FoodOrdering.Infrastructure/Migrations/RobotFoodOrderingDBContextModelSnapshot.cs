@@ -197,6 +197,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<DateTime>("LastUpdatedTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("PaymentMethod")
                         .HasColumnType("integer");
 
@@ -210,6 +213,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
 
                     b.HasIndex("TableId");
 
@@ -342,6 +348,12 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("PaymentStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("numeric");
+
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
@@ -353,6 +365,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<decimal?>("TotalPrice")
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
@@ -448,8 +463,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderId")
-                        .IsUnique();
+                    b.HasIndex("OrderId");
 
                     b.ToTable("Payments");
                 });
@@ -716,17 +730,17 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Action")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Comment")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uuid");
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedTime")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CustomerId")
-                        .HasColumnType("uuid");
 
                     b.Property<string>("DeletedBy")
                         .HasColumnType("text");
@@ -752,13 +766,16 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
-                    b.HasKey("Id");
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
 
-                    b.HasIndex("CustomerId");
+                    b.HasKey("Id");
 
                     b.HasIndex("OrderItemId");
 
                     b.HasIndex("TableId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Feedback");
                 });
@@ -780,6 +797,13 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
                     b.Property<DateTime?>("DeletedTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Key")
                         .IsRequired()
@@ -1018,30 +1042,38 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Invoice", b =>
                 {
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Order", "Order")
+                        .WithOne("Invoices")
+                        .HasForeignKey("SEP490_Robot_FoodOrdering.Domain.Entities.Invoice", "OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Table", "Table")
                         .WithMany()
                         .HasForeignKey("TableId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
+
+                    b.Navigation("Order");
 
                     b.Navigation("Table");
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.InvoiceDetail", b =>
                 {
-                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Invoice", "Invoice")
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Invoice", "Invoices")
                         .WithMany("Details")
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.OrderItem", "OrderItem")
-                        .WithMany()
+                        .WithMany("InvoiceDetails")
                         .HasForeignKey("OrderItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Invoice");
+                    b.Navigation("Invoices");
 
                     b.Navigation("OrderItem");
                 });
@@ -1105,8 +1137,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Payment", b =>
                 {
                     b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.Order", "Order")
-                        .WithOne("Payment")
-                        .HasForeignKey("SEP490_Robot_FoodOrdering.Domain.Entities.Payment", "OrderId")
+                        .WithMany("Payments")
+                        .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1183,10 +1215,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.SEP490_Robot_FoodOrdering.Domain.Entities.Feedback", b =>
                 {
-                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.User", "Customer")
-                        .WithMany("Feedbacks")
-                        .HasForeignKey("CustomerId");
-
                     b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.OrderItem", "OrderItem")
                         .WithMany("Feedbacks")
                         .HasForeignKey("OrderItemId")
@@ -1199,7 +1227,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Customer");
+                    b.HasOne("SEP490_Robot_FoodOrdering.Domain.Entities.User", null)
+                        .WithMany("Feedbacks")
+                        .HasForeignKey("UserId");
 
                     b.Navigation("OrderItem");
 
@@ -1229,10 +1259,12 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.Order", b =>
                 {
+                    b.Navigation("Invoices")
+                        .IsRequired();
+
                     b.Navigation("OrderItems");
 
-                    b.Navigation("Payment")
-                        .IsRequired();
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("SEP490_Robot_FoodOrdering.Domain.Entities.OrderItem", b =>
@@ -1242,6 +1274,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Navigation("Complains");
 
                     b.Navigation("Feedbacks");
+
+                    b.Navigation("InvoiceDetails");
 
                     b.Navigation("OrderItemTopping");
 

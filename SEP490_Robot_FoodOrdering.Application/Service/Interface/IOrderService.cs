@@ -19,7 +19,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
             UpdateOrderItemStatusRequest request);
 
         Task<BaseResponseModel<List<OrderItemResponse>>> GetOrderItemsAsync(Guid orderId);
-        Task<BaseResponseModel<OrderPaymentResponse>> InitiatePaymentAsync(Guid orderId, OrderPaymentRequest request);
+        //Task<BaseResponseModel<OrderPaymentResponse>> InitiatePaymentAsync(Guid orderId, OrderPaymentRequest request);
         Task<BaseResponseModel<InforBill>> CreateBill(Guid idOrder);
         Task<BaseResponseModel<List<OrderResponse>>> GetOrdersbyTableiDAsync(Guid Orderid, Guid TableId);
         Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdOnlyAsync(Guid tableId, DateTime? startDate, DateTime? endDate);

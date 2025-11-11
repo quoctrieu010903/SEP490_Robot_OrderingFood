@@ -22,11 +22,11 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
                    .HasConversion<int>(); // Store enum as int
 
             builder.HasOne(p => p.Order)
-                   .WithOne(o => o.Payment)
-                   .HasForeignKey<Payment>(p => p.OrderId)
-                   .OnDelete(DeleteBehavior.Cascade); // ✅ Delete Payment when Order is deleted
-
+               .WithMany(o => o.Payments)
+               .HasForeignKey(p => p.OrderId)
+               .OnDelete(DeleteBehavior.Cascade);
 
         }
     }
+        
 }

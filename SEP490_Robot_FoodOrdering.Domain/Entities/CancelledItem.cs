@@ -13,7 +13,6 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public decimal OrderTotalBefore { get; set; }
         public decimal OrderTotalAfter { get; set; }
 
-
         public Guid OrderItemId { get; set; }
         public Guid CancelledByUserId { get; set; }
 

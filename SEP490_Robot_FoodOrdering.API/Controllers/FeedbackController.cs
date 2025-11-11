@@ -27,8 +27,8 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("table/{tableId}")]
-        public async Task<ActionResult<PaginatedList<FeedbackResponse>>> GetByTableId(Guid tableId, [FromQuery] PagingRequestModel paging)
+        [HttpGet("table/{tableId}/devided/{devidedId}")]
+        public async Task<ActionResult<PaginatedList<FeedbackResponse>>> GetInvoiceBelongCurrentIdByTableId(Guid tableId,string devidedId, [FromQuery] PagingRequestModel paging)
         {
             var result = await _feedbackService.GetByTableId(tableId, paging);
             return Ok(result);

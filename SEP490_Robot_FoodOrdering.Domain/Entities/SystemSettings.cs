@@ -9,6 +9,8 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public string Key { get; set; }
         public string Value { get; set; }
         public SettingType Type { get; set; }
+        public string DisplayName { get; set; } = default!; 
+        public string? Description { get; set; }            
     }
 }
 

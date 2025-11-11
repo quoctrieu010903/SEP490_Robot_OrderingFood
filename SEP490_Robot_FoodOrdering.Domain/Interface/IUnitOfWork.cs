@@ -12,6 +12,9 @@ namespace SEP490_Robot_FoodOrdering.Domain.Interface
 
         int SaveChanges();
         Task<int> SaveChangesAsync();
+        Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+
 
         // Use for operations when requiring data consistency accross multiple tables
         // or when handling complex logic with dependencies

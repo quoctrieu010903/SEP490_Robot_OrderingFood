@@ -12,16 +12,14 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.7" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.7" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="Quartz" Version="3.15.1" />
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.15.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SEP490_Robot_FoodOrdering.Application\SEP490_Robot_FoodOrdering.Application.csproj" />
     <ProjectReference Include="..\SEP490_Robot_FoodOrdering.Core\SEP490_Robot_FoodOrdering.Core.csproj" />
     <ProjectReference Include="..\SEP490_Robot_FoodOrdering.Domain\SEP490_Robot_FoodOrdering.Domain.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="BackgroundJob\" />
   </ItemGroup>
 
 </Project>

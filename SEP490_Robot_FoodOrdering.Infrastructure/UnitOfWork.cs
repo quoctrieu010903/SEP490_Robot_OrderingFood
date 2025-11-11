@@ -1,5 +1,6 @@
 ﻿
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
@@ -51,6 +52,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure
         public int SaveChanges() => _context.SaveChanges();
 
         public async Task<int> SaveChangesAsync() => await _context.SaveChangesAsync();
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    => _context.SaveChangesAsync(cancellationToken);
+
 
         public int SaveChangesWithTransaction()
         {

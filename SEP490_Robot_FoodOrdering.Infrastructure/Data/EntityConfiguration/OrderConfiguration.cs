@@ -1,5 +1,6 @@
 ﻿
 
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
@@ -25,12 +26,14 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
             builder.HasMany(o => o.OrderItems)
                    .WithOne(oi => oi.Order)
                    .HasForeignKey(oi => oi.OrderId)
-                   .OnDelete(DeleteBehavior.Cascade); // ✅ Delete OrderItems when Order is deleted
+                   .OnDelete(DeleteBehavior.Cascade);// ✅ Delete OrderItems when Order is deleted
 
-            builder.HasOne(o => o.Payment)
-                   .WithOne(p => p.Order)
-                   .HasForeignKey<Payment>(p => p.OrderId)
-                   .OnDelete(DeleteBehavior.Cascade);
+
+
+            builder.Ignore(o => o.TotalPaid);
+            builder.Ignore(o => o.IsFullyPaid);
+
         }
     }
 }
+

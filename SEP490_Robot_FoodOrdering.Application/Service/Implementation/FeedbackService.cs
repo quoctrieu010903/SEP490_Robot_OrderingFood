@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.Feedback;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request.invoice;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Feedback;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Constants;
@@ -17,6 +18,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IInvoiceService _invoiceService;
 
         public FeedbackService(IUnitOfWork unitOfWork, IMapper mapper)
         {
@@ -38,7 +40,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             entity.LastUpdatedTime = DateTime.UtcNow;
 
             await _unitOfWork.Repository<Feedback, Guid>().AddAsync(entity);
+            if(request.Action == FeedbackAction.RequestCheckOut
+                    && request.Type == FeedbackTypeEnum.Other) // đổi FeedbackType cho đúng enum của bạn
+            {
+                // Giả sử feedback có OrderId
+                var requested = new InvoiceCreatRequest(
+                     entity.OrderItem.OrderId,
+                     entity.TableId
+                );
+                await _invoiceService.CreateInvoice(requested);
+            }
+
             await _unitOfWork.SaveChangesAsync();
+
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, entity.Id);
         }
 

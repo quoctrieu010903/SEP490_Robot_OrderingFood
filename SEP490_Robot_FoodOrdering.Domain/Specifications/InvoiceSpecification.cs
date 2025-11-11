@@ -25,8 +25,8 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
         }
 
         // Constructor cho TableId + paging
-        public InvoiceSpecification(Guid tableId, int pageIndex, int pageSize)
-                : base(x => x.Table.Id == tableId)
+        public InvoiceSpecification(Guid OrderId,bool isInvoice)
+                : base(x => x.OrderId == OrderId)
         {
             AddInvoiceIncludes();
         }

@@ -32,95 +32,102 @@ public class PayOSService: IPayOSService
 
     public async Task<BaseResponseModel<OrderPaymentResponse>> CreatePaymentLink(Guid orderId, bool isCustomer)
     {
+        // 1️⃣ Lấy order cùng các payment, item, table
         var order = await _unitOfWork.Repository<Order, Guid>()
-            .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.Table, o => o.OrderItems);
+            .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payments, o => o.Table, o => o.OrderItems);
+
         if (order == null)
             return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
 
-        // Ensure Payment entity
-        var isNewPayment = false;
-        if (order.Payment == null)
+        // 2️⃣ Xác định danh sách món chưa thanh toán
+        var unpaidItems = order.OrderItems
+            .Where(oi => oi.Status != OrderItemStatus.Cancelled && oi.PaymentStatus != PaymentStatusEnums.Paid)
+            .ToList();
+
+        if (!unpaidItems.Any())
         {
-            order.Payment = new Payment
-            {
-                Id = Guid.NewGuid(),
-                OrderId = order.Id,
-                PaymentMethod = PaymentMethodEnums.PayOS,
-                PaymentStatus = PaymentStatusEnums.Paid,
-               // PaymentStatus = PaymentStatusEnums.Pending,
-                CreatedTime = DateTime.UtcNow,
-                LastUpdatedTime = DateTime.UtcNow
-            };
-            isNewPayment = true;
+            return new BaseResponseModel<OrderPaymentResponse>(
+                StatusCodes.Status400BadRequest,
+                "NO_UNPAID_ITEMS",
+                "All items in this order have already been paid."
+            );
         }
-        // TODO: fix later, that is not right.
-        order.Payment.PaymentMethod = PaymentMethodEnums.PayOS;
-        order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
-        //order.Payment.PaymentStatus = PaymentStatusEnums.Pending;
-        // reflect gateway selection at order level
-        order.paymentMethod = PaymentMethodEnums.PayOS;
-        // TODO: fix later
-        order.PaymentStatus = PaymentStatusEnums.Paid;
-        // 
-        order.Payment.LastUpdatedTime = DateTime.UtcNow;
-        _logger.LogInformation($"CreatePaymentLink create Payment Entity success - orderId {orderId}");
-            // Generate unique int order code for PayOS and persist
-        var payOsOrderCode = int.Parse(DateTimeOffset.Now.ToString("ffffff"));
-        order.Payment.PayOSOrderCode = payOsOrderCode;
-            // Persist changes explicitly to avoid EF marking a new Payment as Modified (causing concurrency error)
-        if (isNewPayment)
-        {
-            await _unitOfWork.Repository<Payment, Guid>().AddAsync(order.Payment);
-        }    
-            // Amount: PayOS expects int (VND)
-        var amount = Convert.ToInt32(Math.Round(order.TotalPrice, 0, MidpointRounding.AwayFromZero));
-        
-        // Description: "ORD payOsOrderCode". Eg: "ORD 841803"
-        // Description must be <= 25 chars per PayOS; use short code
-        var shortLabel = $"ORD {payOsOrderCode}"; // e.g., "ORD 123456"
+
+        // 3️⃣ Tính tổng tiền cần thanh toán
+        var unpaidAmount = unpaidItems.Sum(oi => oi.TotalPrice) ?? 0;
+        var amount = Convert.ToInt32(Math.Round(unpaidAmount, 0, MidpointRounding.AwayFromZero));
+
+        // 4️⃣ Sinh mã PayOSOrderCode duy nhất
+        var payOsOrderCode = int.Parse(DateTimeOffset.UtcNow.ToString("ffffff"));
+        var shortLabel = $"ORD {payOsOrderCode}";
         var description = shortLabel;
-        // Items: combine into one total line with short label
-        var items = new List<ItemData>
+
+        // 5️⃣ Tạo Payment mới (không ghi đè Payment cũ)
+        var payment = new Payment
         {
-            new ItemData(shortLabel, 1, amount)
+            Id = Guid.NewGuid(),
+            OrderId = order.Id,
+            PaymentMethod = PaymentMethodEnums.PayOS,
+            PaymentStatus = PaymentStatusEnums.Paid,
+            PayOSOrderCode = payOsOrderCode,
+            CreatedTime = DateTime.UtcNow,
+            LastUpdatedTime = DateTime.UtcNow
         };
-        var returnUrl = "";
-        var cancelUrl = "";
-        
-        if (isCustomer)
-        {
-            returnUrl = _config["Environment:PAYOS_RETURN_URL"] ?? throw new Exception("Missing PAYOS_RETURN_URL");
-            cancelUrl = _config["Environment:PAYOS_CANCEL_URL"] ?? throw new Exception("Missing PAYOS_CANCEL_URL");
-        }
-        else
-        {
-            returnUrl = _config["Environment:PAYOS_MODERATOR_RETURN_URL"] ?? throw new Exception("Missing PAYOS_RETURN_URL");
-            cancelUrl = _config["Environment:PAYOS_MODERATOR_CANCEL_URL"] ?? throw new Exception("Missing PAYOS_CANCEL_URL");
-        }
-        
+
+        await _unitOfWork.Repository<Payment, Guid>().AddAsync(payment);
+        await _unitOfWork.SaveChangesAsync(); // Lưu trước để có mã PayOSOrderCode
+
+        // 6️⃣ Gọi PayOS để tạo link thanh toán
+        var items = new List<ItemData> { new ItemData(shortLabel, 1, amount) };
+
+        var returnUrl = isCustomer
+            ? _config["Environment:PAYOS_RETURN_URL"]
+            : _config["Environment:PAYOS_MODERATOR_RETURN_URL"];
+
+        var cancelUrl = isCustomer
+            ? _config["Environment:PAYOS_CANCEL_URL"]
+            : _config["Environment:PAYOS_MODERATOR_CANCEL_URL"];
+
         var paymentData = new PaymentData(
             payOsOrderCode,
             amount,
             description,
             items,
-            cancelUrl,
-            returnUrl
+            cancelUrl!,
+            returnUrl!
         );
 
         var created = await _payOS.createPaymentLink(paymentData);
 
-        // Persist after creating link to ensure PayOSOrderCode saved
-        await _unitOfWork.SaveChangesAsync();
-
-        return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAYMENT_INITIATED", new OrderPaymentResponse
+        foreach (var item in unpaidItems)
         {
-            OrderId = orderId,
-            // fix later please.
-            PaymentStatus = PaymentStatusEnums.Paid,
-            PaymentUrl = created.checkoutUrl,
-            Message = "Redirect to PayOS for payment."
-        });
+            item.PaymentStatus = PaymentStatusEnums.Paid;
+            await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
+        }
+        order.PaymentStatus = PaymentStatusEnums.Paid;
+        payment.PaymentStatus = PaymentStatusEnums.Paid;
+        payment.LastUpdatedTime = DateTime.UtcNow;
+
+        _unitOfWork.Repository<Payment, Guid>().Update(payment);
+        await _unitOfWork.SaveChangesAsync();
         
+        _logger.LogInformation($"[CreatePaymentLink] Success | OrderId: {order.Id}, PaymentId: {payment.Id}, Amount: {amount}");
+        
+        _logger.LogInformation($"Sync payment status  OrderId: {order.Id} - start");
+        await SyncOrderPaymentStatus(orderId);
+        _logger.LogInformation($"Sync payment status  OrderId: {order.Id} - end");
+        // 8️⃣ Trả về thông tin cho frontend
+        return new BaseResponseModel<OrderPaymentResponse>(
+            StatusCodes.Status200OK,
+            "PAYMENT_INITIATED",
+            new OrderPaymentResponse
+            {
+                OrderId = orderId,
+                PaymentStatus = payment.PaymentStatus,
+                PaymentUrl = created.checkoutUrl,
+                Message = "Redirect to PayOS for payment."
+            }
+        );
     }
 
     public async Task HandleWebhook(WebhookType body)
@@ -129,7 +136,7 @@ public class PayOSService: IPayOSService
         WebhookData data;
         try
         {
-            data = _payOS.verifyPaymentWebhookData(body);
+            data =  _payOS.verifyPaymentWebhookData(body);
         }
         catch (Exception ex)
         {
@@ -202,40 +209,59 @@ public class PayOSService: IPayOSService
     // Manual sync in case webhook missed or for one-off fix
     public async Task<BaseResponseModel<OrderPaymentResponse>> SyncOrderPaymentStatus(Guid orderId)
     {
+        // 1️⃣ Lấy order kèm danh sách payment, order item và table
         var order = await _unitOfWork.Repository<Order, Guid>()
-            .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.OrderItems, o => o.Table);
+            .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payments, o => o.OrderItems, o => o.Table);
+
         if (order == null)
-            return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
+            return new BaseResponseModel<OrderPaymentResponse>(
+                StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
 
-        var payment = order.Payment;
-        if (payment == null)
-            return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "PAYMENT_NOT_FOUND", "Payment record not found");
-
-        // Align only order.PaymentStatus with latest payment status
-        if (payment.PaymentStatus == PaymentStatusEnums.Paid)
-        {
-            order.PaymentStatus = PaymentStatusEnums.Paid;
-        }
-        else if (payment.PaymentStatus == PaymentStatusEnums.Failed)
-        {
-            order.PaymentStatus = PaymentStatusEnums.Failed;
-        }
-        else
+        // 2️⃣ Nếu chưa có Payment nào thì coi như Pending
+        if (order.Payments == null || !order.Payments.Any())
         {
             order.PaymentStatus = PaymentStatusEnums.Pending;
         }
+        else
+        {
+            // ✅ Tất cả thanh toán thành công → Paid
+            if (order.Payments.All(p => p.PaymentStatus == PaymentStatusEnums.Paid))
+            {
+                order.PaymentStatus = PaymentStatusEnums.Paid;
+            }
+            // ✅ Tất cả thanh toán thất bại → Failed
+            else if (order.Payments.All(p => p.PaymentStatus == PaymentStatusEnums.Failed))
+            {
+                order.PaymentStatus = PaymentStatusEnums.Failed;
+            }
+            // ✅ Có ít nhất một Payment chưa xử lý → Pending
+            else
+            {
+                order.PaymentStatus = PaymentStatusEnums.Pending;
+            }
+        }
 
-        // reflect payment method from Payment
-        order.paymentMethod = payment.PaymentMethod;
+        // 3️⃣ Cập nhật lại các OrderItem theo trạng thái tổng thể của Order
+        foreach (var item in order.OrderItems)
+        {
+            item.PaymentStatus = order.PaymentStatus;
+            await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
+        }
 
+        // 4️⃣ Cập nhật Order
+        order.LastUpdatedTime = DateTime.UtcNow;
         await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
         await _unitOfWork.SaveChangesAsync();
 
-        return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "SYNCED", new OrderPaymentResponse
-        {
-            OrderId = orderId,
-            PaymentStatus = order.PaymentStatus,
-            Message = "Order payment status synchronized"
-        });
+        // 5️⃣ Trả kết quả đồng bộ
+        return new BaseResponseModel<OrderPaymentResponse>(
+            StatusCodes.Status200OK,
+            "SYNCED",
+            new OrderPaymentResponse
+            {
+                OrderId = orderId,
+                PaymentStatus = order.PaymentStatus,
+                Message = "Order payment status synchronized successfully"
+            });
     }
 }

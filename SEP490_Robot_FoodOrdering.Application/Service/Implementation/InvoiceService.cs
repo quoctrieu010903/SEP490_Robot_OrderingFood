@@ -1,10 +1,15 @@
 ﻿using System.Net.NetworkInformation;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.invoice;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Invouce;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Topping;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
+using SEP490_Robot_FoodOrdering.Core.Constants;
+using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
+using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
@@ -25,162 +30,89 @@ public class InvoiceService : IInvoiceService
         _unitOfWork = unitOfWork;
     }
 
-
-    public async Task<InvoiceResponse> createInvoice(InvoiceCreatRequest request)
+    public async Task<InvoiceResponse> CreateInvoice(InvoiceCreatRequest request)
     {
-        Console.WriteLine($"Request received: request is null = {request == null}");
-        if (request != null)
+        // 1️⃣ Lấy order từ DB kèm theo OrderItems và Table
+        //var existedOrder = await _unitOfWork.Repository<Order, Guid>()
+        //    .GetByIdWithIncludeAsync(
+        //        o => o.Id == request.OrderId,
+        //        true,
+        //        o => o.OrderItems,
+        //        o => o.OrderItems!.Select(oi => oi.Product),
+        //        o => o.Table
+        //    );
+        var existedOrder = await _unitOfWork.Repository<Order, Guid>()
+            .GetWithSpecAsync(new OrderSpecification(request.OrderId,true));
+        if (existedOrder == null)
         {
-            Console.WriteLine($"TableId: {request.tableId}, Status: {request.status}");
+            throw new ErrorException(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
         }
 
-        if (request == null)
-            throw new ArgumentNullException(nameof(request), "Request cannot be null");
-
-        if (request.tableId == Guid.Empty)
-            throw new ArgumentException("Table ID cannot be empty", nameof(request.tableId));
-
-        var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.tableId);
-
-        if (table == null)
-            throw new Exception("Table not found");
-
-        Invoice invoice = new Invoice();
-        Order order = null;
-
-        var temp = await _unitOfWork.Repository<Order, Order>()
-            .GetAllWithSpecAsync(new OrdersByTableIdsSpecification(request.tableId));
-
-        Console.WriteLine($"Found {temp?.Count() ?? 0} orders");
-
-        if (temp == null || !temp.Any())
+        // 2️⃣ Kiểm tra order đã thanh toán chưa
+        if (existedOrder.PaymentStatus != PaymentStatusEnums.Paid)
         {
-            throw new Exception("No orders found for this table");
+            throw new ErrorException(StatusCodes.Status400BadRequest, "ORDER_NOT_PAID", "Order is not paid yet");
         }
 
-        foreach (var tableOrder in temp)
+        // 3️⃣ Tạo mới Invoice từ Order
+        var invoice = new Invoice()
         {
-            if (tableOrder?.PaymentStatus == PaymentStatusEnums.Pending)
+            OrderId = existedOrder.Id,
+            TableId = existedOrder.TableId ?? request.TableId  ,   // nếu không truyền TableId thì lấy từ order
+            CreatedTime = DateTime.UtcNow,
+            TotalMoney = existedOrder.TotalPrice,               // tùy tên property trong model
+            PaymentMethod = existedOrder.paymentMethod,          // chú ý tên property đúng
+            Status = existedOrder.PaymentStatus,
+
+            // 4️⃣ Tạo danh sách InvoiceDetails
+            Details = existedOrder.OrderItems?.Select(oi => new InvoiceDetail()
             {
-                order = tableOrder;
-                break;
-            }
-        }
+                OrderItemId = oi.Id,
+                TotalMoney = oi.TotalPrice ?? 0,
+                Status = oi.Order.Status,
 
-        if (order == null)
-        {
-            throw new Exception("Order not found or no pending order available");
-        }
+            }).ToList() ?? new List<InvoiceDetail>()
+        };
 
+        // 5️⃣ Lưu vào DB
+        await _unitOfWork.Repository<Invoice, Guid>().AddAsync(invoice);
+        await _unitOfWork.SaveChangesAsync();
 
-        if (order.OrderItems == null || !order.OrderItems.Any())
-            throw new Exception("Order has no items");
-
-        List<InvoiceDetail> details = new List<InvoiceDetail>();
-
-        if (order.Payment == null)
-        {
-            order.Payment = new Payment()
-            {
-                CreatedTime = DateTime.UtcNow,
-                Order = order,
-                PaymentStatus = PaymentStatusEnums.Pending,
-                PaymentMethod = request.MethodEnums == null ? PaymentMethodEnums.COD : request.MethodEnums,
-            };
-        }
-
-        if (request.status == StatusInvoice.Payment)
-        {
-            order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
-
-            foreach (var orderItem in order.OrderItems)
-            {
-                // Kiểm tra null cho từng orderItem
-                if (orderItem == null)
-                {
-                    Console.WriteLine("Warning: Found null order item, skipping...");
-                    continue;
-                }
-
-                if (orderItem.ProductSize == null)
-                {
-                    Console.WriteLine($"Warning: OrderItem {orderItem.Id} has null ProductSize, skipping...");
-                    continue;
-                }
-
-                decimal toppingPrice = 0;
-                try
-                {
-                    if (orderItem.OrderItemTopping != null && orderItem.OrderItemTopping.Any())
-                    {
-                        toppingPrice = orderItem.OrderItemTopping
-                            .Where(t => t != null)
-                            .Sum(topping => topping.Price);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error calculating topping price for OrderItem {orderItem.Id}: {ex.Message}");
-                    toppingPrice = 0;
-                }
-
-                details.Add(new InvoiceDetail()
-                {
-                    OrderItem = orderItem,
-                    CreatedTime = DateTime.UtcNow,
-                    TotalMoney = orderItem.ProductSize.Price + toppingPrice
-                });
-            }
-
-            invoice.CreatedTime = DateTime.UtcNow;
-            _unitOfWork.Repository<Order, Guid>().Update(order);
-        }
-        else
-        {
-            order.Payment.PaymentStatus = PaymentStatusEnums.Failed;
-            order.Status = OrderStatus.Cancelled;
-
-            foreach (var orderItem in order.OrderItems)
-            {
-                if (orderItem == null)
-                {
-                    Console.WriteLine("Warning: Found null order item in failed payment, skipping...");
-                    continue;
-                }
-
-                details.Add(new InvoiceDetail()
-                {
-                    OrderItem = orderItem,
-                    CreatedTime = DateTime.UtcNow,
-                    TotalMoney = 0
-                });
-            }
-        }
-
-        if (!details.Any())
-        {
-            throw new Exception("No valid order items found to create invoice");
-        }
-
-        invoice.Details = details;
-        invoice.TotalMoney = details.Sum(d => d.TotalMoney);
-        invoice.Table = table;
-
-        _unitOfWork.Repository<Invoice, Guid>().Add(invoice);
-        _unitOfWork.SaveChanges();
-
-        return new InvoiceResponse()
+        var response = new InvoiceResponse
         {
             Id = invoice.Id,
-            TableName = table.Name ?? "Unknown Table",
+            OrderId = invoice.OrderId,
+            TableId = invoice.TableId,
+            TableName = existedOrder.Table?.Name,
             CreatedTime = invoice.CreatedTime,
-            TotalMoney = invoice.TotalMoney,
-            PaymentStatus = order.Payment.PaymentStatus.ToString(),
-            Details = details.Select(d => CreateInvoiceDetailResponse(d)).Where(d => d != null).ToList()
+            PaymentMethod = invoice.PaymentMethod.ToString(),
+            TotalAmount = invoice.TotalMoney,
+            Discount = 0,
+            FinalAmount = invoice.TotalMoney,
+            CashierName = "Moderator Manager", // hoặc lấy từ User hiện tại
+            Details = invoice.Details.Select(d => new InvoiceDetailResponse
+            {
+                OrderItemId = d.OrderItemId,
+                ProductName = d.OrderItem?.Product.Name,
+                UnitPrice = d.OrderItem?.Price ?? 0,
+                toppings = d.OrderItem?.OrderItemTopping?.Select(oit => new ToppingResponse
+                {
+                    Id = oit.Topping.Id,
+                    Name = oit.Topping.Name,
+                    Price = oit.Topping.Price
+                }).ToList() ?? new List<ToppingResponse>(),
+                TotalMoney = d.OrderItem?.TotalPrice ?? 0,
+                Status = d.Status.ToString()
+            }).ToList()
         };
+
+
+
+        return response;
     }
 
-    public Task<PaginatedList<InvoiceResponse>> getAllInvoice(PagingRequestModel pagingRequest )
+
+    public Task<PaginatedList<InvoiceResponse>> getAllInvoice(PagingRequestModel pagingRequest)
     {
         throw new NotImplementedException();
     }
@@ -190,48 +122,13 @@ public class InvoiceService : IInvoiceService
         throw new NotImplementedException();
     }
 
-    public async Task<PaginatedList<InvoiceResponse>> getInvoiceByTableId(Guid tableId, PagingRequestModel pagingRequest)
+    public async Task<BaseResponseModel<InvoiceResponse>> getInvoiceByTableId(Guid OrderId)
     {
-        var specification = new InvoiceSpecification(tableId,pagingRequest.PageNumber,pagingRequest.PageSize);
-        var invoices = await _unitOfWork.Repository<Invoice, Guid>().GetAllWithSpecAsync(specification);
-        var response = _mapper.Map<List<InvoiceResponse>>(invoices);
+        var specification = new InvoiceSpecification(OrderId, true);
+        var invoices = await _unitOfWork.Repository<Invoice, Guid>().GetWithSpecAsync(specification);
+        var response = _mapper.Map<InvoiceResponse>(invoices);
 
 
-        return PaginatedList<InvoiceResponse>.Create(response, pagingRequest.PageNumber, pagingRequest.PageSize);
-    }
-
-    private InvoiceDetailResponse CreateInvoiceDetailResponse(InvoiceDetail detail)
-    {
-        try
-        {
-            if (detail?.OrderItem == null)
-                return null;
-
-            var orderItem = detail.OrderItem;
-
-            return new InvoiceDetailResponse()
-            {
-                OrderItemId = orderItem.Id,
-                ProductName = orderItem.ProductSize?.Product?.Name ?? "Unknown Product",
-                UnitPrice = orderItem.ProductSize?.Price ?? 0,
-                Toppings = orderItem.OrderItemTopping?
-                    .Where(t => t?.Topping != null)
-                    .Select(t => t.Topping.Name ?? "Unknown Topping")
-                    .ToList() ?? new List<string>(),
-                TotalMoney = detail.TotalMoney
-            };
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error creating invoice detail response: {ex.Message}");
-            return new InvoiceDetailResponse()
-            {
-                OrderItemId = detail?.OrderItem?.Id ?? Guid.Empty,
-                ProductName = "Error Loading Product",
-                UnitPrice = 0,
-                Toppings = new List<string>(),
-                TotalMoney = detail?.TotalMoney ?? 0
-            };
-        }
+        return new BaseResponseModel<InvoiceResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, response, "Invoice retrived successfully");
     }
 }

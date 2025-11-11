@@ -1,4 +1,4 @@
-﻿
+﻿    
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
@@ -35,7 +35,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
                    .WithOne(oit => oit.OrderItem)
                    .HasForeignKey(oit => oit.OrderItemId)
                    .OnDelete(DeleteBehavior.Cascade); // ✅ Delete Toppings when OrderItem is deleted
-          
+
+          builder.Ignore(oi => oi.IsPaid);
         }
     }
 }
