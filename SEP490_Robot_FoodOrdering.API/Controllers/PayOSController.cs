@@ -70,5 +70,44 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             var result = await _payOSService.SyncOrderPaymentStatus(orderId);
             return StatusCode(result.StatusCode, result);
         }
+        /// <summary>
+        /// Cancel the payment
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <param name="isCustomer"></param>
+        /// <returns></returns>
+        [HttpGet("cancel/{orderId}")]
+        [ProducesResponseType(typeof(BaseResponseModel<OrderPaymentResponse>), 200)]
+        public async Task<IActionResult> Cancel(Guid orderId,bool isCustomer)
+        {
+            var result = await _payOSService.CancelOrderPaymentStatus(orderId, isCustomer);
+            var redirectUrl = result.Data?.PaymentUrl;
+            if (!string.IsNullOrWhiteSpace(redirectUrl))
+            {
+                return Redirect(redirectUrl);
+            }
+            // safely return status code if redirect failed
+            return StatusCode(result.StatusCode, result);
+        }
+        
+        /// <summary>
+        /// Complete the payment
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <param name="isCustomer"></param>
+        /// <returns></returns>
+        [HttpGet("success/{orderId}")]
+        [ProducesResponseType(typeof(BaseResponseModel<OrderPaymentResponse>), 200)]
+        public async Task<IActionResult> Success(Guid orderId, bool isCustomer)
+        {
+            var result = await _payOSService.CompleteOrderPaymentStatus(orderId, isCustomer);
+            var redirectUrl = result.Data?.PaymentUrl;
+            if (!string.IsNullOrWhiteSpace(redirectUrl))
+            {
+                return Redirect(redirectUrl);
+            }
+             // safely return status code if redirect failed
+            return StatusCode(result.StatusCode, result);
+        }
     }
 }
