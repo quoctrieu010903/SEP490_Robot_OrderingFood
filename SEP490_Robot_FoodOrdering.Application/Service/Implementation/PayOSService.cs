@@ -70,7 +70,7 @@ public class PayOSService: IPayOSService
             Id = Guid.NewGuid(),
             OrderId = order.Id,
             PaymentMethod = PaymentMethodEnums.PayOS,
-            PaymentStatus = PaymentStatusEnums.Paid,
+            PaymentStatus = PaymentStatusEnums.Pending,
             PayOSOrderCode = payOsOrderCode,
             CreatedTime = DateTime.UtcNow,
             LastUpdatedTime = DateTime.UtcNow
@@ -104,12 +104,12 @@ public class PayOSService: IPayOSService
 
         var created = await _payOS.createPaymentLink(paymentData);
 
-        foreach (var item in unpaidItems)
-        {
-            item.PaymentStatus = PaymentStatusEnums.Paid;
-            await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
-        }
-        order.PaymentStatus = PaymentStatusEnums.Paid;
+        // foreach (var item in unpaidItems)
+        // {
+        //     item.PaymentStatus = PaymentStatusEnums.Paid;
+        //     await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
+        // }
+        order.PaymentStatus = PaymentStatusEnums.Pending;
         payment.PaymentStatus = PaymentStatusEnums.Pending; 
         payment.LastUpdatedTime = DateTime.UtcNow;
 
@@ -222,6 +222,8 @@ public class PayOSService: IPayOSService
             return new BaseResponseModel<OrderPaymentResponse>(
                 StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
 
+        
+        
         // 2️⃣ Nếu chưa có Payment nào thì coi như Pending
         if (order.Payments == null || !order.Payments.Any())
         {
@@ -283,10 +285,9 @@ public class PayOSService: IPayOSService
                 StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
         // get check the order items, if the order item paid. still get the same. 
 
-        if (order.PaymentStatus == PaymentStatusEnums.Paid)
-        {
+        var hasAnySuccessfulPayment = order.Payments != null && order.Payments.Any(p => p.PaymentStatus == PaymentStatusEnums.Paid);
+        if (!hasAnySuccessfulPayment)
             order.PaymentStatus = PaymentStatusEnums.Pending;
-        }
         
         // Update lại order.
         order.LastUpdatedTime = DateTime.UtcNow;
@@ -313,15 +314,50 @@ public class PayOSService: IPayOSService
 
     public async Task<BaseResponseModel<OrderPaymentResponse>> CompleteOrderPaymentStatus(Guid orderId, bool isCustomer)
     {
-        var orderSuccessResponse = await SyncOrderPaymentStatus(orderId);
+       // var orderSuccessResponse = await SyncOrderPaymentStatus(orderId);
+       
+       var order = await _unitOfWork.Repository<Order, Guid>()
+           .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payments, o => o.OrderItems, o => o.Table);
+
+       if (order == null)
+           return new BaseResponseModel<OrderPaymentResponse>(
+               StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
+
+
+       // Xác định món chưa thanh toán
+       var unpaidItems = order.OrderItems
+           .Where(oi => oi.Status != OrderItemStatus.Cancelled && oi.PaymentStatus != PaymentStatusEnums.Paid)
+           .ToList();
+       foreach (var item in unpaidItems)
+       {
+           item.PaymentStatus = PaymentStatusEnums.Paid;
+           await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
+       }
+
+       // update order payment status
+       order.PaymentStatus= PaymentStatusEnums.Paid;
+       order.LastUpdatedTime = DateTime.UtcNow;
+       await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
+       await _unitOfWork.SaveChangesAsync();
         var returnUrl = isCustomer
             ? _config["Environment:PAYOS_RETURN_URL"]
             : _config["Environment:PAYOS_MODERATOR_RETURN_URL"];
         // update return url
-        if (orderSuccessResponse.Data != null)
-        {
-            orderSuccessResponse.Data.PaymentUrl = returnUrl;
-        }
-        return orderSuccessResponse;
+        // if (orderSuccessResponse.Data != null)
+        // {
+        //     orderSuccessResponse.Data.PaymentUrl = returnUrl;
+        // }
+        // return orderSuccessResponse;
+        
+        return new BaseResponseModel<OrderPaymentResponse>(
+            StatusCodes.Status200OK,
+            "SUCCESSS",
+            new OrderPaymentResponse
+            {
+                OrderId = orderId,
+                PaymentStatus = order.PaymentStatus,
+                PaymentUrl = returnUrl,
+                Message = "Order payment status synchronized successfully"
+            });
     }
 }
