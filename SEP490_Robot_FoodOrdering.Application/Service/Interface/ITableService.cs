@@ -24,6 +24,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
         Task<BaseResponseModel<TableResponse>> AcceptSharedTableAsync(Guid tableId, string shareToken, string newDeviceId);
         Task<BaseResponseModel<TableResponse>> ScanQrCode01(Guid id, string deviceId);
         Task<BaseResponseModel<TableResponse>> MoveTable(Guid oldTableId, MoveTableRequest request);
+        Task<BaseResponseModel<CheckDeviceTokenResponse>> CheckTableAndDeviceToken(Guid tableId, string deviceId);
 
     }
 } 
