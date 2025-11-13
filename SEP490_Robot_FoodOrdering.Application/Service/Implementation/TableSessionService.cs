@@ -65,7 +65,11 @@ public class TableSessionService : ITableSessionService
 
         await _unitOfWork.Repository<TableSession, Guid>().AddAsync(session);
 
+        // Update Table entity with full locking mechanism
         table.Status = TableEnums.Occupied;
+        table.DeviceId = deviceId;           // Set device owner
+        table.IsQrLocked = true;             // Lock QR to prevent other devices
+        table.LockedAt = now;                // Track when QR was first locked
         table.LastAccessedAt = now;
 
         await _activityService.LogAsync(session, deviceId, TableActivityType.CheckIn, new
@@ -101,11 +105,14 @@ public class TableSessionService : ITableSessionService
         session.CheckOut = now;
         session.LastActivityAt = now;
 
+        // Reset table to available state with all fields
         session.Table.Status = TableEnums.Available;
-        session.Table.LastAccessedAt = now;
+        session.Table.DeviceId = null;
+        session.Table.IsQrLocked = false;        // Unlock QR for next customer
+        session.Table.LockedAt = null;           // Clear lock timestamp
         session.Table.isShared = false;
         session.Table.ShareToken = null;
-        session.Table.DeviceId = null;
+        session.Table.LastAccessedAt = now;
 
         await _activityService.LogAsync(session, actorDeviceId, TableActivityType.CloseSession, new
         {
