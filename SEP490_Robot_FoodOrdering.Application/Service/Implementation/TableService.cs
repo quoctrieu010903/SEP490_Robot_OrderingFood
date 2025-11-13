@@ -238,12 +238,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                     if (unpaidInvoices != null)
                     {
-                        _logger.LogWarning("ScanQrCode: device {DeviceId} còn hóa đơn pending ở bàn {TableName}",
+                        _logger.LogWarning("ScanQrCode: device {DeviceId} còn hóa đơn pending ở {TableName}",
                             deviceId, currentTable.Name);
 
                         throw new ErrorException(StatusCodes.Status403Forbidden,
                             ResponseCodeConstants.FORBIDDEN,
-                            $"Bạn đang có hóa đơn chưa thanh toán ở bàn {currentTable.Name}, vui lòng thanh toán trước khi đổi bàn.");
+                            $"Bạn đang có hóa đơn chưa thanh toán ở {currentTable.Name}, vui lòng thanh toán trước khi đổi bàn.");
                     }
                     else
                     {
@@ -593,7 +593,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         {
             var table = await _unitOfWork.Repository<Table, Guid>().GetWithSpecAsync(new BaseSpecification<Table>(x => x.Id == tableId && x.DeviceId == CurrentDevideId));
             if (table == null)
-                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, $"Không tìm thấy người dùng hiện tại ở bàn {table.Name} ");
+                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, $"Không tìm thấy người dùng hiện tại ở {table.Name} ");
             var sharetoken = Guid.NewGuid().ToString("N");
 
             table.ShareToken = sharetoken;
@@ -741,12 +741,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         var currentTableName = currentSessionForDevice.Table?.Name ?? "khác";
 
                         _logger.LogWarning(
-                            "ScanQrCode: device {DeviceId} còn hóa đơn pending ở bàn {TableName}",
+                            "ScanQrCode: device {DeviceId} còn hóa đơn pending ở {TableName}",
                             deviceId, currentTableName);
 
                         throw new ErrorException(StatusCodes.Status403Forbidden,
                             ResponseCodeConstants.FORBIDDEN,
-                            $"Bạn đang có hóa đơn chưa thanh toán ở bàn {currentTableName}, vui lòng thanh toán trước khi đổi bàn.");
+                            $"Bạn đang có hóa đơn chưa thanh toán ở {currentTableName}, vui lòng thanh toán trước khi đổi bàn.");
                     }
 
                     // Không còn bill pending -> close session cũ + release bàn cũ (Table fields sẽ được cập nhật trong CloseSessionAsync)
@@ -843,6 +843,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // ===== CASE C: Có session Active nhưng đang thuộc device KHÁC =====
             if (activeSession != null && !string.IsNullOrEmpty(activeSession.DeviceId) && activeSession.DeviceId != deviceId)
             {
+                // OLD LOGIC - COMMENTED OUT: Cho phép override khi không có bill
+                // Vấn đề: Logic này cho phép device khác chiếm bàn khi không có bill pending
+                // → Vi phạm mục đích của IsQrLocked (ngăn device khác scan vào)
+                /*
                 // Check bill pending
                 var unpaidInvoiceForThisTable = await _unitOfWork.Repository<Payment, Guid>()
                     .GetWithSpecAsync(new BaseSpecification<Payment>(
@@ -883,6 +887,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     respOverride,
                     null,
                     "Đã checkin vào bàn thành công");
+                */
+
+                // NEW LOGIC: BLOCK HOÀN TOÀN device khác
+                // Bàn đã bị lock bởi device khác → chặn ngay, không quan tâm có bill hay không
+                // Chỉ cho phép device đang giữ bàn hoặc moderator (dùng endpoint thay đổi trạng thái)
+                _logger.LogWarning(
+                    "ScanQrCode: table {TableName} (IsQrLocked={IsQrLocked}) đang bị giữ bởi device {OldDeviceId}, từ chối device mới {NewDeviceId}",
+                    table.Name, table.IsQrLocked, activeSession.DeviceId, deviceId);
+
+                throw new ErrorException(
+                    StatusCodes.Status403Forbidden,
+                    ResponseCodeConstants.FORBIDDEN,
+                    $"{table.Name} đang được sử dụng. Vui lòng chọn bàn khác hoặc liên hệ nhân viên.");
             }
 
             // ===== CASE D: Không có session Active cho bàn này -> tạo session mới =====
@@ -940,7 +957,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 throw new ErrorException(
                     StatusCodes.Status400BadRequest,
                     ResponseCodeConstants.BADREQUEST,
-                    $"Bàn {oldTable.Name} không ở trạng thái Occupied. Trạng thái hiện tại: {oldTable.Status}");
+                    $"{oldTable.Name} không ở trạng thái Occupied. Trạng thái hiện tại: {oldTable.Status}");
             }
 
             // ===== VALIDATION 3: Get and validate new table =====
@@ -958,7 +975,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 throw new ErrorException(
                     StatusCodes.Status400BadRequest,
                     ResponseCodeConstants.BADREQUEST,
-                    $"Bàn {newTable.Name} đang trong trạng thái Occupied. Vui lòng chọn bàn khác");
+                    $"{newTable.Name} đang trong trạng thái Occupied. Vui lòng chọn bàn khác");
             }
 
             if (newTable.Status == TableEnums.Reserved)
@@ -966,7 +983,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 throw new ErrorException(
                     StatusCodes.Status400BadRequest,
                     ResponseCodeConstants.BADREQUEST,
-                    $"Bàn {newTable.Name} đang trong trạng thái Reserved (đã giữ chỗ). Vui lòng chọn bàn khác");
+                    $"{newTable.Name} đang trong trạng thái Reserved (đã giữ chỗ). Vui lòng chọn bàn khác");
             }
 
             // ===== VALIDATION 4: Get the latest order from old table =====
@@ -978,7 +995,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 throw new ErrorException(
                     StatusCodes.Status400BadRequest,
                     ResponseCodeConstants.BADREQUEST,
-                    $"Bàn {oldTable.Name} không có order nào để chuyển");
+                    $"{oldTable.Name} không có order nào để chuyển");
             }
 
             // Get the most recent order based on CreatedTime
@@ -1020,7 +1037,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 throw new ErrorException(
                     StatusCodes.Status400BadRequest,
                     ResponseCodeConstants.BADREQUEST,
-                    $"Bàn {oldTable.Name} không có session hoạt động");
+                    $"{oldTable.Name} không có session hoạt động");
             }
 
             _logger.LogInformation(
