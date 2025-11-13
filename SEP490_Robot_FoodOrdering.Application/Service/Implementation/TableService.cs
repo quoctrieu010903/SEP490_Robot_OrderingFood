@@ -808,8 +808,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 activeSession.LastActivityAt = now;
                 _unitOfWork.Repository<TableSession, Guid>().Update(activeSession);
 
+                // Sync lại trạng thái Table để đảm bảo consistency
+                // (Trường hợp moderator đã thay đổi trạng thái bàn bằng API PUT nhưng session vẫn Active)
+                table.Status = TableEnums.Occupied;
+                table.DeviceId = deviceId;
+                table.IsQrLocked = true;
+                table.LockedAt = table.LockedAt ?? now; // Giữ nguyên LockedAt cũ nếu có, hoặc set mới
                 table.LastAccessedAt = now;
-                // giữ nguyên Status = Occupied, IsQrLocked = true, DeviceId = deviceId
                 _unitOfWork.Repository<Table, Guid>().Update(table);
 
                 await _unitOfWork.SaveChangesAsync();
@@ -1156,6 +1161,79 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     oldTableId, request.NewTableId);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Check if a device token matches the table's current device
+        /// </summary>
+        /// <param name="tableId">The ID of the table to check</param>
+        /// <param name="deviceId">The device ID to verify</param>
+        /// <returns>Response indicating if the device matches and table information</returns>
+        public async Task<BaseResponseModel<CheckDeviceTokenResponse>> CheckTableAndDeviceToken(Guid tableId, string deviceId)
+        {
+            _logger.LogInformation(
+                "CheckTableAndDeviceToken: Checking table {TableId} for device {DeviceId}",
+                tableId, deviceId);
+
+            // Get table from database
+            var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(tableId);
+
+            // Case 1: Table not found - return isMatch = false (graceful degradation)
+            if (table == null)
+            {
+                _logger.LogWarning(
+                    "CheckTableAndDeviceToken: Table {TableId} not found",
+                    tableId);
+
+                return new BaseResponseModel<CheckDeviceTokenResponse>(
+                    StatusCodes.Status200OK,
+                    ResponseCodeConstants.SUCCESS,
+                    new CheckDeviceTokenResponse
+                    {
+                        IsMatch = false,
+                        TableId = tableId,
+                        TableName = "Unknown",
+                        CurrentDeviceId = null,
+                        Status = TableEnums.Available,
+                        IsQrLocked = false,
+                        LastAccessedAt = null
+                    },
+                    null,
+                    "Bàn không tồn tại");
+            }
+
+            // Case 2: Check if deviceId matches
+            bool isMatch = !string.IsNullOrEmpty(table.DeviceId) && 
+                           !string.IsNullOrEmpty(deviceId) && 
+                           table.DeviceId.Equals(deviceId, StringComparison.Ordinal);
+
+            var response = new CheckDeviceTokenResponse
+            {
+                IsMatch = isMatch,
+                TableId = table.Id,
+                TableName = table.Name,
+                CurrentDeviceId = table.DeviceId,
+                Status = table.Status,
+                IsQrLocked = table.IsQrLocked,
+                LastAccessedAt = table.LastAccessedAt
+            };
+
+            string message = isMatch 
+                ? $"Device khớp với {table.Name}" 
+                : table.DeviceId == null 
+                    ? $"{table.Name} chưa có device nào" 
+                    : $"Device không khớp với {table.Name}";
+
+            _logger.LogInformation(
+                "CheckTableAndDeviceToken: Table {TableName} - IsMatch: {IsMatch}, CurrentDeviceId: {CurrentDeviceId}, RequestDeviceId: {RequestDeviceId}",
+                table.Name, isMatch, table.DeviceId, deviceId);
+
+            return new BaseResponseModel<CheckDeviceTokenResponse>(
+                StatusCodes.Status200OK,
+                ResponseCodeConstants.SUCCESS,
+                response,
+                null,
+                message);
         }
 
     }

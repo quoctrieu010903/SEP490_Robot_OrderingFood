@@ -156,5 +156,38 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             var result = await _service.MoveTable(oldTableId, request);
             return Ok(result);
         }
+
+        /// <summary>
+        /// Check if a device token matches the table's current device
+        /// </summary>
+        /// <remarks>
+        /// This endpoint verifies whether the provided device token matches the device currently associated with the table.
+        /// 
+        /// Use cases:
+        /// * Validate device ownership before allowing order operations
+        /// * Check if device still has permission to modify orders
+        /// * Detect if device session has expired or been taken over
+        /// 
+        /// Sample request:
+        /// 
+        ///     GET /api/Table/{tableId}/checkDeviceToken/{deviceId}
+        /// 
+        /// The response includes:
+        /// * isMatch: true if device matches, false otherwise
+        /// * Table information (name, status, isQrLocked)
+        /// * Current device ID for comparison
+        /// 
+        /// </remarks>
+        /// <param name="tableId">The ID of the table to check</param>
+        /// <param name="deviceId">The device ID/token to verify</param>
+        /// <returns>CheckDeviceTokenResponse with match result and table information</returns>
+        /// <response code="200">Check completed successfully (returns isMatch=true/false)</response>
+        /// <response code="500">Internal server error</response>
+        [HttpGet("{tableId}/checkDeviceToken/{deviceId}")]
+        public async Task<IActionResult> CheckTableAndDeviceToken(Guid tableId, string deviceId)
+        {
+            var result = await _service.CheckTableAndDeviceToken(tableId, deviceId);
+            return Ok(result);
+        }
     }
 }
