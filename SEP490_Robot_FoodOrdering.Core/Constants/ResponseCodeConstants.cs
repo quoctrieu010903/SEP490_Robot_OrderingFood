@@ -25,7 +25,7 @@ namespace SEP490_Robot_FoodOrdering.Core.Constants
         public const string VALIDATION_ERROR = "ValidationError";
         public const string NO_CHANGE = "You don't have permission to change the status ";
         public const string INVALID_OPERATION = "INVALID_OPERATION"; // Thao tác không hợp lệ theo nghiệp vụ
-
+        public const string CONFLICT = "Conflict"; // Avoid conflict error. 
 
         // Payment & Membership specific codes
         public const string PAYMENT_REQUIRED = "Payment required!";
