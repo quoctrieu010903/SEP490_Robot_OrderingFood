@@ -238,12 +238,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                     if (unpaidInvoices != null)
                     {
-                        _logger.LogWarning("ScanQrCode: device {DeviceId} còn hóa đơn pending ở bàn {TableName}",
+                        _logger.LogWarning("ScanQrCode: device {DeviceId} còn hóa đơn pending ở {TableName}",
                             deviceId, currentTable.Name);
 
                         throw new ErrorException(StatusCodes.Status403Forbidden,
                             ResponseCodeConstants.FORBIDDEN,
-                            $"Bạn đang có hóa đơn chưa thanh toán ở bàn {currentTable.Name}, vui lòng thanh toán trước khi đổi bàn.");
+                            $"Bạn đang có hóa đơn chưa thanh toán ở {currentTable.Name}, vui lòng thanh toán trước khi đổi bàn.");
                     }
                     else
                     {
@@ -593,7 +593,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         {
             var table = await _unitOfWork.Repository<Table, Guid>().GetWithSpecAsync(new BaseSpecification<Table>(x => x.Id == tableId && x.DeviceId == CurrentDevideId));
             if (table == null)
-                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, $"Không tìm thấy người dùng hiện tại ở bàn {table.Name} ");
+                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, $"Không tìm thấy người dùng hiện tại ở {table.Name} ");
             var sharetoken = Guid.NewGuid().ToString("N");
 
             table.ShareToken = sharetoken;
@@ -741,12 +741,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         var currentTableName = currentSessionForDevice.Table?.Name ?? "khác";
 
                         _logger.LogWarning(
-                            "ScanQrCode: device {DeviceId} còn hóa đơn pending ở bàn {TableName}",
+                            "ScanQrCode: device {DeviceId} còn hóa đơn pending ở {TableName}",
                             deviceId, currentTableName);
 
                         throw new ErrorException(StatusCodes.Status403Forbidden,
                             ResponseCodeConstants.FORBIDDEN,
-                            $"Bạn đang có hóa đơn chưa thanh toán ở bàn {currentTableName}, vui lòng thanh toán trước khi đổi bàn.");
+                            $"Bạn đang có hóa đơn chưa thanh toán ở {currentTableName}, vui lòng thanh toán trước khi đổi bàn.");
                     }
 
                     // Không còn bill pending -> close session cũ + release bàn cũ (Table fields sẽ được cập nhật trong CloseSessionAsync)
@@ -843,6 +843,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // ===== CASE C: Có session Active nhưng đang thuộc device KHÁC =====
             if (activeSession != null && !string.IsNullOrEmpty(activeSession.DeviceId) && activeSession.DeviceId != deviceId)
             {
+                // OLD LOGIC - COMMENTED OUT: Cho phép override khi không có bill
+                // Vấn đề: Logic này cho phép device khác chiếm bàn khi không có bill pending
+                // → Vi phạm mục đích của IsQrLocked (ngăn device khác scan vào)
+                /*
                 // Check bill pending
                 var unpaidInvoiceForThisTable = await _unitOfWork.Repository<Payment, Guid>()
                     .GetWithSpecAsync(new BaseSpecification<Payment>(
@@ -883,6 +887,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     respOverride,
                     null,
                     "Đã checkin vào bàn thành công");
+                */
+
+                // NEW LOGIC: BLOCK HOÀN TOÀN device khác
+                // Bàn đã bị lock bởi device khác → chặn ngay, không quan tâm có bill hay không
+                // Chỉ cho phép device đang giữ bàn hoặc moderator (dùng endpoint thay đổi trạng thái)
+                _logger.LogWarning(
+                    "ScanQrCode: table {TableName} (IsQrLocked={IsQrLocked}) đang bị giữ bởi device {OldDeviceId}, từ chối device mới {NewDeviceId}",
+                    table.Name, table.IsQrLocked, activeSession.DeviceId, deviceId);
+
+                throw new ErrorException(
+                    StatusCodes.Status403Forbidden,
+                    ResponseCodeConstants.FORBIDDEN,
+                    $"{table.Name} đang được sử dụng. Vui lòng chọn bàn khác hoặc liên hệ nhân viên.");
             }
 
             // ===== CASE D: Không có session Active cho bàn này -> tạo session mới =====
@@ -904,7 +921,250 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 "Đã checkin vào bàn thành công");
         }
 
+        /// <summary>
+        /// Move the latest order from old table to new table
+        /// </summary>
+        /// <param name="oldTableId">The ID of the old table</param>
+        /// <param name="request">Move table request containing newTableId and reason</param>
+        /// <returns>Response with updated table information</returns>
+        public async Task<BaseResponseModel<TableResponse>> MoveTable(Guid oldTableId, MoveTableRequest request)
+        {
+            _logger.LogInformation(
+                "MoveTable: Starting move from table {OldTableId} to {NewTableId}. Reason: {Reason}",
+                oldTableId, request.NewTableId, request.Reason);
 
+            // ===== VALIDATION 1: Check if trying to move to same table =====
+            if (oldTableId == request.NewTableId)
+            {
+                throw new ErrorException(
+                    StatusCodes.Status400BadRequest,
+                    ResponseCodeConstants.BADREQUEST,
+                    "Không thể chuyển bàn sang chính bàn đó");
+            }
+
+            // ===== VALIDATION 2: Get and validate old table =====
+            var oldTable = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(oldTableId);
+            if (oldTable == null)
+            {
+                throw new ErrorException(
+                    StatusCodes.Status404NotFound,
+                    ResponseCodeConstants.NOT_FOUND,
+                    "Bàn cũ không tìm thấy");
+            }
+
+            if (oldTable.Status != TableEnums.Occupied)
+            {
+                throw new ErrorException(
+                    StatusCodes.Status400BadRequest,
+                    ResponseCodeConstants.BADREQUEST,
+                    $"{oldTable.Name} không ở trạng thái Occupied. Trạng thái hiện tại: {oldTable.Status}");
+            }
+
+            // ===== VALIDATION 3: Get and validate new table =====
+            var newTable = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.NewTableId);
+            if (newTable == null)
+            {
+                throw new ErrorException(
+                    StatusCodes.Status404NotFound,
+                    ResponseCodeConstants.NOT_FOUND,
+                    "Bàn mới không tìm thấy");
+            }
+
+            if (newTable.Status == TableEnums.Occupied)
+            {
+                throw new ErrorException(
+                    StatusCodes.Status400BadRequest,
+                    ResponseCodeConstants.BADREQUEST,
+                    $"{newTable.Name} đang trong trạng thái Occupied. Vui lòng chọn bàn khác");
+            }
+
+            if (newTable.Status == TableEnums.Reserved)
+            {
+                throw new ErrorException(
+                    StatusCodes.Status400BadRequest,
+                    ResponseCodeConstants.BADREQUEST,
+                    $"{newTable.Name} đang trong trạng thái Reserved (đã giữ chỗ). Vui lòng chọn bàn khác");
+            }
+
+            // ===== VALIDATION 4: Get the latest order from old table =====
+            var latestOrder = await _unitOfWork.Repository<Order, Order>()
+                .GetAllWithSpecAsync(new OrdersByTableIdsSpecification(oldTableId));
+
+            if (latestOrder == null || !latestOrder.Any())
+            {
+                throw new ErrorException(
+                    StatusCodes.Status400BadRequest,
+                    ResponseCodeConstants.BADREQUEST,
+                    $"{oldTable.Name} không có order nào để chuyển");
+            }
+
+            // Get the most recent order based on CreatedTime
+            var orderToMove = latestOrder
+                .OrderByDescending(o => o.CreatedTime)
+                .FirstOrDefault();
+
+            if (orderToMove == null)
+            {
+                throw new ErrorException(
+                    StatusCodes.Status400BadRequest,
+                    ResponseCodeConstants.BADREQUEST,
+                    "Không tìm thấy order để chuyển");
+            }
+
+            _logger.LogInformation(
+                "MoveTable: Found latest order {OrderId} created at {CreatedTime}",
+                orderToMove.Id, orderToMove.CreatedTime);
+
+            // ===== VALIDATION 5: Check if there's a new order being created (prevent concurrent operations) =====
+            // Check if the order was created very recently (e.g., within last 5 seconds)
+            var now = DateTime.UtcNow;
+            var timeSinceOrderCreated = now - orderToMove.CreatedTime;
+            if (timeSinceOrderCreated.TotalSeconds < 5)
+            {
+                throw new ErrorException(
+                    StatusCodes.Status409Conflict,
+                    ResponseCodeConstants.CONFLICT,
+                    "Có order mới đang được tạo. Vui lòng đợi vài giây và thử lại");
+            }
+
+            // ===== VALIDATION 6: Get active session from old table =====
+            var activeSessionSpec = new ActiveSessionByTableSpecification(oldTableId);
+            var activeSession = await _unitOfWork.Repository<TableSession, Guid>()
+                .GetWithSpecAsync(activeSessionSpec);
+
+            if (activeSession == null)
+            {
+                throw new ErrorException(
+                    StatusCodes.Status400BadRequest,
+                    ResponseCodeConstants.BADREQUEST,
+                    $"{oldTable.Name} không có session hoạt động");
+            }
+
+            _logger.LogInformation(
+                "MoveTable: Found active session {SessionId} with DeviceId {DeviceId}",
+                activeSession.Id, activeSession.DeviceId);
+
+            // ===== START TRANSACTION =====
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                // ===== STEP 1: Update Order's TableId =====
+                orderToMove.TableId = request.NewTableId;
+                orderToMove.LastUpdatedTime = now;
+                orderToMove.LastUpdatedBy = "Moderator";
+                _unitOfWork.Repository<Order, Order>().Update(orderToMove);
+
+                _logger.LogInformation(
+                    "MoveTable: Updated order {OrderId} TableId to {NewTableId}",
+                    orderToMove.Id, request.NewTableId);
+
+                // ===== STEP 2: Update Invoice's TableId if exists =====
+                var invoice = await _unitOfWork.Repository<Invoice, Guid>()
+                    .GetAllWithSpecAsync(new InvoiceByOrderIdSpecification(orderToMove.Id));
+
+                if (invoice != null && invoice.Any())
+                {
+                    foreach (var inv in invoice)
+                    {
+                        inv.TableId = request.NewTableId;
+                        inv.LastUpdatedTime = now;
+                        inv.LastUpdatedBy = "Moderator";
+                        _unitOfWork.Repository<Invoice, Guid>().Update(inv);
+                        
+                        _logger.LogInformation(
+                            "MoveTable: Updated invoice {InvoiceId} TableId to {NewTableId}",
+                            inv.Id, request.NewTableId);
+                    }
+                }
+
+                // ===== STEP 3: Update TableSession =====
+                activeSession.TableId = request.NewTableId;
+                activeSession.LastActivityAt = now;
+                _unitOfWork.Repository<TableSession, Guid>().Update(activeSession);
+
+                _logger.LogInformation(
+                    "MoveTable: Updated session {SessionId} to new table {NewTableId}",
+                    activeSession.Id, request.NewTableId);
+
+                // ===== STEP 4: Transfer DeviceId from old table to new table =====
+                var deviceIdToTransfer = oldTable.DeviceId;
+                var shareTokenToTransfer = oldTable.ShareToken;
+                var isSharedToTransfer = oldTable.isShared;
+
+                newTable.DeviceId = deviceIdToTransfer;
+                newTable.ShareToken = shareTokenToTransfer;
+                newTable.isShared = isSharedToTransfer;
+                newTable.Status = TableEnums.Occupied;
+                newTable.LastAccessedAt = now;
+                newTable.LastUpdatedTime = now;
+                newTable.LastUpdatedBy = "Moderator";
+                _unitOfWork.Repository<Table, Guid>().Update(newTable);
+
+                _logger.LogInformation(
+                    "MoveTable: Transferred DeviceId {DeviceId} to new table {NewTableName}",
+                    deviceIdToTransfer, newTable.Name);
+
+                // ===== STEP 5: Reset old table to Available =====
+                oldTable.Status = TableEnums.Available;
+                oldTable.DeviceId = null;
+                oldTable.ShareToken = null;
+                oldTable.isShared = false;
+                oldTable.LastAccessedAt = now;
+                oldTable.LastUpdatedTime = now;
+                oldTable.LastUpdatedBy = "Moderator";
+                _unitOfWork.Repository<Table, Guid>().Update(oldTable);
+
+                _logger.LogInformation(
+                    "MoveTable: Reset old table {OldTableName} to Available",
+                    oldTable.Name);
+
+                // ===== STEP 6: Log activity =====
+                await _tableActivityService.LogAsync(
+                    activeSession,
+                    deviceIdToTransfer,
+                    TableActivityType.MoveTable,
+                    new
+                    {
+                        fromTableId = oldTableId,
+                        fromTableName = oldTable.Name,
+                        toTableId = request.NewTableId,
+                        toTableName = newTable.Name,
+                        orderId = orderToMove.Id,
+                        reason = request.Reason,
+                        movedBy = "Moderator",
+                        movedAt = now
+                    });
+
+                _logger.LogInformation(
+                    "MoveTable: Logged activity for session {SessionId}",
+                    activeSession.Id);
+
+                // ===== COMMIT TRANSACTION =====
+                await _unitOfWork.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation(
+                    "MoveTable: Successfully moved table from {OldTableName} to {NewTableName}",
+                    oldTable.Name, newTable.Name);
+
+                // ===== RETURN RESPONSE =====
+                var response = _mapper.Map<TableResponse>(newTable);
+                return new BaseResponseModel<TableResponse>(
+                    StatusCodes.Status200OK,
+                    ResponseCodeConstants.SUCCESS,
+                    response,
+                    null,
+                    $"Đã chuyển bàn thành công từ {oldTable.Name} sang {newTable.Name}");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex,
+                    "MoveTable: Error occurred while moving from table {OldTableId} to {NewTableId}",
+                    oldTableId, request.NewTableId);
+                throw;
+            }
+        }
 
     }
 }

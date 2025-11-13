@@ -47,9 +47,9 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// GET /api/Table?PageIndex=1&PageSize=10&status=Available
         /// 
         /// Available table statuses:
-        /// * Available � The table is free and ready to use
-        /// * Occupied � The table is currently in use
-        /// * Reserved � The table has been reserved
+        /// * Available � The table is free and ready to use
+        /// * Occupied � The table is currently in use
+        /// * Reserved � The table has been reserved
         /// 
         /// Use this endpoint to:
         /// * Display tables to staff or customers
@@ -81,15 +81,16 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         [HttpGet("{id}/scanQrCode/{DevidedId}")]
         public async Task<IActionResult> ScanQrCode(Guid id, string DevidedId)
         {
-            var result = await _service.ScanQrCode(id, DevidedId);
+           // var result = await _service.ScanQrCode(id, DevidedId);
+           var result = await _service.ScanQrCode01(id, DevidedId);
             return Ok(result);
         }
-        [HttpGet("{id}/scanQrCode01/{DevidedId}")]
-        public async Task<IActionResult> ScanQrCodeTest(Guid id, string DevidedId)
-        {
-            var result = await _service.ScanQrCode01(id, DevidedId);
-            return Ok(result);
-        }
+        // [HttpGet("{id}/scanQrCode01/{DevidedId}")]
+        // public async Task<IActionResult> ScanQrCodeTest(Guid id, string DevidedId)
+        // {
+        //     var result = await _service.ScanQrCode01(id, DevidedId);
+        //     return Ok(result);
+        // }
         // Endpoint to share table and get QR code
         [HttpPost("{tableId}/share")]
         public async Task<ActionResult<BaseResponseModel<QrShareResponse>>> ShareTable(Guid tableId, [FromQuery] string currentDeviceId)
@@ -116,6 +117,43 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         public async Task<IActionResult> CheckoutTable(Guid id)
         {
             var result = await _service.CheckoutTable(id);
+            return Ok(result);
+        }
+        /// <summary>
+        /// Move the latest order from one table to another table.
+        /// </summary>
+        /// <remarks>
+        /// This endpoint moves the most recent order from the old table to a new table.
+        /// 
+        /// Business Rules:
+        /// * Old table must be in Occupied status
+        /// * New table must be in Available status
+        /// * Only the latest order (by CreatedTime) will be moved
+        /// * All associated data will be transferred: Order, Invoice, TableSession, DeviceId
+        /// * Old table will be set back to Available status
+        /// * Reason is required for audit trail
+        /// 
+        /// Sample request:
+        /// 
+        ///     POST /api/Table/{oldTableId}/move
+        ///     {
+        ///         "newTableId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        ///         "reason": "Khách yêu cầu đổi sang bàn rộng hơn"
+        ///     }
+        /// 
+        /// </remarks>
+        /// <param name="oldTableId">The ID of the old table (must be Occupied)</param>
+        /// <param name="request">Move table request containing newTableId and reason</param>
+        /// <returns>The result of the operation with new table information</returns>
+        /// <response code="200">Table moved successfully</response>
+        /// <response code="400">Invalid request parameters (table status invalid, no orders found, etc.)</response>
+        /// <response code="404">Old table or new table not found</response>
+        /// <response code="409">Conflict - new order being created, please wait and retry</response>
+        /// <response code="500">Internal server error</response>
+        [HttpPost("{oldTableId}/move")]
+        public async Task<IActionResult> MoveTable(Guid oldTableId, [FromBody] MoveTableRequest request)
+        {
+            var result = await _service.MoveTable(oldTableId, request);
             return Ok(result);
         }
     }
