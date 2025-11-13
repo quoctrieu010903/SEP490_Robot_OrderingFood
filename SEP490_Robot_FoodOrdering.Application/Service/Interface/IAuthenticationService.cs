@@ -16,10 +16,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
             Task<BaseResponseModel<AuthenticationResponse>> SignInAsync(SignInRequest request);
             Task<BaseResponseModel<UserProfileResponse>> GetProfileAsync();
             Task<BaseResponseModel<bool>> UpdateProfileAsync(UpdateProfileRequest request);
-
            
-          
-        }
+
+
+
+    }
 
 }
 

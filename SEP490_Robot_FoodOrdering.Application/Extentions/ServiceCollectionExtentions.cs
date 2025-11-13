@@ -24,7 +24,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Extentions
             services.AddScoped<IRemakeItemService, RemakeOrderItemService>();   
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IPayOSService, PayOSService>();
+            services.AddScoped<ITableSessionService, TableSessionService>();
+            services.AddScoped<ITableActivityService, TableActivityService>();
             
+
             services.AddHttpContextAccessor();
 
             services.AddScoped<IProductToppingService, ProductToppingService>();
