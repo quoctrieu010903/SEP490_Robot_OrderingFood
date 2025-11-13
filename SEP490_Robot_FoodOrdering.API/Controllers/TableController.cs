@@ -84,6 +84,12 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             var result = await _service.ScanQrCode(id, DevidedId);
             return Ok(result);
         }
+        [HttpGet("{id}/scanQrCode01/{DevidedId}")]
+        public async Task<IActionResult> ScanQrCodeTest(Guid id, string DevidedId)
+        {
+            var result = await _service.ScanQrCode01(id, DevidedId);
+            return Ok(result);
+        }
         // Endpoint to share table and get QR code
         [HttpPost("{tableId}/share")]
         public async Task<ActionResult<BaseResponseModel<QrShareResponse>>> ShareTable(Guid tableId, [FromQuery] string currentDeviceId)

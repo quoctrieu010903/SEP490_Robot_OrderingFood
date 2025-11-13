@@ -1,5 +1,6 @@
 ﻿
 using SEP490_Robot_FoodOrdering.Core.Base;
+using SEP490_Robot_FoodOrdering.Domain.Entities.SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 
 namespace SEP490_Robot_FoodOrdering.Domain.Entities
@@ -8,6 +9,12 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
     {
         public Guid? TableId { get; set; } // nếu đặt tại quán
         public virtual Table? Table { get; set; } // nếu đặt tại quán
+                                                  // Phiên bàn
+       
+        // Khách hàng – nếu có
+        public Guid? CustomerId { get; set; }
+        public virtual Customer? Customer { get; set; }
+
         public OrderStatus Status { get; set; }  // Automatically derived from order items' statuses
         public decimal TotalPrice { get; set; }
        
@@ -16,7 +23,10 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public virtual ICollection<OrderItem> OrderItems { get; set; }
         public virtual  Invoice Invoices { get; set; }
 
-        
+        public Guid? TableSessionId { get; set; }
+        public virtual TableSession? TableSession { get; set; }
+
+
 
         public bool IsFullyPaid => OrderItems
               .Where(x => x.Status != OrderItemStatus.Cancelled)
