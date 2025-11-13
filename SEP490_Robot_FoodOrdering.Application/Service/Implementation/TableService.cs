@@ -818,7 +818,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     activeSession,
                     deviceId,
                     TableActivityType.ScanAgain,
-                    new { tableId = table.Id });
+                    new { tableId = table.Id , tableName = table.Name});
                 await _unitOfWork.SaveChangesAsync();
 
                 var respContinue = _mapper.Map<TableResponse>(table);
