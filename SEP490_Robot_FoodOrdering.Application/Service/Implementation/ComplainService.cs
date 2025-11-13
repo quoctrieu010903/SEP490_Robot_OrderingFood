@@ -157,7 +157,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>> GetAllComplainIsPending()
         {
             // Lấy tất cả dữ liệu cần thiết
-            var tables = await _unitOfWork.Repository<Table, Guid>().GetAllWithIncludeAsync(true , t=> t.Orders);
+            var tables = await _unitOfWork.Repository<Table, Guid>().GetAllWithIncludeAsync(true , t=> t.Orders, t => t.Sessions);
             var complains = await _unitOfWork.Repository<Complain, Guid>()
                 .GetAllWithSpecAsync(new BaseSpecification<Complain>(x => x.isPending));
 
@@ -172,7 +172,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 .Select(table =>
                 {
                     int pendingCount = complains.Count(c => c.TableId == table.Id);
-
+                    string sessionId = table.Sessions
+                        .FirstOrDefault(s => s.Status == Domain.Enums.TableSessionStatus.Active)?.Id.ToString() ?? string.Empty;
                     // Lấy thống kê của bàn này nếu có
                     var stats = orderStatsDict.TryGetValue(table.Id, out var s)
                         ? s
@@ -182,7 +183,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     {
                         Key = table.Id.ToString(),
                         Value = new ComplainPeedingInfo(
-
+                            SessionId: sessionId,
                             TableName: table.Name,
                             tableStatus: table.Status,
                             paymentStatus : stats.PaymentStatus,

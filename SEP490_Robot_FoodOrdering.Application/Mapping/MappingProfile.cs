@@ -70,7 +70,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Topping.Price))
                 .ReverseMap();
             CreateMap<CreateProductToppingRequest, ProductTopping>().ReverseMap();
-            CreateMap<Table, TableResponse>().ReverseMap();
+            CreateMap<Table, TableResponse>()
+                            .ForMember(
+                                dest => dest.TableSessionId,
+                                opt => opt.MapFrom(src =>
+                                    src.Sessions
+                                        .OrderByDescending(s => s.Status == TableSessionStatus.Active)
+                                        .ThenByDescending(s => s.CheckIn)
+                                        .Select(s => (Guid?)s.Id)
+                                        .FirstOrDefault()
+                                )
+                            ).ReverseMap();
             CreateMap<CreateTableRequest, Table>().ReverseMap();
 
 

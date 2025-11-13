@@ -1,8 +1,13 @@
 ﻿
 
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Table;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.TableActivities;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
+using SEP490_Robot_FoodOrdering.Core.Constants;
+using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
@@ -18,34 +23,37 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _unitOfWork = unitOfWork;
         }
 
-           public async Task<List<TableActivityLogResponse>> GetLogAsync(Guid sessionId)
-    {
-        var spec = new BaseSpecification<TableActivity>(
-            x => x.TableSessionId == sessionId);
+        public async Task<PaginatedList<TableActivityLogResponse>> GetLogAsync(Guid sessionId , PagingRequestModel requestModel)
+        {
+            var spec = new BaseSpecification<TableActivity>(
+                x => x.TableSessionId == sessionId);
 
-        // sắp xếp theo thời gian nếu muốn
-        spec.AddOrderByDescending(x => x.CreatedTime);
+            // sắp xếp theo thời gian nếu muốn
+            spec.AddOrderByDescending(x => x.CreatedTime);
 
-        var activities = await _unitOfWork.Repository<TableActivity, Guid>()
-            .GetAllWithSpecAsync(spec);
+            var activities = await _unitOfWork.Repository<TableActivity, Guid>()
+                .GetAllWithSpecAsync(spec);
 
-        var result = activities
-            .Select(a => new TableActivityLogResponse
-            {
-                
-                TableSessionId = a.TableSessionId,
-                DeviceId = a.DeviceId,
-                Type = a.Type.ToString(),
-                CreatedTime = a.CreatedTime,
+            var result = activities
+                .Select(a => new TableActivityLogResponse
+                {
 
-                Data = string.IsNullOrEmpty(a.Data)
-                    ? null
-                    : JsonSerializer.Deserialize<object>(a.Data)
-            })
-            .ToList();
+                    TableSessionId = a.TableSessionId,
+                    DeviceId = a.DeviceId,
+                    Type = a.Type.ToString(),
+                    CreatedTime = a.CreatedTime,
 
-        return result;
-    }
+                    Data = string.IsNullOrEmpty(a.Data)
+                        ? null
+                        : JsonSerializer.Deserialize<object>(a.Data)
+                })
+                .ToList();
+
+            return new PaginatedList<TableActivityLogResponse>(
+                result,result.Count(), requestModel.PageNumber,requestModel.PageSize);
+
+        }
+        
 
         public async Task LogAsync(TableSession session, string? deviceId, TableActivityType type, object? data = null)
         {

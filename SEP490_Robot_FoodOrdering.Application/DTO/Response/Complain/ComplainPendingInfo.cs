@@ -2,6 +2,6 @@
 
 namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Complain;
 
-public record ComplainPeedingInfo(string TableName ,TableEnums tableStatus ,PaymentStatusEnums paymentStatus, int Counter  , int DeliveredCount, int ServeredCount,  
+public record ComplainPeedingInfo(string? SessionId,    string TableName ,TableEnums tableStatus ,PaymentStatusEnums paymentStatus, int Counter  , int DeliveredCount, int ServeredCount,  
     int PaidCount,
     int TotalItems);
