@@ -808,8 +808,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 activeSession.LastActivityAt = now;
                 _unitOfWork.Repository<TableSession, Guid>().Update(activeSession);
 
+                // Sync lại trạng thái Table để đảm bảo consistency
+                // (Trường hợp moderator đã thay đổi trạng thái bàn bằng API PUT nhưng session vẫn Active)
+                table.Status = TableEnums.Occupied;
+                table.DeviceId = deviceId;
+                table.IsQrLocked = true;
+                table.LockedAt = table.LockedAt ?? now; // Giữ nguyên LockedAt cũ nếu có, hoặc set mới
                 table.LastAccessedAt = now;
-                // giữ nguyên Status = Occupied, IsQrLocked = true, DeviceId = deviceId
                 _unitOfWork.Repository<Table, Guid>().Update(table);
 
                 await _unitOfWork.SaveChangesAsync();
