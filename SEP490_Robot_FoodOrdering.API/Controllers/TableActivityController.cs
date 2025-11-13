@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 
 namespace SEP490_Robot_FoodOrdering.API.Controllers
@@ -14,12 +15,12 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             _tableActivities = tableActivities;
         }
         [HttpGet("{sessionId:guid}")]
-        public async Task<IActionResult> GetAction(Guid sessionId)
+        public async Task<IActionResult> GetAction(Guid sessionId, [FromQuery] PagingRequestModel paging)
         {
         
-            var logs = await _tableActivities.GetLogAsync(sessionId);
+            var logs = await _tableActivities.GetLogAsync(sessionId , paging);
 
-            return Ok(logs);
+           return Ok(logs);
         }
 
     }

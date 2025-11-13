@@ -82,7 +82,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
         public async Task<PaginatedList<TableResponse>> GetAll(PagingRequestModel paging, TableEnums? status, string? tableName)
         {
-            var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecAsync(new TableSpecification(paging.PageNumber, paging.PageSize, status, tableName));
+            var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecWithInclueAsync(new TableSpecification(paging.PageNumber, paging.PageSize, status, tableName),true , t=>t.Sessions);
             var mapped = _mapper.Map<List<TableResponse>>(list);
             mapped = mapped
                         .OrderBy(t =>
@@ -91,22 +91,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                             return match.Success ? Convert.ToInt32(match.Value) : int.MaxValue;
                         })
                         .ToList();
-            foreach (var table in mapped)
-            {
-                // Tạo URL chứa id của bàn
-                //string url = $"{ServerEndpoint.}/{table.Id}";
-
-                //// Sinh QR code dạng Base64
-                //table.QRCode = "data:image/png;base64," + GenerateQrCodeBase64_NoDrawing(url);
-
-            }
+            
 
 
             return PaginatedList<TableResponse>.Create(mapped, paging.PageNumber, paging.PageSize);
         }
         public async Task<TableResponse> GetById(Guid id)
         {
-            var existed = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(id);
+            var existed = await _unitOfWork.Repository<Table, Guid>().GetByIdWithIncludeAsync(t=>t.Id == id , true , t => t.Sessions);
             if (existed == null)
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Table không tìm thấy");
 
