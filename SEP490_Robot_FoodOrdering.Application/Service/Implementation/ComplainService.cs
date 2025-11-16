@@ -11,6 +11,7 @@ using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
 using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
+using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
@@ -154,30 +155,98 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
 
 
+            public async Task<BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>> GetAllComplainIsPending1()
+            {
+                // Lấy tất cả dữ liệu cần thiết
+                var tables = await _unitOfWork.Repository<Table, Guid>().GetAllWithIncludeAsync(true , t=> t.Orders, t => t.Sessions);
+                var complains = await _unitOfWork.Repository<Complain, Guid>()
+                    .GetAllWithSpecAsync(new BaseSpecification<Complain>(x => x.isPending));
+
+                if (tables == null || !tables.Any())
+                    throw new ErrorException(404, "No tables found");
+
+                // Lấy toàn bộ thống kê order cho các bàn
+                var orderStatsDict = await _orderService.GetOrderStatsByTableIds(tables.Select(x => x.Id));
+
+                // 🔹 Gộp dữ liệu bằng LINQ
+                var result = tables.Select(table =>
+                {
+                    //int pendingCount = complains.TryGetValue(table.Id, out var count) ? count : 0;
+                    int pendingCount = complains.Count(complains => complains.TableId == table.Id);
+                    var activeSession = table.Sessions.FirstOrDefault();
+                    var sessionId = activeSession?.Id.ToString() ?? string.Empty;
+
+                    var stats = (activeSession != null && orderStatsDict.TryGetValue(table.Id, out var s))
+                        ? s
+                        : new OrderStaticsResponse { PaymentStatus = 0, DeliveredCount = 0, ServedCount = 0, PaidCount = 0, TotalOrderItems = 0 };
+
+                    return new ComplainPeedingInfo(
+                        Id: table.Id,
+                        SessionId: sessionId,
+                        TableName: table.Name,
+                        tableStatus: table.Status,
+                        paymentStatus: stats.PaymentStatus,
+                        Counter: pendingCount,
+                        DeliveredCount: stats.DeliveredCount,
+                        ServeredCount: stats.ServedCount,
+                        PaidCount: stats.PaidCount,
+                        TotalItems: stats.TotalOrderItems
+                    );
+                }).ToDictionary(x => x.Id.ToString(), x => x);
+
+
+                return new BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>(
+                    StatusCodes.Status200OK,
+                    ResponseCodeConstants.SUCCESS,
+                    result
+                );
+            }
+
         public async Task<BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>> GetAllComplainIsPending()
         {
-            // Lấy tất cả dữ liệu cần thiết
-            var tables = await _unitOfWork.Repository<Table, Guid>().GetAllWithIncludeAsync(true , t=> t.Orders, t => t.Sessions);
+            var tables = await _unitOfWork.Repository<Table, Guid>()
+                .GetAllWithIncludeAsync(true, t => t.Orders);
+
             var complains = await _unitOfWork.Repository<Complain, Guid>()
                 .GetAllWithSpecAsync(new BaseSpecification<Complain>(x => x.isPending));
 
             if (tables == null || !tables.Any())
                 throw new ErrorException(404, "No tables found");
 
-            // Lấy toàn bộ thống kê order cho các bàn
-            var orderStatsDict = await _orderService.GetOrderStatsByTableIds(tables.Select(x => x.Id));
+            var orderStatsDict = await _orderService
+                .GetOrderStatsByTableIds(tables.Select(x => x.Id));
 
-            // 🔹 Gộp dữ liệu bằng LINQ
             var result = tables.Select(table =>
             {
-                //int pendingCount = complains.TryGetValue(table.Id, out var count) ? count : 0;
-                int pendingCount = complains.Count(complains => complains.TableId == table.Id);
-                var activeSession = table.Sessions.FirstOrDefault();
+                int pendingCount = complains.Count(c => c.TableId == table.Id);
+
+                var activeSession = table.Sessions.FirstOrDefault(); // tạm chọn session đầu
                 var sessionId = activeSession?.Id.ToString() ?? string.Empty;
 
-                var stats = (activeSession != null && orderStatsDict.TryGetValue(table.Id, out var s))
+                var stats = (activeSession != null
+                             && orderStatsDict.TryGetValue(table.Id, out var s))
                     ? s
-                    : new OrderStaticsResponse { PaymentStatus = 0, DeliveredCount = 0, ServedCount = 0, PaidCount = 0, TotalOrderItems = 0 };
+                    : new OrderStaticsResponse
+                    {
+                        PaymentStatus = 0,
+                        DeliveredCount = 0,
+                        ServedCount = 0,
+                        PaidCount = 0,
+                        TotalOrderItems = 0
+                    };
+
+                // ✅ QUICK FIX: nếu bàn trống hoặc không có session active thì ép stats về 0
+                if (table.Status == (int)TableEnums.Available && activeSession == null)
+                {
+                    stats = new OrderStaticsResponse
+                    {
+                        PaymentStatus = 0,
+                        DeliveredCount = 0,
+                        ServedCount = 0,
+                        PaidCount = 0,
+                        TotalOrderItems = 0
+                    };
+                }
 
                 return new ComplainPeedingInfo(
                     Id: table.Id,
@@ -193,13 +262,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 );
             }).ToDictionary(x => x.Id.ToString(), x => x);
 
-
             return new BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>(
                 StatusCodes.Status200OK,
                 ResponseCodeConstants.SUCCESS,
                 result
             );
         }
+
+
 
         public async Task<BaseResponseModel<List<ComplainResponse>>> GetComplainByTable(Guid idTable)
         {
