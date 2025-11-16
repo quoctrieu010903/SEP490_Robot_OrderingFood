@@ -180,7 +180,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     : new OrderStaticsResponse { PaymentStatus = 0, DeliveredCount = 0, ServedCount = 0, PaidCount = 0, TotalOrderItems = 0 };
 
                 return new ComplainPeedingInfo(
-               
+                    Id: table.Id,
                     SessionId: sessionId,
                     TableName: table.Name,
                     tableStatus: table.Status,
