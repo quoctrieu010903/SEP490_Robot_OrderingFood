@@ -13,5 +13,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
     {
         Task LogAsync(TableSession session, string? deviceId,TableActivityType type, object? data = null);
         Task<PaginatedList<TableActivityLogResponse>> GetLogAsync(Guid sessionId , PagingRequestModel pagingrequest);
-    }
+      }
 }
+

@@ -20,6 +20,7 @@ using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.ServerEndPoint;
 using static System.Net.WebRequestMethods;
 using Microsoft.Extensions.Logging;
+using System.Net.WebSockets;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -32,9 +33,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IServerEndpointService _enpointService;
         private readonly ITableSessionService _tableSessionService;
         private readonly ITableActivityService _tableActivityService;
+        private readonly IInvoiceService _invoiceService;
         private readonly ILogger<TableService> _logger;
 
-        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService , ITableActivityService tableActivityService)
+        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService , ITableActivityService tableActivityService, IInvoiceService invoiceService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -45,6 +47,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _enpointService = endpointService;
             _tableSessionService = tableSessionService;
             _tableActivityService = tableActivityService;
+            _invoiceService = invoiceService;
         }
         public async Task<BaseResponseModel> Create(CreateTableRequest request)
         {
@@ -161,6 +164,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 // 1️⃣ Occupied → Available
                 case (TableEnums.Occupied, TableEnums.Available):
                     await HandleOccupiedToAvailable(table, allItems, orders.ToList(), updatedBy);
+                    
                     break;
 
                 // 2️⃣ Available → Occupied  
@@ -434,6 +438,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             table.LastUpdatedBy = updatedBy;
             table.LastUpdatedTime = DateTime.UtcNow;
 
+
             _unitOfWork.Repository<Table, Guid>().Update(table);
         }
         private decimal CalculateOrderTotal(List<OrderItem> orderItems)
@@ -655,6 +660,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     && o.Status != OrderStatus.Completed
                     && o.Status != OrderStatus.Cancelled   // 👈 tránh dính order đã huỷ
                 ));
+           var tableSession = await _unitOfWork.Repository<TableSession, Guid>()
+                .GetWithSpecAsync(new BaseSpecification<TableSession>(s =>
+                    s.TableId == id && s.Status == TableSessionStatus.Active));
 
             if (order != null)
             {
@@ -671,24 +679,40 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 order.LastUpdatedTime = DateTime.UtcNow;
                 _unitOfWork.Repository<Order, Guid>().Update(order);
             }
-            // Nếu order == null: không có order đang active -> cho checkout bình thường
+            var requestInvoice = new InvoiceCreatRequest
+            ( existedTable.Id,order.Id  );
+         
 
-            // Giải phóng bàn
-            existedTable.Status = TableEnums.Available;
-            existedTable.DeviceId = null;
-            existedTable.IsQrLocked = false;
-            existedTable.LockedAt = null;
-            existedTable.LastAccessedAt = null;
-            existedTable.LastUpdatedTime = DateTime.UtcNow;
-            _unitOfWork.Repository<Table, Guid>().Update(existedTable);
+           var result =  await _invoiceService.CreateInvoice(requestInvoice);
 
+            await _tableActivityService.LogAsync(
+                    tableSession,
+                    existedTable.DeviceId,
+                    TableActivityType.CreateInvoice,  // nếu ông thêm enum này
+                    new
+                    {
+                        InvoiceId = order.Invoices.Id,
+                        OrderId = order.Id,
+                        InvoiceTotal = order.Invoices.TotalMoney,
+                        PaymentStatus = order.Invoices.Status,
+
+                    });
+
+
+
+            await _tableSessionService.CloseSessionAsync(
+                  tableSession,
+                  "Checkout table",
+                  result.Id,
+                  existedTable.DeviceId
+              );
             await _unitOfWork.SaveChangesAsync();
 
             return new BaseResponseModel<TableResponse>(
                 StatusCodes.Status200OK,
                 ResponseCodeConstants.SUCCESS,
                 _mapper.Map<TableResponse>(existedTable),
-                null,
+                
                 "Checkout thành công"
             );
         }
@@ -819,11 +843,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                 await _unitOfWork.SaveChangesAsync();
 
-                await _tableActivityService.LogAsync(
-                    activeSession,
-                    deviceId,
-                    TableActivityType.ScanAgain,
-                    new { tableId = table.Id , tableName = table.Name});
+              
                 await _unitOfWork.SaveChangesAsync();
 
                 var respContinue = _mapper.Map<TableResponse>(table);

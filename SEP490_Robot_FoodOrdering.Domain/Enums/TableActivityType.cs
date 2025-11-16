@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace SEP490_Robot_FoodOrdering.Domain.Enums
 {
+    
     public enum TableActivityType
     {
         CheckIn = 0,
@@ -14,8 +15,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
         CreateOrder = 10,
         AddOrderItems = 11,
 
-        PartialPayment = 20,
-        FullPayment = 21,
+
 
         MoveTable = 30,
 
@@ -24,9 +24,12 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
         ShareStop = 42,
 
         RequestCheckout = 50,
+        CreateInvoice = 50,
         CloseSession = 51,
 
         AutoRelease = 60,
         AttachDeviceFromModerator = 70,
     }
+
 }
+
