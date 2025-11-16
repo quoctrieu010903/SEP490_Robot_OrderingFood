@@ -168,34 +168,30 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var orderStatsDict = await _orderService.GetOrderStatsByTableIds(tables.Select(x => x.Id));
 
             // 🔹 Gộp dữ liệu bằng LINQ
-            var result = tables
-                .Select(table =>
-                {
-                    int pendingCount = complains.Count(c => c.TableId == table.Id);
-                    string sessionId = table.Sessions
-                        .FirstOrDefault(s => s.Status == Domain.Enums.TableSessionStatus.Active)?.Id.ToString() ?? string.Empty;
-                    // Lấy thống kê của bàn này nếu có
-                    var stats = orderStatsDict.TryGetValue(table.Id, out var s)
-                        ? s
-                        : new OrderStaticsResponse();
+            var result = tables.Select(table =>
+            {
+                //int pendingCount = complains.TryGetValue(table.Id, out var count) ? count : 0;
+                int pendingCount = complains.Count(complains => complains.TableId == table.Id);
+                var activeSession = table.Sessions.FirstOrDefault();
+                var sessionId = activeSession?.Id.ToString() ?? string.Empty;
 
-                    return new
-                    {
-                        Key = table.Id.ToString(),
-                        Value = new ComplainPeedingInfo(
-                            SessionId: sessionId,
-                            TableName: table.Name,
-                            tableStatus: table.Status,
-                            paymentStatus : stats.PaymentStatus,
-                            Counter: pendingCount,
-                            DeliveredCount: stats.DeliveredCount,
-                            ServeredCount: stats.ServedCount,
-                            PaidCount: stats.PaidCount,
-                            TotalItems: stats.TotalOrderItems
-                        )
-                    };
-                })
-                .ToDictionary(x => x.Key, x => x.Value);
+                var stats = (activeSession != null && orderStatsDict.TryGetValue(table.Id, out var s))
+                    ? s
+                    : new OrderStaticsResponse { PaymentStatus = 0, DeliveredCount = 0, ServedCount = 0, PaidCount = 0, TotalOrderItems = 0 };
+
+                return new ComplainPeedingInfo(
+                    SessionId: sessionId,
+                    TableName: table.Name,
+                    tableStatus: table.Status,
+                    paymentStatus: stats.PaymentStatus,
+                    Counter: pendingCount,
+                    DeliveredCount: stats.DeliveredCount,
+                    ServeredCount: stats.ServedCount,
+                    PaidCount: stats.PaidCount,
+                    TotalItems: stats.TotalOrderItems
+                );
+            }).ToDictionary(x => x.TableName, x => x);
+
 
             return new BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>(
                 StatusCodes.Status200OK,

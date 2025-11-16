@@ -6,7 +6,7 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Request
     public class CreateOrderRequest
     {
         public Guid TableId { get; set; }
-        public string deviceToken {  get; set; }
+        public string? deviceToken {  get; set; }
         public List<CreateOrderItemRequest> Items { get; set; }
     }
 

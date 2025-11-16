@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -23,7 +24,8 @@ public class PayOSService: IPayOSService
     private readonly IConfiguration _config;
     private readonly ILogger<PayOSService> _logger;
     private readonly IServerEndpointService _serverEndpointService;
-    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger, IServerEndpointService serverEndpointService)
+
+    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger, IServerEndpointService serverEndpointService )
     {
         _unitOfWork = unitOfWork;
         _payOS = payOS;
@@ -75,6 +77,7 @@ public class PayOSService: IPayOSService
             CreatedTime = DateTime.UtcNow,
             LastUpdatedTime = DateTime.UtcNow
         };
+
 
         await _unitOfWork.Repository<Payment, Guid>().AddAsync(payment);
         await _unitOfWork.SaveChangesAsync(); // Lưu trước để có mã PayOSOrderCode
@@ -255,9 +258,14 @@ public class PayOSService: IPayOSService
             await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
         }
 
+
         // 4️⃣ Cập nhật Order
         order.LastUpdatedTime = DateTime.UtcNow;
         await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
+        var session = await _unitOfWork.Repository<TableSession, Guid>()
+            .GetByIdWithIncludeAsync(ts => ts.Id == order.TableSessionId, false, ts => ts.Table);
+
+       
         await _unitOfWork.SaveChangesAsync();
 
         // 5️⃣ Trả kết quả đồng bộ

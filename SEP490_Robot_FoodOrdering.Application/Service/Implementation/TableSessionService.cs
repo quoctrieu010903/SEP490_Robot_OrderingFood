@@ -1,4 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.TableSession;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
@@ -9,13 +12,15 @@ public class TableSessionService : ITableSessionService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITableActivityService _activityService;
+    private readonly IMapper _mapper;
 
     public TableSessionService(
         IUnitOfWork unitOfWork,
-        ITableActivityService activityService)
+        ITableActivityService activityService , IMapper mapper)
     {
         _unitOfWork = unitOfWork;
         _activityService = activityService;
+        _mapper = mapper;
     }
 
     public async Task<TableSession?> GetActiveSessionForDeviceAsync(string deviceId)
@@ -158,5 +163,13 @@ public class TableSessionService : ITableSessionService
         });
     }
 
-        
+    public async Task<PaginatedList<TableSessionResponse>> GetSessionByTableId(Guid tableId, PagingRequestModel request)
+    {
+        var existedSpec = new BaseSpecification<TableSession>(x => x.TableId == tableId);
+        var query = await _unitOfWork.Repository<TableSession, Guid>()
+            .GetAllWithSpecWithInclueAsync(existedSpec,  true , ts=> ts.Table , ts => ts.Customer , ts => ts.Activities);
+        var response =  _mapper.Map<List<TableSessionResponse>>(query);
+        return PaginatedList<TableSessionResponse>.Create(response, request.PageNumber, request.PageSize);
+
+    }
 }

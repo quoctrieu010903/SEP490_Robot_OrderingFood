@@ -328,7 +328,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     }
                 }
 
-                if (activeSession != null)
+                // Kiểm tra xem đã log AddOrderItems cho session này chưa
+                var hasLogged = await _unitOfWork.Repository<TableActivity, Guid>()
+                    .AnyAsync(a => a.TableSessionId == activeSession.Id &&
+                                   a.Type == TableActivityType.AddOrderItems);
+                if (!hasLogged)
                 {
                     // Get newly added items (last N items based on request count)
                     var newlyAddedItems = existingOrder.OrderItems

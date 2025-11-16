@@ -20,6 +20,8 @@ using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.ServerEndPoint;
 using static System.Net.WebRequestMethods;
 using Microsoft.Extensions.Logging;
+using System.Net.WebSockets;
+using ZXing;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -32,9 +34,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IServerEndpointService _enpointService;
         private readonly ITableSessionService _tableSessionService;
         private readonly ITableActivityService _tableActivityService;
+        private readonly IInvoiceService _invoiceService;
         private readonly ILogger<TableService> _logger;
 
-        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService , ITableActivityService tableActivityService)
+        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService , ITableActivityService tableActivityService, IInvoiceService invoiceService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -45,6 +48,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _enpointService = endpointService;
             _tableSessionService = tableSessionService;
             _tableActivityService = tableActivityService;
+            _invoiceService = invoiceService;
         }
         public async Task<BaseResponseModel> Create(CreateTableRequest request)
         {
@@ -136,16 +140,25 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
 
 
-        public async Task<TableResponse> ChangeTableStatus(Guid tableId, TableEnums newStatus, string? reason = null, string updatedBy = "System")
+        public async Task<TableResponse> ChangeTableStatus(Guid tableId, TableEnums newStatus, string reason, string updatedBy = "System")
         {
-            var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(tableId);
+            var table = await _unitOfWork.Repository<Table, Guid>().GetByIdWithIncludeAsync(t=> t.Id == tableId , true , t=> t.Sessions, t => t.Orders);
             if (table == null)
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Table không tìm thấy");
-
+            if (String.IsNullOrWhiteSpace(reason))
+            {
+                throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.BADREQUEST,
+                    "Lý do thay đổi trạng thái bàn không được để trống");
+            }
             // Nếu trạng thái giống nhau thì không cần thay đổi
             if (table.Status == newStatus)
                 throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.BADREQUEST,
                     $"Bàn đã ở trạng thái {newStatus}");
+
+            var latestSessionId = table.Sessions
+                                .Where(s => s.Status == TableSessionStatus.Active)     // chỉ lấy session Active
+                                .OrderByDescending(s => s.CheckIn)                     // session nào CheckIn mới nhất
+                                .FirstOrDefault();                                     // nếu không có thì = null
 
             // Load orders + orderItems của bàn
             var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(
@@ -160,7 +173,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
                 // 1️⃣ Occupied → Available
                 case (TableEnums.Occupied, TableEnums.Available):
-                    await HandleOccupiedToAvailable(table, allItems, orders.ToList(), updatedBy);
+                    await HandleOccupiedToAvailable(latestSessionId, table, allItems, orders.ToList(),reason, updatedBy);
+                    
                     break;
 
                 // 2️⃣ Available → Occupied  
@@ -341,7 +355,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
         // ===== HELPER METHODS =====
-        private async Task HandleOccupiedToAvailable(Table table, List<OrderItem> allItems, List<Order> orders, string updatedBy)
+        private async Task HandleOccupiedToAvailable(TableSession tableSession , Table table, List<OrderItem> allItems, List<Order> orders,string reason, string updatedBy)
         {
             // 🧩 1️⃣ Xử lý từng OrderItem
             foreach (var item in allItems)
@@ -424,15 +438,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             await _unitOfWork.SaveChangesAsync();
 
-            // 🧩 3️⃣ Cập nhật lại thông tin bàn
-            table.Status = TableEnums.Available;
 
-            table.DeviceId = null;
-            table.IsQrLocked = false;
-            table.LockedAt = null;
-            table.LastAccessedAt = null;
-            table.LastUpdatedBy = updatedBy;
-            table.LastUpdatedTime = DateTime.UtcNow;
+            await _tableSessionService.CloseSessionAsync(
+                                 tableSession,
+                                 "người điều phối trưởng muốn huỷ bàn vì lý do sau :  " + reason,
+                                  null, 
+                                 table.DeviceId
+                             );
+
 
             _unitOfWork.Repository<Table, Guid>().Update(table);
         }
@@ -655,6 +668,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     && o.Status != OrderStatus.Completed
                     && o.Status != OrderStatus.Cancelled   // 👈 tránh dính order đã huỷ
                 ));
+           var tableSession = await _unitOfWork.Repository<TableSession, Guid>()
+                .GetWithSpecAsync(new BaseSpecification<TableSession>(s =>
+                    s.TableId == id && s.Status == TableSessionStatus.Active));
 
             if (order != null)
             {
@@ -671,24 +687,40 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 order.LastUpdatedTime = DateTime.UtcNow;
                 _unitOfWork.Repository<Order, Guid>().Update(order);
             }
-            // Nếu order == null: không có order đang active -> cho checkout bình thường
+            var requestInvoice = new InvoiceCreatRequest
+            ( existedTable.Id,order.Id  );
+         
 
-            // Giải phóng bàn
-            existedTable.Status = TableEnums.Available;
-            existedTable.DeviceId = null;
-            existedTable.IsQrLocked = false;
-            existedTable.LockedAt = null;
-            existedTable.LastAccessedAt = null;
-            existedTable.LastUpdatedTime = DateTime.UtcNow;
-            _unitOfWork.Repository<Table, Guid>().Update(existedTable);
+           var result =  await _invoiceService.CreateInvoice(requestInvoice);
 
+            await _tableActivityService.LogAsync(
+                    tableSession,
+                    existedTable.DeviceId,
+                    TableActivityType.CreateInvoice,  // nếu ông thêm enum này
+                    new
+                    {
+                        InvoiceId = order.Invoices.Id,
+                        OrderId = order.Id,
+                        InvoiceTotal = order.Invoices.TotalMoney,
+                        PaymentStatus = order.Invoices.Status,
+
+                    });
+
+
+
+            await _tableSessionService.CloseSessionAsync(
+                  tableSession,
+                  "Checkout table",
+                  result.Id,
+                  existedTable.DeviceId
+              );
             await _unitOfWork.SaveChangesAsync();
 
             return new BaseResponseModel<TableResponse>(
                 StatusCodes.Status200OK,
                 ResponseCodeConstants.SUCCESS,
                 _mapper.Map<TableResponse>(existedTable),
-                null,
+                
                 "Checkout thành công"
             );
         }
@@ -819,11 +851,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                 await _unitOfWork.SaveChangesAsync();
 
-                await _tableActivityService.LogAsync(
-                    activeSession,
-                    deviceId,
-                    TableActivityType.ScanAgain,
-                    new { tableId = table.Id , tableName = table.Name});
+              
                 await _unitOfWork.SaveChangesAsync();
 
                 var respContinue = _mapper.Map<TableResponse>(table);
