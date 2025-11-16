@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -23,7 +24,8 @@ public class PayOSService: IPayOSService
     private readonly IConfiguration _config;
     private readonly ILogger<PayOSService> _logger;
     private readonly IServerEndpointService _serverEndpointService;
-    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger, IServerEndpointService serverEndpointService)
+
+    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger, IServerEndpointService serverEndpointService )
     {
         _unitOfWork = unitOfWork;
         _payOS = payOS;
@@ -75,6 +77,7 @@ public class PayOSService: IPayOSService
             CreatedTime = DateTime.UtcNow,
             LastUpdatedTime = DateTime.UtcNow
         };
+
 
         await _unitOfWork.Repository<Payment, Guid>().AddAsync(payment);
         await _unitOfWork.SaveChangesAsync(); // Lưu trước để có mã PayOSOrderCode
@@ -255,9 +258,14 @@ public class PayOSService: IPayOSService
             await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
         }
 
+
         // 4️⃣ Cập nhật Order
         order.LastUpdatedTime = DateTime.UtcNow;
         await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
+        var session = await _unitOfWork.Repository<TableSession, Guid>()
+            .GetByIdWithIncludeAsync(ts => ts.Id == order.TableSessionId, false, ts => ts.Table);
+
+       
         await _unitOfWork.SaveChangesAsync();
 
         // 5️⃣ Trả kết quả đồng bộ
@@ -291,6 +299,7 @@ public class PayOSService: IPayOSService
         
         // Update lại order.
         order.LastUpdatedTime = DateTime.UtcNow;
+        var tableId = order.TableId;
         await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
         await _unitOfWork.SaveChangesAsync();
 
@@ -299,6 +308,12 @@ public class PayOSService: IPayOSService
         var cancelUrl = isCustomer
         ? _config["Environment:PAYOS_CANCEL_URL"]
         : _config["Environment:PAYOS_MODERATOR_CANCEL_URL"];
+        var finalReturnUrl = cancelUrl;
+        if (tableId.HasValue)
+        {
+             finalReturnUrl = cancelUrl + $"/{tableId}";
+            _logger.LogInformation($"Final payment return: {finalReturnUrl}");
+        }
         return new BaseResponseModel<OrderPaymentResponse>(
             StatusCodes.Status200OK,
             "CANCELLED",
@@ -306,7 +321,7 @@ public class PayOSService: IPayOSService
             {
                 OrderId = orderId,
                 //PaymentUrl = frontendCancelURL,
-                PaymentUrl = cancelUrl,
+                PaymentUrl = finalReturnUrl,
                 PaymentStatus = order.PaymentStatus,
                 Message = "payment status cancelled."
             });
@@ -318,7 +333,7 @@ public class PayOSService: IPayOSService
        
        var order = await _unitOfWork.Repository<Order, Guid>()
            .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payments, o => o.OrderItems, o => o.Table);
-
+       
        if (order == null)
            return new BaseResponseModel<OrderPaymentResponse>(
                StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
@@ -337,11 +352,21 @@ public class PayOSService: IPayOSService
        // update order payment status
        order.PaymentStatus= PaymentStatusEnums.Paid;
        order.LastUpdatedTime = DateTime.UtcNow;
+       var tableId = order.TableId;
        await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
        await _unitOfWork.SaveChangesAsync();
-        var returnUrl = isCustomer
+       
+       
+       var returnUrl = isCustomer
             ? _config["Environment:PAYOS_RETURN_URL"]
             : _config["Environment:PAYOS_MODERATOR_RETURN_URL"];
+       var finalReturnUrl = returnUrl;
+       if (tableId.HasValue)
+       {
+           finalReturnUrl = returnUrl + $"/{tableId}";
+           _logger.LogInformation($"Final payment return: {finalReturnUrl}");
+       }
+       
         // update return url
         // if (orderSuccessResponse.Data != null)
         // {
@@ -356,7 +381,7 @@ public class PayOSService: IPayOSService
             {
                 OrderId = orderId,
                 PaymentStatus = order.PaymentStatus,
-                PaymentUrl = returnUrl,
+                PaymentUrl = finalReturnUrl,
                 Message = "Order payment status synchronized successfully"
             });
     }

@@ -17,6 +17,7 @@ using SEP490_Robot_FoodOrdering.Application.DTO.Request.Feedback;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Feedback;
 using SEP490_Robot_FoodOrdering.Domain.Entities.SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.SystemSettings;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.TableSession;
 
 namespace SEP490_Robot_FoodOrdering.Application.Mapping
 {
@@ -70,7 +71,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Topping.Price))
                 .ReverseMap();
             CreateMap<CreateProductToppingRequest, ProductTopping>().ReverseMap();
-            CreateMap<Table, TableResponse>().ReverseMap();
+            CreateMap<Table, TableResponse>()
+                                     .ForMember(
+                                         dest => dest.TableSessionId,
+                                         opt => opt.MapFrom(src =>
+                                             src.Sessions
+                                                 .Where(s => s.Status == TableSessionStatus.Active) // chỉ lấy active
+                                                 .OrderByDescending(s => s.CheckIn) // nếu có nhiều session active, lấy mới nhất
+                                                 .Select(s => (Guid?)s.Id)
+                                                 .FirstOrDefault()
+                                         )
+                                     )
+                                     .ReverseMap();
+
             CreateMap<CreateTableRequest, Table>().ReverseMap();
 
 
@@ -133,7 +146,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
         .ForMember(dest => dest.SizeName, opt => opt.MapFrom(src => src.OrderItem.ProductSize.SizeName))
         .ForMember(
                     dest => dest.ToppingName,
-                    opt => opt.MapFrom(src =>
+                    opt => opt.MapFrom(src =>   
                         src.OrderItem.Product.AvailableToppings != null
                             ? string.Join(", ", src.OrderItem.Product.AvailableToppings
                                 .Select(t => t.Topping.Name))
@@ -231,6 +244,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
             #endregion
 
             CreateMap<SystemSettings, SystemSettingResponse>().ReverseMap();
+            CreateMap<TableSession, TableSessionResponse>()
+                         .ForMember(dest => dest.TableName,
+                             opt => opt.MapFrom(src => src.Table != null ? src.Table.Name : null))
+                         .ForMember(dest => dest.Status,
+                             opt => opt.MapFrom(src => src.Status.ToString()))
+                         .ForMember(dest => dest.CustomerName,
+                             opt => opt.MapFrom(src => src.Customer != null ? src.Customer.Name : null))
+                         .ForMember(dest => dest.PhoneNumber,
+                             opt => opt.MapFrom(src => src.Customer != null ? src.Customer.PhoneNumber : null))
+                         .ReverseMap();
+
+
 
         }
 

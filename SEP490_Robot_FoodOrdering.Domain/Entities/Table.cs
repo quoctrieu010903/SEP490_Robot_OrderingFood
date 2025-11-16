@@ -2,8 +2,7 @@
 using SEP490_Robot_FoodOrdering.Core.Base;
 using SEP490_Robot_FoodOrdering.Domain.Entities.SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
-
-namespace SEP490_Robot_FoodOrdering.Domain.Entities
+namespace SEP490_Robot_FoodOrdering.Domain.Entities 
 {
     public class Table : BaseEntity
     {
@@ -15,6 +14,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public DateTime? LastAccessedAt { get; set; }
         public string? ShareToken { get; set; }
         public bool isShared { get; set; } = false;
+        public virtual ICollection<TableSession> Sessions { get; set; } = new List<TableSession>();
 
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         public virtual ICollection<Feedback> Feedbacks { get; set; }

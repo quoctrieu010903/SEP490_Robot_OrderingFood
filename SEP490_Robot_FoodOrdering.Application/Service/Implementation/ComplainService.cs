@@ -157,7 +157,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>> GetAllComplainIsPending()
         {
             // Lấy tất cả dữ liệu cần thiết
-            var tables = await _unitOfWork.Repository<Table, Guid>().GetAllWithIncludeAsync(true , t=> t.Orders);
+            var tables = await _unitOfWork.Repository<Table, Guid>().GetAllWithIncludeAsync(true , t=> t.Orders, t => t.Sessions);
             var complains = await _unitOfWork.Repository<Complain, Guid>()
                 .GetAllWithSpecAsync(new BaseSpecification<Complain>(x => x.isPending));
 
@@ -168,33 +168,30 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var orderStatsDict = await _orderService.GetOrderStatsByTableIds(tables.Select(x => x.Id));
 
             // 🔹 Gộp dữ liệu bằng LINQ
-            var result = tables
-                .Select(table =>
-                {
-                    int pendingCount = complains.Count(c => c.TableId == table.Id);
+            var result = tables.Select(table =>
+            {
+                //int pendingCount = complains.TryGetValue(table.Id, out var count) ? count : 0;
+                int pendingCount = complains.Count(complains => complains.TableId == table.Id);
+                var activeSession = table.Sessions.FirstOrDefault();
+                var sessionId = activeSession?.Id.ToString() ?? string.Empty;
 
-                    // Lấy thống kê của bàn này nếu có
-                    var stats = orderStatsDict.TryGetValue(table.Id, out var s)
-                        ? s
-                        : new OrderStaticsResponse();
+                var stats = (activeSession != null && orderStatsDict.TryGetValue(table.Id, out var s))
+                    ? s
+                    : new OrderStaticsResponse { PaymentStatus = 0, DeliveredCount = 0, ServedCount = 0, PaidCount = 0, TotalOrderItems = 0 };
 
-                    return new
-                    {
-                        Key = table.Id.ToString(),
-                        Value = new ComplainPeedingInfo(
+                return new ComplainPeedingInfo(
+                    SessionId: sessionId,
+                    TableName: table.Name,
+                    tableStatus: table.Status,
+                    paymentStatus: stats.PaymentStatus,
+                    Counter: pendingCount,
+                    DeliveredCount: stats.DeliveredCount,
+                    ServeredCount: stats.ServedCount,
+                    PaidCount: stats.PaidCount,
+                    TotalItems: stats.TotalOrderItems
+                );
+            }).ToDictionary(x => x.TableName, x => x);
 
-                            TableName: table.Name,
-                            tableStatus: table.Status,
-                            paymentStatus : stats.PaymentStatus,
-                            Counter: pendingCount,
-                            DeliveredCount: stats.DeliveredCount,
-                            ServeredCount: stats.ServedCount,
-                            PaidCount: stats.PaidCount,
-                            TotalItems: stats.TotalOrderItems
-                        )
-                    };
-                })
-                .ToDictionary(x => x.Key, x => x.Value);
 
             return new BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>(
                 StatusCodes.Status200OK,

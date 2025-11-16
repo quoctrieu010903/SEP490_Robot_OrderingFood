@@ -29,8 +29,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IRemakeItemService _remakeItemService;
         private readonly ICancelledItemService _cancelledItemService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ITableActivityService _tableActivityService;
 
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<OrderService> logger, IOrderItemReposotory orderItemReposotory, INotificationService? notificationService, ICancelledItemService cancelledItemService, IRemakeItemService remakeItemService ,IHttpContextAccessor httpContextAccessor)
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<OrderService> logger, IOrderItemReposotory orderItemReposotory, INotificationService? notificationService, ICancelledItemService cancelledItemService, IRemakeItemService remakeItemService, IHttpContextAccessor httpContextAccessor, ITableActivityService tableActivityService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -40,6 +41,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _cancelledItemService = cancelledItemService;
             _remakeItemService = remakeItemService;
             _httpContextAccessor = httpContextAccessor;
+            _tableActivityService = tableActivityService;
         }
 
 
@@ -137,6 +139,69 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             
             await _unitOfWork.Repository<Order, Guid>().AddAsync(order);
             await _unitOfWork.SaveChangesAsync();
+
+            // ===== LOG TABLE ACTIVITY: CreateOrder =====
+            TableSession? activeSession = null;
+
+            // Try to get session from order first
+            if (order.TableSessionId.HasValue)
+            {
+                activeSession = await _unitOfWork.Repository<TableSession, Guid>()
+                    .GetByIdAsync(order.TableSessionId.Value);
+                
+                _logger.LogInformation(
+                    "CreateOrder: Using TableSessionId from order {OrderId}, SessionId: {SessionId}",
+                    order.Id, order.TableSessionId.Value);
+            }
+            else
+            {
+                // Query active session by TableId
+                activeSession = await _unitOfWork.Repository<TableSession, Guid>()
+                    .GetWithSpecAsync(new BaseSpecification<TableSession>(
+                        s => s.TableId == request.TableId && 
+                             s.Status == TableSessionStatus.Active));
+                
+                if (activeSession != null)
+                {
+                    _logger.LogInformation(
+                        "CreateOrder: Found active session by TableId {TableId}, SessionId: {SessionId}",
+                        request.TableId, activeSession.Id);
+                }
+            }
+
+            if (activeSession != null)
+            {
+                await _tableActivityService.LogAsync(
+                    activeSession,
+                    request.deviceToken,
+                    TableActivityType.CreateOrder,
+                    new
+                    {
+                        orderId = order.Id,
+                        tableId = order.TableId,
+                        tableName = table.Name,
+                        itemCount = order.OrderItems.Count,
+                        totalPrice = order.TotalPrice,
+                        items = order.OrderItems.Select(i => new {
+                            productId = i.ProductId,
+                            productName = i.Product?.Name,
+                            sizeId = i.ProductSizeId,
+                            sizeName = i.ProductSize?.SizeName,
+                            toppingCount = i.OrderItemTopping?.Count ?? 0
+                        }).ToList()
+                    });
+
+                _logger.LogInformation(
+                    "CreateOrder: Logged activity for order {OrderId} in session {SessionId}",
+                    order.Id, activeSession.Id);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "CreateOrder: No active session found for table {TableId} when creating order {OrderId}. Activity not logged.",
+                    request.TableId, order.Id);
+            }
+
             var response = _mapper.Map<OrderResponse>(order);
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status201Created, "ORDER_CREATED", response);
             }
@@ -233,6 +298,80 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                 _unitOfWork.Repository<Order, Guid>().Update(existingOrder);
                 await _unitOfWork.SaveChangesAsync();
+
+                // ===== LOG TABLE ACTIVITY: AddOrderItems =====
+                TableSession? activeSession = null;
+
+                // Try to get session from order first
+                if (existingOrder.TableSessionId.HasValue)
+                {
+                    activeSession = await _unitOfWork.Repository<TableSession, Guid>()
+                        .GetByIdAsync(existingOrder.TableSessionId.Value);
+                    
+                    _logger.LogInformation(
+                        "HandleOrderAsync: Using TableSessionId from order {OrderId}, SessionId: {SessionId}",
+                        existingOrder.Id, existingOrder.TableSessionId.Value);
+                }
+                else
+                {
+                    // Query active session by TableId
+                    activeSession = await _unitOfWork.Repository<TableSession, Guid>()
+                        .GetWithSpecAsync(new BaseSpecification<TableSession>(
+                            s => s.TableId == request.TableId && 
+                                 s.Status == TableSessionStatus.Active));
+                    
+                    if (activeSession != null)
+                    {
+                        _logger.LogInformation(
+                            "HandleOrderAsync: Found active session by TableId {TableId}, SessionId: {SessionId}",
+                            request.TableId, activeSession.Id);
+                    }
+                }
+
+                // Kiểm tra xem đã log AddOrderItems cho session này chưa
+                var hasLogged = await _unitOfWork.Repository<TableActivity, Guid>()
+                    .AnyAsync(a => a.TableSessionId == activeSession.Id &&
+                                   a.Type == TableActivityType.AddOrderItems);
+                if (!hasLogged)
+                {
+                    // Get newly added items (last N items based on request count)
+                    var newlyAddedItems = existingOrder.OrderItems
+                        .OrderByDescending(i => i.CreatedTime)
+                        .Take(request.Items.Count)
+                        .ToList();
+
+                    await _tableActivityService.LogAsync(
+                        activeSession,
+                        request.deviceToken,
+                        TableActivityType.AddOrderItems,
+                        new
+                        {
+                            orderId = existingOrder.Id,
+                            tableId = existingOrder.TableId,
+                            tableName = table?.Name,
+                            newItemCount = request.Items.Count,
+                            addedTotal = addedTotal,
+                            newTotalPrice = existingOrder.TotalPrice,
+                            previousTotalPrice = existingOrder.TotalPrice - addedTotal,
+                            newItems = newlyAddedItems.Select(i => new {
+                                productId = i.ProductId,
+                                productName = i.Product?.Name,
+                                sizeId = i.ProductSizeId,
+                                sizeName = i.ProductSize?.SizeName,
+                                toppingCount = i.OrderItemTopping?.Count ?? 0
+                            }).ToList()
+                        });
+
+                    _logger.LogInformation(
+                        "HandleOrderAsync: Logged AddOrderItems activity for order {OrderId} in session {SessionId}. Added {ItemCount} items, total: {AddedTotal}",
+                        existingOrder.Id, activeSession.Id, request.Items.Count, addedTotal);
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "HandleOrderAsync: No active session found for table {TableId} when adding items to order {OrderId}. Activity not logged.",
+                        request.TableId, existingOrder.Id);
+                }
 
                 var response = _mapper.Map<OrderResponse>(existingOrder);
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status200OK, "ORDER_UPDATED", response);

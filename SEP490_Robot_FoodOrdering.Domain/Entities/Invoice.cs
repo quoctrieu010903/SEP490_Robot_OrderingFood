@@ -12,6 +12,9 @@ public class Invoice: BaseEntity
     public decimal TotalMoney { get; set; }        
     public PaymentStatusEnums Status { get; set; }        
     public PaymentMethodEnums PaymentMethod { get; set; }
+    public Guid? CustomerId { get; set; }
+    public virtual Customer? Customer { get; set; }
+
     public ICollection<InvoiceDetail>  Details { get; set; }
     
 }
@@ -20,6 +23,7 @@ public class InvoiceDetail : BaseEntity
 {
    public Guid InvoiceId { get; set; }
     public virtual Invoice Invoices { get; set; }
+
 
     public Guid OrderItemId { get; set; }
     public virtual OrderItem OrderItem { get; set; }

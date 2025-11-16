@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SEP490_Robot_FoodOrdering.Core.Base;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
+using SEP490_Robot_FoodOrdering.Domain.Entities.SEP490_Robot_FoodOrdering.Domain.Entities;
 
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence
 {
@@ -24,6 +25,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence
         public DbSet<ProductSize> ProductSizes { get; set; }
         public DbSet<ProductTopping> ProductToppings { get; set; }
         public DbSet<Table> Tables { get; set; }
+        public DbSet<TableSession> TableSessions { get; set; }
+        public DbSet<TableActivity> TableActivitys { get; set; }
+        public DbSet<Customer> Customers { get; set; }
         public DbSet<Topping> Toppings { get; set; }
 
         public DbSet<Invoice> Invoices { get; set; }

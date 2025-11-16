@@ -84,6 +84,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<AuthenticationResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, response);
         }
 
+       
+
         public async Task<BaseResponseModel<bool>> UpdateProfileAsync(UpdateProfileRequest request)
         {
             var userid = Guid.Parse(_httpContextAccessor.HttpContext?.User?.FindFirst("Id")?.Value);

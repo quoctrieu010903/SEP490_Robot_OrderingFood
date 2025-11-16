@@ -27,7 +27,16 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
                    .WithOne(oi => oi.Order)
                    .HasForeignKey(oi => oi.OrderId)
                    .OnDelete(DeleteBehavior.Cascade);// ✅ Delete OrderItems when Order is deleted
-
+            
+            builder.HasOne(o => o.Customer)
+                .WithMany(c => c.Orders)
+                .HasForeignKey(o => o.CustomerId)
+                .OnDelete(DeleteBehavior.SetNull);
+            
+            builder.HasOne(o => o.TableSession)
+                .WithMany(ts => ts.Orders)
+                .HasForeignKey(o => o.TableSessionId)
+                .OnDelete(DeleteBehavior.Restrict);
 
 
             builder.Ignore(o => o.TotalPaid);
