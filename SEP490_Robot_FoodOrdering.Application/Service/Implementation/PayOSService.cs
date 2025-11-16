@@ -24,15 +24,14 @@ public class PayOSService: IPayOSService
     private readonly IConfiguration _config;
     private readonly ILogger<PayOSService> _logger;
     private readonly IServerEndpointService _serverEndpointService;
-    private readonly ITableActivityService _activityService;
-    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger, IServerEndpointService serverEndpointService , ITableActivityService activityService)
+
+    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger, IServerEndpointService serverEndpointService )
     {
         _unitOfWork = unitOfWork;
         _payOS = payOS;
         _config = config;
         _logger = logger;
         _serverEndpointService = serverEndpointService;
-        _activityService = activityService;
     }
 
     public async Task<BaseResponseModel<OrderPaymentResponse>> CreatePaymentLink(Guid orderId, bool isCustomer)
@@ -266,11 +265,7 @@ public class PayOSService: IPayOSService
         var session = await _unitOfWork.Repository<TableSession, Guid>()
             .GetByIdWithIncludeAsync(ts => ts.Id == order.TableSessionId, false, ts => ts.Table);
 
-        await _activityService.LogAsync(session, order.Table.DeviceId, TableActivityType.CreateOrder, new
-        {
-            OrderId = order.Id,
-            NewPaymentStatus = order.PaymentStatus.ToString()
-        });
+       
         await _unitOfWork.SaveChangesAsync();
 
         // 5️⃣ Trả kết quả đồng bộ
