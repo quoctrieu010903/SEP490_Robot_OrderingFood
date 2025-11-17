@@ -102,7 +102,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
         public async Task<TableResponse> GetById(Guid id)
         {
-            var existed = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(id );
+            var existed = await _unitOfWork.Repository<Table, Guid>().GetByIdWithIncludeAsync(t => t.Id == id, true, t=> t.Sessions);
             if (existed == null)
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Table không tìm thấy");
 
