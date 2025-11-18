@@ -298,6 +298,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 FeedBack = c.Description,
                 CreateData = c.CreatedTime,
                 IsPending = c.isPending,
+                ResolutionNote = c.ResolutionNote, // Map ResolutionNote để frontend có thể check "yêu cầu nhanh"
 
                 // Nếu OrderItem có include thì map chi tiết luôn
                 Dtos = c.OrderItem != null
