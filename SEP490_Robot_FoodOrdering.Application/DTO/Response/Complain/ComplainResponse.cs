@@ -15,5 +15,6 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Complain
         public bool IsPending { get; set; }
         public DateTime CreateData { get; set; }
         public List<OrderItemDTO> Dtos { get; set; }
+        public string? ResolutionNote { get; set; } // Ghi chú xử lý từ moderator (chứa "Yêu cầu nhanh:" khi được gửi phục vụ nhanh)
     }
 }
