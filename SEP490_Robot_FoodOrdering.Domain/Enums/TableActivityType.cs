@@ -14,6 +14,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
 
         CreateOrder = 10,
         AddOrderItems = 11,
+        UpdateOrderItemStatus = 12,
 
 
 
