@@ -13,4 +13,9 @@ public record ComplainPeedingInfo(
     int ServeredCount,
     int PaidCount,
     int TotalItems,
-    DateTime? LastOrderUpdatedTime);
+    DateTime? LastOrderUpdatedTime,
+    int PendingItems,
+    bool IsWaitingDish,
+    int? WaitingDurationInMinutes
+
+    );
