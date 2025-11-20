@@ -554,6 +554,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 }
                 oi.Status = request.Status;
                 oi.LastUpdatedTime = DateTime.UtcNow;
+                if (oi.Order != null)
+                {
+                    oi.Order.LastUpdatedTime = DateTime.UtcNow;
+                }
                 _logger.LogInformation(
                     $"OrderItem {oi.Id} status changed from {oldStatus} to {oi.Status} in Order {orderId}");
             }
@@ -572,6 +576,69 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
             await _unitOfWork.SaveChangesAsync();
+
+            // ===== LOG TABLE ACTIVITY: UpdateOrderItemStatus =====
+            TableSession? activitySession = null;
+
+            if (order.TableSessionId.HasValue)
+            {
+                activitySession = await _unitOfWork.Repository<TableSession, Guid>()
+                    .GetByIdAsync(order.TableSessionId.Value);
+
+                _logger.LogInformation(
+                    "UpdateOrderItemStatusAsync: Using TableSessionId from order {OrderId}, SessionId: {SessionId}",
+                    order.Id, order.TableSessionId.Value);
+            }
+            else if (order.TableId.HasValue)
+            {
+                activitySession = await _unitOfWork.Repository<TableSession, Guid>()
+                    .GetWithSpecAsync(new BaseSpecification<TableSession>(
+                        s => s.TableId == order.TableId && s.Status == TableSessionStatus.Active));
+
+                if (activitySession != null)
+                {
+                    _logger.LogInformation(
+                        "UpdateOrderItemStatusAsync: Found active session by TableId {TableId}, SessionId: {SessionId}",
+                        order.TableId, activitySession.Id);
+                }
+            }
+
+            if (activitySession != null)
+            {
+                await _tableActivityService.LogAsync(
+                    activitySession,
+                    order.Table?.DeviceId ?? order.LastUpdatedBy,
+                    TableActivityType.UpdateOrderItemStatus,
+                    new
+                    {
+                        orderId = order.Id,
+                        tableId = order.TableId,
+                        tableName = order.Table?.Name,
+                        previousOrderStatus = oldOrderStatus,
+                        newOrderStatus = order.Status,
+                        updatedItems = targets.Select(i => new
+                        {
+                            orderItemId = i.Id,
+                            productId = i.ProductId,
+                            productName = i.Product?.Name,
+                            sizeId = i.ProductSizeId,
+                            sizeName = i.ProductSize?.SizeName,
+                            previousStatus = oldStatus,
+                            newStatus = i.Status,
+                            remarkNote = i.RemakeNote
+                        }).ToList()
+                    });
+
+                _logger.LogInformation(
+                    "UpdateOrderItemStatusAsync: Logged activity for order {OrderId} in session {SessionId}",
+                    order.Id, activitySession.Id);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "UpdateOrderItemStatusAsync: No active session found for table {TableId} when updating order items for Order {OrderId}. Activity not logged.",
+                    order.TableId, order.Id);
+            }
             
             // Send real-time notification for order item status change
             if (_notificationService != null)
