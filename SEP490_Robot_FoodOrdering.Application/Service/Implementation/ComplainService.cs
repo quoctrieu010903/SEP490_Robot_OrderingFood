@@ -1,6 +1,7 @@
 
 
 using AutoMapper;
+using System.Linq;
 using Microsoft.AspNetCore.Http;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.Complain;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response;
@@ -176,6 +177,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     var activeSession = table.Sessions.FirstOrDefault();
                     var sessionId = activeSession?.Id.ToString() ?? string.Empty;
 
+                    DateTime? lastOrderUpdatedTime = table.Orders != null && table.Orders.Any()
+                        ? table.Orders
+                            .OrderByDescending(o => o.LastUpdatedTime)
+                            .Select(o => (DateTime?)o.LastUpdatedTime)
+                            .FirstOrDefault()
+                        : null;
+
                     var stats = (activeSession != null && orderStatsDict.TryGetValue(table.Id, out var s))
                         ? s
                         : new OrderStaticsResponse { PaymentStatus = 0, DeliveredCount = 0, ServedCount = 0, PaidCount = 0, TotalOrderItems = 0 };
@@ -190,7 +198,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         DeliveredCount: stats.DeliveredCount,
                         ServeredCount: stats.ServedCount,
                         PaidCount: stats.PaidCount,
-                        TotalItems: stats.TotalOrderItems
+                        TotalItems: stats.TotalOrderItems,
+                        LastOrderUpdatedTime: lastOrderUpdatedTime
                     );
                 }).ToDictionary(x => x.Id.ToString(), x => x);
 
@@ -227,6 +236,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                 var sessionId = activeSession?.Id.ToString() ?? string.Empty;
 
+                 DateTime? lastOrderUpdatedTime = table.Orders != null && table.Orders.Any()
+                     ? table.Orders
+                         .OrderByDescending(o => o.LastUpdatedTime)
+                         .Select(o => (DateTime?)o.LastUpdatedTime)
+                         .FirstOrDefault()
+                     : null;
+
                 var stats = (activeSession != null
                              && orderStatsDict.TryGetValue(table.Id, out var s))
                     ? s
@@ -262,7 +278,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     DeliveredCount: stats.DeliveredCount,
                     ServeredCount: stats.ServedCount,
                     PaidCount: stats.PaidCount,
-                    TotalItems: stats.TotalOrderItems
+                     TotalItems: stats.TotalOrderItems,
+                     LastOrderUpdatedTime: lastOrderUpdatedTime
                 );
             }).ToDictionary(x => x.Id.ToString(), x => x);
 

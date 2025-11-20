@@ -14,6 +14,8 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Order
         public decimal TotalPaid { get; set; }
 
         public DateTime CreatedTime { get; set; }
+        public DateTime? LastUpdatedTime { get; set; }
+        
         public Guid? DeviceTokenId { get; set; }
         public List<OrderItemResponse> Items { get; set; }
     }
