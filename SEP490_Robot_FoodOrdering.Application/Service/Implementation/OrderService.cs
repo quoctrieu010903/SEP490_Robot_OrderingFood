@@ -554,6 +554,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 }
                 oi.Status = request.Status;
                 oi.LastUpdatedTime = DateTime.UtcNow;
+                if (oi.Order != null)
+                {
+                    oi.Order.LastUpdatedTime = DateTime.UtcNow;
+                }
                 _logger.LogInformation(
                     $"OrderItem {oi.Id} status changed from {oldStatus} to {oi.Status} in Order {orderId}");
             }
