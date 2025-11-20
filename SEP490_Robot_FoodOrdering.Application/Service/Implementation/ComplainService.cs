@@ -214,7 +214,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>> GetAllComplainIsPending()
         {
             var tables = await _unitOfWork.Repository<Table, Guid>()
-                .GetAllWithIncludeAsync(true, t => t.Orders,t => t.Sessions);
+                .GetAllWithIncludeAsync(true, t => t.Orders, t => t.Sessions);
 
             var complains = await _unitOfWork.Repository<Complain, Guid>()
                 .GetAllWithSpecAsync(new BaseSpecification<Complain>(x => x.isPending));
@@ -230,32 +230,36 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 int pendingCount = complains.Count(c => c.TableId == table.Id);
 
                 var activeSession = table.Sessions
-                               .Where(s => s.Status == TableSessionStatus.Active)                      // hoặc s.Status == TableSessionStatus.Active
-                               .OrderByDescending(s => s.CheckIn)       // mới nhất trước
-                               .FirstOrDefault();
+                    .Where(s => s.Status == TableSessionStatus.Active)
+                    .OrderByDescending(s => s.CheckIn)
+                    .FirstOrDefault();
 
                 var sessionId = activeSession?.Id.ToString() ?? string.Empty;
 
-                 DateTime? lastOrderUpdatedTime = table.Orders != null && table.Orders.Any()
-                     ? table.Orders
-                         .OrderByDescending(o => o.LastUpdatedTime)
-                         .Select(o => (DateTime?)o.LastUpdatedTime)
-                         .FirstOrDefault()
-                     : null;
+                DateTime? lastOrderUpdatedTime = table.Orders != null && table.Orders.Any()
+                    ? table.Orders
+                        .OrderByDescending(o => o.LastUpdatedTime)
+                        .Select(o => (DateTime?)o.LastUpdatedTime)
+                        .FirstOrDefault()
+                    : null;
 
-                var stats = (activeSession != null
-                             && orderStatsDict.TryGetValue(table.Id, out var s))
-                    ? s
-                    : new OrderStaticsResponse
-                    {
-                        PaymentStatus = 0,
-                        DeliveredCount = 0,
-                        ServedCount = 0,
-                        PaidCount = 0,
-                        TotalOrderItems = 0
-                    };
+                // mặc định stats = 0
+                var stats = new OrderStaticsResponse
+                {
+                    PaymentStatus = 0,
+                    DeliveredCount = 0,
+                    ServedCount = 0,
+                    PaidCount = 0,
+                    TotalOrderItems = 0
+                };
 
-                // ✅ QUICK FIX: nếu bàn trống hoặc không có session active thì ép stats về 0
+                // Nếu có session active và có thống kê thì lấy
+                if (activeSession != null && orderStatsDict.TryGetValue(table.Id, out var s))
+                {
+                    stats = s;
+                }
+
+                // Nếu bàn trống + không có session active → ép về 0 luôn cho chắc
                 if (table.Status == (int)TableEnums.Available && activeSession == null)
                 {
                     stats = new OrderStaticsResponse
@@ -266,7 +270,29 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         PaidCount = 0,
                         TotalOrderItems = 0
                     };
+                    lastOrderUpdatedTime = null;
                 }
+
+                // 👉 Số món chưa serve (Completed coi như đã serve)
+                var pendingItems = Math.Max(0, stats.TotalOrderItems - stats.ServedCount);
+
+                // Bàn đang chờ món nếu:
+                // - còn món chưa serve
+                // - bàn đang có khách
+                bool isWaitingDish =
+                    pendingItems > 0 && table.Status == TableEnums.Occupied;
+
+                int? waitingDurationInMinutes = null;
+                if (isWaitingDish && lastOrderUpdatedTime.HasValue)
+                {
+                    var now = DateTime.UtcNow; // hoặc DateTime.Now tùy convention
+                    waitingDurationInMinutes =
+                        (int)Math.Floor((now - lastOrderUpdatedTime.Value).TotalMinutes);
+                }
+
+                // TODO: nếu muốn FE hiển thị pill "Chờ món: X phút"
+                // thì thêm pendingItems / isWaitingDish / waitingDurationInMinutes
+                // vào ComplainPeedingInfo
 
                 return new ComplainPeedingInfo(
                     Id: table.Id,
@@ -278,8 +304,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     DeliveredCount: stats.DeliveredCount,
                     ServeredCount: stats.ServedCount,
                     PaidCount: stats.PaidCount,
-                     TotalItems: stats.TotalOrderItems,
-                     LastOrderUpdatedTime: lastOrderUpdatedTime
+                    TotalItems: stats.TotalOrderItems,
+                    LastOrderUpdatedTime: lastOrderUpdatedTime,
+                    PendingItems: pendingItems,
+                    IsWaitingDish: isWaitingDish,
+                    WaitingDurationInMinutes: waitingDurationInMinutes
                 );
             }).ToDictionary(x => x.Id.ToString(), x => x);
 

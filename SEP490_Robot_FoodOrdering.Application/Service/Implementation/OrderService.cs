@@ -1022,7 +1022,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 PaymentStatus = finalPaymentStatus,
                 TotalOrderItems = totalItems,
                 DeliveredCount = allItems.Count(x =>
-                    x.ItemStatus is OrderItemStatus.Ready or OrderItemStatus.Served or OrderItemStatus.Remark or OrderItemStatus.Completed),
+                    x.ItemStatus is OrderItemStatus.Preparing or  OrderItemStatus.Ready or OrderItemStatus.Served or OrderItemStatus.Remark or OrderItemStatus.Completed),
                 ServedCount = allItems.Count(x =>
                     x.ItemStatus is OrderItemStatus.Served or OrderItemStatus.Completed),
                 PaidCount = paidItems
