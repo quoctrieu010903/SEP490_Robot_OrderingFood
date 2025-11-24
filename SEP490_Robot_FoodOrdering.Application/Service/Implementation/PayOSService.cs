@@ -309,9 +309,10 @@ public class PayOSService: IPayOSService
         ? _config["Environment:PAYOS_CANCEL_URL"]
         : _config["Environment:PAYOS_MODERATOR_CANCEL_URL"];
         var finalReturnUrl = cancelUrl;
-        if (tableId.HasValue)
+        if (tableId.HasValue && cancelUrl != null)
         {
-             finalReturnUrl = cancelUrl + $"/{tableId}";
+            var separator = cancelUrl.Contains('?') ? "&" : "?";
+            finalReturnUrl = $"{cancelUrl}{separator}id={tableId}";
             _logger.LogInformation($"Final payment return: {finalReturnUrl}");
         }
         return new BaseResponseModel<OrderPaymentResponse>(
@@ -361,9 +362,10 @@ public class PayOSService: IPayOSService
             ? _config["Environment:PAYOS_RETURN_URL"]
             : _config["Environment:PAYOS_MODERATOR_RETURN_URL"];
        var finalReturnUrl = returnUrl;
-       if (tableId.HasValue)
+       if (tableId.HasValue && returnUrl != null)
        {
-           finalReturnUrl = returnUrl + $"/{tableId}";
+           var separator = returnUrl.Contains('?') ? "&" : "?";
+           finalReturnUrl = $"{returnUrl}{separator}id={tableId}";
            _logger.LogInformation($"Final payment return: {finalReturnUrl}");
        }
        
