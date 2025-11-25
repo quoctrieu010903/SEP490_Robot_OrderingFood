@@ -140,6 +140,57 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             await _unitOfWork.Repository<Order, Guid>().AddAsync(order);
             await _unitOfWork.SaveChangesAsync();
 
+            // ===== SEND SIGNALR NOTIFICATIONS FOR NEW ORDER ITEMS =====
+            if (_notificationService != null)
+            {
+                try
+                {
+                    // Reload order with includes to get Product and ProductSize navigation properties
+                    var orderWithIncludes = await _unitOfWork.Repository<Order, Guid>()
+                        .GetWithSpecAsync(new OrderSpecification(order.Id, true), true);
+
+                    if (orderWithIncludes != null)
+                    {
+                        foreach (var orderItem in orderWithIncludes.OrderItems)
+                        {
+                            var orderItemNotification = new OrderItemStatusNotification
+                            {
+                                OrderId = order.Id,
+                                OrderItemId = orderItem.Id,
+                                TableId = order.TableId ?? Guid.Empty,
+                                TableName = table.Name,
+                                ProductName = orderItem.Product?.Name ?? "Unknown Product",
+                                SizeName = orderItem.ProductSize?.SizeName.ToString() ?? "Unknown Size",
+                                OldStatus = OrderItemStatus.Pending, // New items start as Pending
+                                NewStatus = OrderItemStatus.Pending,
+                                RemarkNote = orderItem.Note,
+                                UpdatedAt = DateTime.UtcNow,
+                                UpdatedBy = request.deviceToken ?? "System"
+                            };
+
+                            await _notificationService.SendOrderItemStatusNotificationAsync(orderItemNotification);
+                        }
+
+                        // Also send a general kitchen notification
+                        await _notificationService.SendKitchenNotificationAsync(
+                            $"Đơn hàng mới từ bàn {table.Name} với {orderWithIncludes.OrderItems.Count} món",
+                            "NewOrderCreated"
+                        );
+
+                        _logger.LogInformation(
+                            "CreateOrderAsync: Sent SignalR notifications for {ItemCount} order items in new order {OrderId}",
+                            orderWithIncludes.OrderItems.Count, order.Id);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, 
+                        "CreateOrderAsync: Failed to send SignalR notifications for new order {OrderId}",
+                        order.Id);
+                    // Don't fail the operation if notification fails
+                }
+            }
+
             // ===== LOG TABLE ACTIVITY: CreateOrder =====
             TableSession? activeSession = null;
 
@@ -238,6 +289,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 }
 
                 decimal addedTotal = 0;
+                var newlyAddedOrderItems = new List<OrderItem>(); // Track newly added items for notifications
 
                 foreach (var itemReq in request.Items)
                 {
@@ -262,6 +314,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         OrderItemTopping = new List<OrderItemTopping>()
                     };
                     existingOrder.OrderItems.Add(orderItem);
+                    newlyAddedOrderItems.Add(orderItem); // Track for notifications
                     addedTotal += productSize.Price;
                     foreach (var toppingId in itemReq.ToppingIds)
                     {
@@ -298,6 +351,82 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                 _unitOfWork.Repository<Order, Guid>().Update(existingOrder);
                 await _unitOfWork.SaveChangesAsync();
+
+                // ===== SEND SIGNALR NOTIFICATIONS FOR NEW ORDER ITEMS =====
+                if (_notificationService != null)
+                {
+                    try
+                    {
+                        // Reload order with includes to get Product and ProductSize navigation properties
+                        var orderWithIncludes = await _unitOfWork.Repository<Order, Guid>()
+                            .GetWithSpecAsync(new OrderSpecification(existingOrder.Id, true), true);
+
+                        if (orderWithIncludes != null)
+                        {
+                            // Get the IDs of newly added items (they should have IDs after SaveChangesAsync)
+                            var newlyAddedItemIds = newlyAddedOrderItems
+                                .Where(item => item.Id != Guid.Empty)
+                                .Select(item => item.Id)
+                                .ToList();
+
+                            // If items don't have IDs yet, get them by matching CreatedTime (fallback)
+                            if (!newlyAddedItemIds.Any())
+                            {
+                                var recentTime = DateTime.UtcNow.AddSeconds(-5); // 5 second window
+                                newlyAddedItemIds = orderWithIncludes.OrderItems
+                                    .Where(i => i.CreatedTime >= recentTime)
+                                    .OrderByDescending(i => i.CreatedTime)
+                                    .Take(request.Items.Count)
+                                    .Select(i => i.Id)
+                                    .ToList();
+                            }
+
+                            foreach (var itemId in newlyAddedItemIds)
+                            {
+                                // Find the item in the reloaded order to get navigation properties
+                                var itemWithIncludes = orderWithIncludes.OrderItems
+                                    .FirstOrDefault(i => i.Id == itemId);
+
+                                if (itemWithIncludes != null)
+                                {
+                                    var orderItemNotification = new OrderItemStatusNotification
+                                    {
+                                        OrderId = existingOrder.Id,
+                                        OrderItemId = itemWithIncludes.Id,
+                                        TableId = existingOrder.TableId ?? Guid.Empty,
+                                        TableName = table?.Name ?? "Unknown",
+                                        ProductName = itemWithIncludes.Product?.Name ?? "Unknown Product",
+                                        SizeName = itemWithIncludes.ProductSize?.SizeName.ToString() ?? "Unknown Size",
+                                        OldStatus = OrderItemStatus.Pending, // New items start as Pending
+                                        NewStatus = OrderItemStatus.Pending,
+                                        RemarkNote = itemWithIncludes.Note,
+                                        UpdatedAt = DateTime.UtcNow,
+                                        UpdatedBy = request.deviceToken ?? "System"
+                                    };
+
+                                    await _notificationService.SendOrderItemStatusNotificationAsync(orderItemNotification);
+                                }
+                            }
+
+                            // Also send a general kitchen notification
+                            await _notificationService.SendKitchenNotificationAsync(
+                                $"Đã thêm {newlyAddedItemIds.Count} món mới vào đơn hàng bàn {table?.Name ?? "Unknown"}",
+                                "NewOrderItemsAdded"
+                            );
+
+                            _logger.LogInformation(
+                                "HandleOrderAsync: Sent SignalR notifications for {ItemCount} new order items in order {OrderId}",
+                                newlyAddedItemIds.Count, existingOrder.Id);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, 
+                            "HandleOrderAsync: Failed to send SignalR notifications for new order items in order {OrderId}",
+                            existingOrder.Id);
+                        // Don't fail the operation if notification fails
+                    }
+                }
 
                 // ===== LOG TABLE ACTIVITY: AddOrderItems =====
                 TableSession? activeSession = null;
