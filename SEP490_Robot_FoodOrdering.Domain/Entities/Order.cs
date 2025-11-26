@@ -14,6 +14,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         // Khách hàng – nếu có
         public Guid? CustomerId { get; set; }
         public virtual Customer? Customer { get; set; }
+        //public string OrderCode { get; set; }  = $"OR{Guid.NewGuid():N}"[..8].ToUpper();
 
         public OrderStatus Status { get; set; }  // Automatically derived from order items' statuses
         public decimal TotalPrice { get; set; }

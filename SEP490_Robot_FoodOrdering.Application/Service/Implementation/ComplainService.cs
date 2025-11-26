@@ -321,22 +321,58 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
 
-        public async Task<BaseResponseModel<List<ComplainResponse>>> GetComplainByTable(Guid idTable)
+        public async Task<BaseResponseModel<List<ComplainResponse>>> GetComplainByTable(
+       Guid idTable,
+       bool forCustomer = false
+   )
         {
-            // ✅ Lấy tất cả complain của table, include luôn OrderItem và Product
+            // 1) Nếu customer -> lấy Active Session mới nhất của bàn
+            Guid? activeSessionId = null;
+
+            if (forCustomer)
+            {
+                var activeSession = await _unitOfWork.Repository<TableSession, Guid>()
+                    .GetWithSpecAsync(new BaseSpecification<TableSession>(s =>
+                        s.TableId == idTable
+                        && s.Status == TableSessionStatus.Active
+                    ));
+
+                if (activeSession == null)
+                    throw new ErrorException(
+                        StatusCodes.Status404NotFound,
+                        ResponseCodeConstants.NOT_FOUND,
+                        "Bàn hiện không có phiên hoạt động (Active session)."
+                    );
+
+                activeSessionId = activeSession.Id;
+            }
+
+            // 2) Build predicate
+            // Customer: lọc theo TableId + ActiveSessionId
+            // Moderator/Admin: lọc theo TableId (lấy tất cả)
+            var spec = new BaseSpecification<Complain>(c =>
+        c.TableId == idTable &&
+        (!forCustomer || c.Table.Sessions.Any(s => s.Id == activeSessionId))
+    );
+
+
+            // 3) Query + include OrderItem + Product
             var complains = await _unitOfWork.Repository<Complain, Guid>()
                 .GetAllWithSpecWithInclueAsync(
-                    new BaseSpecification<Complain>(c => c.TableId == idTable),
+                    spec,
                     true,
                     o => o.OrderItem,
                     o => o.OrderItem.Product
                 );
 
-            // ✅ Nếu không có dữ liệu, ném lỗi 404
             if (complains == null || !complains.Any())
-                throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Không tìm thấy complain");
+                throw new ErrorException(
+                    StatusCodes.Status404NotFound,
+                    ResponseCodeConstants.NOT_FOUND,
+                    "Không tìm thấy complain"
+                );
 
-            // ✅ Map thủ công sang List<ComplainResponse>
+            // 4) Map response
             var responseList = complains.Select(c => new ComplainResponse
             {
                 ComplainId = c.Id,
@@ -344,23 +380,21 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 FeedBack = c.Description,
                 CreateData = c.CreatedTime,
                 IsPending = c.isPending,
-                ResolutionNote = c.ResolutionNote, // Map ResolutionNote để frontend có thể check "yêu cầu nhanh"
+                ResolutionNote = c.ResolutionNote,
 
-                // Nếu OrderItem có include thì map chi tiết luôn
                 Dtos = c.OrderItem != null
                     ? new List<OrderItemDTO>
                     {
                 new OrderItemDTO(
                     c.OrderItem.Id,
                     c.OrderItem.Product?.Name ?? "N/A",
-                    c.OrderItem.Product?.ImageUrl??"N/A",
+                    c.OrderItem.Product?.ImageUrl ?? "N/A",
                     c.OrderItem.Status
                 )
                     }
                     : new List<OrderItemDTO>()
             }).ToList();
 
-            // ✅ Trả kết quả về client
             return new BaseResponseModel<List<ComplainResponse>>(
                 StatusCodes.Status200OK,
                 ResponseCodeConstants.SUCCESS,

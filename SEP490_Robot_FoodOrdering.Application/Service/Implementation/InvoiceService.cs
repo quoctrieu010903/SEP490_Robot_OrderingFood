@@ -32,83 +32,91 @@ public class InvoiceService : IInvoiceService
 
     public async Task<InvoiceResponse> CreateInvoice(InvoiceCreatRequest request)
     {
-        // 1️⃣ Lấy order từ DB kèm theo OrderItems và Table
-        //var existedOrder = await _unitOfWork.Repository<Order, Guid>()
-        //    .GetByIdWithIncludeAsync(
-        //        o => o.Id == request.OrderId,
-        //        true,
-        //        o => o.OrderItems,
-        //        o => o.OrderItems!.Select(oi => oi.Product),
-        //        o => o.Table
-        //    );
         var existedOrder = await _unitOfWork.Repository<Order, Guid>()
-            .GetWithSpecAsync(new OrderSpecification(request.OrderId,true));
+            .GetWithSpecAsync(new OrderSpecification(request.OrderId, true));
+
         if (existedOrder == null)
-        {
             throw new ErrorException(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
-        }
 
-        // 2️⃣ Kiểm tra order đã thanh toán chưa
         if (existedOrder.PaymentStatus != PaymentStatusEnums.Paid)
-        {
             throw new ErrorException(StatusCodes.Status400BadRequest, "ORDER_NOT_PAID", "Order is not paid yet");
-        }
 
-        // 3️⃣ Tạo mới Invoice từ Order
-        var invoice = new Invoice()
+        // (Khuyến nghị) chống tạo trùng theo OrderId
+        var existedInvoice = await _unitOfWork.Repository<Invoice, Guid>()
+            .GetWithSpecAsync(new BaseSpecification<Invoice>(x => x.OrderId == existedOrder.Id));
+
+        if (existedInvoice != null)
+            return BuildInvoiceResponse(existedInvoice.Id, existedOrder);
+
+        // ✅ Tạo ID trước để detail dùng FK chuẩn
+        //var invoiceId = Guid.NewGuid();
+
+        var invoice = new Invoice
         {
+            //Id = invoiceId, // ✅ QUAN TRỌNG
             OrderId = existedOrder.Id,
-            TableId = existedOrder.TableId ?? request.TableId  ,   // nếu không truyền TableId thì lấy từ order
+            TableId = existedOrder.TableId ?? request.TableId,
             CreatedTime = DateTime.UtcNow,
-            TotalMoney = existedOrder.TotalPrice,               // tùy tên property trong model
-            PaymentMethod = existedOrder.paymentMethod,          // chú ý tên property đúng
+            TotalMoney = existedOrder.TotalPrice,
+            PaymentMethod = existedOrder.paymentMethod,
             Status = existedOrder.PaymentStatus,
-
-            // 4️⃣ Tạo danh sách InvoiceDetails
-            Details = existedOrder.OrderItems?.Select(oi => new InvoiceDetail()
-            {
-                OrderItemId = oi.Id,
-                TotalMoney = oi.TotalPrice ?? 0,
-                Status = oi.Order.Status,
-
-            }).ToList() ?? new List<InvoiceDetail>()
+            Details = new List<InvoiceDetail>() // ✅ tránh null
         };
 
-        // 5️⃣ Lưu vào DB
-        await _unitOfWork.Repository<Invoice, Guid>().AddAsync(invoice);
-        await _unitOfWork.SaveChangesAsync();
-
-        var response = new InvoiceResponse
+        var orderStatus = existedOrder.Status;
+        if (existedOrder.OrderItems != null)
         {
-            Id = invoice.Id,
-            OrderId = invoice.OrderId,
-            TableId = invoice.TableId,
-            TableName = existedOrder.Table?.Name,
-            CreatedTime = invoice.CreatedTime,
-            PaymentMethod = invoice.PaymentMethod.ToString(),
-            TotalAmount = invoice.TotalMoney,
-            Discount = 0,
-            FinalAmount = invoice.TotalMoney,
-            CashierName = "Moderator Manager", // hoặc lấy từ User hiện tại
-            Details = invoice.Details.Select(d => new InvoiceDetailResponse
+            foreach (var oi in existedOrder.OrderItems)
             {
-                OrderItemId = d.OrderItemId,
-                ProductName = d.OrderItem?.Product.Name,
-                UnitPrice = d.OrderItem?.Price ?? 0,
-                toppings = d.OrderItem?.OrderItemTopping?.Select(oit => new ToppingResponse
+                var detail = new InvoiceDetail
+                {
+                    //Id = Guid.NewGuid(),
+                    //InvoiceId = invoiceId, // ✅ FK đúng
+                    Invoices = invoice,    // ✅ navigation đúng (theo entity của bạn)
+                    OrderItemId = oi.Id,
+                    TotalMoney = oi.TotalPrice ?? 0,
+                    Status = orderStatus  // ✅
+                };
+
+                invoice.Details.Add(detail);
+            }
+        }
+
+        await _unitOfWork.Repository<Invoice, Guid>().AddAsync(invoice);
+        // ❌ KHÔNG SaveChanges ở đây (CheckoutTable sẽ SaveChanges ở cuối)
+
+        return BuildInvoiceResponse(invoice.Id, existedOrder);
+    }
+
+    private InvoiceResponse BuildInvoiceResponse(Guid invoiceId, Order existedOrder)
+    {
+        return new InvoiceResponse
+        {
+            Id = invoiceId,
+            OrderId = existedOrder.Id,
+            TableId = existedOrder.TableId ?? Guid.Empty,
+            TableName = existedOrder.Table?.Name,
+            CreatedTime = DateTime.UtcNow, // hoặc truyền createdTime vào nếu muốn đúng tuyệt đối
+            PaymentMethod = existedOrder.paymentMethod.ToString(),
+            TotalAmount = existedOrder.TotalPrice,
+            Discount = 0,
+            FinalAmount = existedOrder.TotalPrice,
+            CashierName = "Moderator Manager",
+            Details = existedOrder.OrderItems?.Select(oi => new InvoiceDetailResponse
+            {
+                OrderItemId = oi.Id,
+                ProductName = oi.Product?.Name,
+                UnitPrice = oi.Price ?? 0,
+                toppings = oi.OrderItemTopping?.Select(oit => new ToppingResponse
                 {
                     Id = oit.Topping.Id,
                     Name = oit.Topping.Name,
                     Price = oit.Topping.Price
                 }).ToList() ?? new List<ToppingResponse>(),
-                TotalMoney = d.OrderItem?.TotalPrice ?? 0,
-                Status = d.Status.ToString()
-            }).ToList()
+                TotalMoney = oi.TotalPrice ?? 0,
+                Status = oi.Status.ToString()
+            }).ToList() ?? new List<InvoiceDetailResponse>()
         };
-
-
-
-        return response;
     }
 
 
