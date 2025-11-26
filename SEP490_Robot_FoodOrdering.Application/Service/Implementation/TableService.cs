@@ -35,9 +35,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly ITableSessionService _tableSessionService;
         private readonly ITableActivityService _tableActivityService;
         private readonly IInvoiceService _invoiceService;
+        private readonly ICustomerPointService _customerPointService;
         private readonly ILogger<TableService> _logger;
 
-        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService , ITableActivityService tableActivityService, IInvoiceService invoiceService)
+        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService , ITableActivityService tableActivityService, IInvoiceService invoiceService, ICustomerPointService customerPointService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -49,6 +50,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _tableSessionService = tableSessionService;
             _tableActivityService = tableActivityService;
             _invoiceService = invoiceService;
+            _customerPointService = customerPointService;
         }
         public async Task<BaseResponseModel> Create(CreateTableRequest request)
         {
@@ -691,7 +693,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             ( existedTable.Id,order.Id  );
          
 
-           var result =  await _invoiceService.CreateInvoice(requestInvoice);
+           var invoice =  await _invoiceService.CreateInvoice(requestInvoice);
+            await _customerPointService.AwardPointsForInvoiceAsync(invoice.Id);
+
 
             await _tableActivityService.LogAsync(
                     tableSession,
@@ -711,7 +715,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             await _tableSessionService.CloseSessionAsync(
                   tableSession,
                   "Checkout table",
-                  result.Id,
+                  invoice.Id,
                   existedTable.DeviceId
               );
             await _unitOfWork.SaveChangesAsync();
