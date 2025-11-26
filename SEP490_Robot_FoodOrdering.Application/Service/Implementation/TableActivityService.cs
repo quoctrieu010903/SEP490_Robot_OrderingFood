@@ -68,7 +68,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             };
 
             await _unitOfWork.Repository<TableActivity, Guid>().AddAsync(activity);
-            //await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
         }
 
         public Task LogPaymentActivityAsync(Order order, Payment currentPayment, TableSession session)

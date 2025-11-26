@@ -728,12 +728,20 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // ✅ CHỈ COMMIT 1 LẦN Ở CUỐI
             await _unitOfWork.SaveChangesAsync();
 
-            return new BaseResponseModel<TableResponse>(
+            var resp = new BaseResponseModel<TableResponse>(
                 StatusCodes.Status200OK,
                 ResponseCodeConstants.SUCCESS,
                 _mapper.Map<TableResponse>(existedTable),
                 "Checkout thành công"
             );
+
+            return resp;
+            // return new BaseResponseModel<TableResponse>(
+            //     StatusCodes.Status200OK,
+            //     ResponseCodeConstants.SUCCESS,
+            //     _mapper.Map<TableResponse>(existedTable),
+            //     "Checkout thành công"
+            // );
         }
 
 

@@ -72,7 +72,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
            
             invoice.LastUpdatedTime = now;
-            invoiceRepo.Update(invoice);
+            //invoiceRepo.Update(invoice);
 
             //await _unitOfWork.SaveChangesAsync();
         }
