@@ -15,8 +15,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        // Rule tích điểm: 1 điểm / 10.000đ
-        private const decimal PointUnitVnd = 10000m;
+    
 
         public CustomerPointService(IUnitOfWork unitOfWork)
         {
@@ -60,8 +59,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             // Tính điểm
             // Tổng tiền tùy model bạn: invoice.TotalMoney / invoice.TotalAmount ...
-            var total = invoice.TotalMoney; // đổi tên field nếu khác
-            var points = (int)Math.Floor(total / PointUnitVnd);
+            var total = invoice.TotalMoney;
+            var points = (int)Math.Floor((total * 0.01m) / 1000m);
+
             if (points < 0) points = 0;
 
             // Update customer
@@ -74,7 +74,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             invoice.LastUpdatedTime = now;
             invoiceRepo.Update(invoice);
 
-            await _unitOfWork.SaveChangesAsync();
+            //await _unitOfWork.SaveChangesAsync();
         }
     }
 }

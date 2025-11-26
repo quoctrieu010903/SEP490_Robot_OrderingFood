@@ -27,8 +27,8 @@ public class ComplainController
 
 
     [HttpGet("{idTable}")]
-    public Task<BaseResponseModel<List<ComplainResponse>>> GetFeedbackTable(Guid idTable)
-        => FeedbackService.GetComplainByTable(idTable);
+    public Task<BaseResponseModel<List<ComplainResponse>>> GetFeedbackTable(Guid idTable , [FromQuery] bool isCustomer)
+        => FeedbackService.GetComplainByTable(idTable,isCustomer);
 
     [HttpPut("{idTable}")]
     public Task<BaseResponseModel<List<ComplainCreate>>> ConfirmFeedback(

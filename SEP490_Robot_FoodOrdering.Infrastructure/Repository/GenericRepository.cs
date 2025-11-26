@@ -190,6 +190,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Repository
         public async Task AddAsync(TEntity entity)
         {
             await _dbSet.AddAsync(entity);
+          
         }
 
         public async Task AddRangeAsync(IEnumerable<TEntity> entities)

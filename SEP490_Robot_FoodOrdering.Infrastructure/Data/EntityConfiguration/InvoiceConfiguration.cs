@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
 {
@@ -24,6 +21,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
                .HasForeignKey(i => i.TableId)
                .OnDelete(DeleteBehavior.SetNull);
 
+
         }
+
     }
 }
+
