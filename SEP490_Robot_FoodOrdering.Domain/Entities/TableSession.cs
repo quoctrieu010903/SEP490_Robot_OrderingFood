@@ -18,13 +18,14 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
             // nếu khách có tài khoản / nhập SĐT
             public Guid? CustomerId { get; set; }
             public virtual Customer? Customer { get; set; }
-
+            public string? SessionCode  { get; set; }
             public DateTime CheckIn { get; set; } = DateTime.UtcNow;
             public DateTime? CheckOut { get; set; }
             public DateTime? LastActivityAt { get; set; }
 
             public virtual ICollection<TableActivity> Activities { get; set; } = new List<TableActivity>();
             public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+            
         }
     }
 

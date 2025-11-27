@@ -19,5 +19,6 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         //     { "fromTableId":"...", "toTableId":"..." }
         //     { "shareToken":"..." }
         public string? Data { get; set; }
+        public string? ActivityCode { get; set; }
     }
 }
