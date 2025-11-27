@@ -764,6 +764,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                             orderId = order.Id,
                             tableId = order.TableId,
                             tableName = order.Table?.Name,
+                            orderCode = order.OrderCode,
                             previousOrderStatus = oldOrderStatus,
                             newOrderStatus = order.Status,
                             updatedItems = targets.Select(i => new
