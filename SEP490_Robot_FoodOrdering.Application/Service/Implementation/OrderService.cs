@@ -67,8 +67,21 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 throw new ErrorException(StatusCodes.Status403Forbidden, ResponseCodeConstants.FORBIDDEN,
                     "Thiết bị không có quyền đặt món cho bàn này");
 
-            var order = _mapper.Map<Order>(request);
+            var activeSession = await _unitOfWork.Repository<TableSession, Guid>()
+               .GetWithSpecAsync(new BaseSpecification<TableSession>(s =>
+                   s.TableId == request.TableId
+                   && s.Status == TableSessionStatus.Active
+                   && s.DeviceId == request.deviceToken
+               ));
 
+            if (activeSession == null)
+                throw new ErrorException(StatusCodes.Status403Forbidden, ResponseCodeConstants.FORBIDDEN,
+                    "Thiết bị chưa bind vào phiên (session) đang hoạt động của bàn này");
+
+
+
+            var order = _mapper.Map<Order>(request);
+            order.TableSessionId = activeSession.Id;
             order.Status = OrderStatus.Pending;
             order.PaymentStatus = PaymentStatusEnums.Pending;
             order.CreatedBy = request.deviceToken;
@@ -76,6 +89,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             order.CreatedTime = DateTime.UtcNow;
             order.LastUpdatedTime = DateTime.UtcNow;
+            
 
             order.OrderItems = new List<OrderItem>();
             decimal total = 0;
@@ -192,7 +206,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
 
             // ===== LOG TABLE ACTIVITY: CreateOrder =====
-            TableSession? activeSession = null;
+            //TableSession? activeSession = null;
 
             // Try to get session from order first
             if (order.TableSessionId.HasValue)

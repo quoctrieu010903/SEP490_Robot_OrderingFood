@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using QRCoder;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
+using SEP490_Robot_FoodOrdering.Core.Ultils;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 
@@ -92,6 +93,23 @@ namespace SEP490_Robot_FoodOrdering.Application.Utils
             using var qrCode = new PngByteQRCode(qrCodeData);
             var qrCodeImage = qrCode.GetGraphic(20);
             return Convert.ToBase64String(qrCodeImage);
+        }
+
+        public string GenerateCode(string prefix, int length)
+        {
+            if (string.IsNullOrWhiteSpace(prefix))
+                throw new ArgumentException("prefix là bắt buộc.", nameof(prefix));
+
+            if (length <= 0)
+                throw new ArgumentOutOfRangeException(nameof(length), "length phải > 0.");
+
+            var p = prefix.Trim().ToUpperInvariant();
+
+            // Nếu enum của bạn là AlphaNumericUpper thì dùng cái đó.
+            // Nếu không có, dùng AlphaNumeric rồi .ToUpperInvariant()
+            var random = GenerateRandomString(length, CharacterSet.AlphanumericMixed).ToUpperInvariant();
+
+            return $"{p}-{random}";
         }
 
         //public string GetEmailTemplate(string templateName, string folder)

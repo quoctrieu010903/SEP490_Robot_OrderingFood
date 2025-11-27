@@ -25,10 +25,16 @@ public class InvoiceController
     {
         return await _invoiceService.CreateInvoice(request);
     }
-    [HttpGet("Order/{OrderId}")]
+    [HttpGet("Order/{OrderId}/invoice")]
     public async Task<ActionResult<BaseResponseModel<InvoiceResponse>>> GetInvoicesByTableId(Guid OrderId)
     {
         var result = await _invoiceService.getInvoiceByTableId(OrderId);
+        return result;
+    }
+    [HttpGet("invoice/{InvoiceId}")]
+    public async Task<ActionResult<BaseResponseModel<InvoiceResponse>>> GetInvoicesById(Guid InvoiceId)
+    {
+        var result = await _invoiceService.getInvoiceById(InvoiceId);
         return result;
     }
 }

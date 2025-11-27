@@ -43,5 +43,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Abstractions.Utils
         Task<string> GetEmailTemplateAsync(string templateName, string folder);
         string GenerateEmploymentCode(RoleNameEnums role, int length = 4);
         string GenerateQrCodeBase64_NoDrawing(string text);
+        /// <summary>
+        /// Tạo code theo format: PREFIX-RANDOM
+        /// length là độ dài phần RANDOM (không tính prefix và dấu '-')
+        /// </summary>
+        string GenerateCode(string prefix, int length);
     }
 }
