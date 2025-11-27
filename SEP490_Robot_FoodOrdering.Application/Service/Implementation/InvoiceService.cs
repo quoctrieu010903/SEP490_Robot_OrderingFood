@@ -1,6 +1,7 @@
 ﻿using System.Net.NetworkInformation;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.invoice;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Invouce;
@@ -23,11 +24,13 @@ public class InvoiceService : IInvoiceService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly IUtilsService _utilsService;
 
-    public InvoiceService(IUnitOfWork unitOfWork, IMapper mapper)
+    public InvoiceService(IUnitOfWork unitOfWork, IMapper mapper, IUtilsService utilsService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
+        _utilsService = utilsService;
     }
 
     public async Task<InvoiceResponse> CreateInvoice(InvoiceCreatRequest request)
@@ -56,6 +59,7 @@ public class InvoiceService : IInvoiceService
             //Id = invoiceId, // ✅ QUAN TRỌNG
             OrderId = existedOrder.Id,
             TableId = existedOrder.TableId ?? request.TableId,
+            InvoiceCode = _utilsService.GenerateCode("HD", 6),
             CreatedTime = DateTime.UtcNow,
             TotalMoney = existedOrder.TotalPrice,
             PaymentMethod = existedOrder.paymentMethod,

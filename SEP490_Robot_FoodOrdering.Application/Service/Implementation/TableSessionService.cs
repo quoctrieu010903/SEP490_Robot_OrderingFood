@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.TableSession;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
@@ -13,14 +14,16 @@ public class TableSessionService : ITableSessionService
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITableActivityService _activityService;
     private readonly IMapper _mapper;
+    private readonly IUtilsService _utilsService;
 
     public TableSessionService(
         IUnitOfWork unitOfWork,
-        ITableActivityService activityService, IMapper mapper)
+        ITableActivityService activityService, IMapper mapper, IUtilsService utilsService)
     {
         _unitOfWork = unitOfWork;
         _activityService = activityService;
         _mapper = mapper;
+        _utilsService = utilsService;
     }
 
     public async Task<TableSession?> GetActiveSessionForDeviceAsync(string deviceId)
@@ -62,6 +65,7 @@ public class TableSessionService : ITableSessionService
             TableId = table.Id,
             DeviceId = deviceId,
             SessionToken = Guid.NewGuid().ToString("N"),
+            SessionCode = _utilsService.GenerateCode("SC", 6),
             Status = TableSessionStatus.Active,
             CheckIn = now,
             CheckOut = null,
