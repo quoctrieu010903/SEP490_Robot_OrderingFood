@@ -297,8 +297,10 @@ public class PayOSService: IPayOSService
         if (!hasAnySuccessfulPayment)
             order.PaymentStatus = PaymentStatusEnums.Pending;
         
-        // Update lại order.
+        // Update last updated time + payment status for order.
         order.LastUpdatedTime = DateTime.UtcNow;
+        order.paymentMethod = PaymentMethodEnums.PayOS;
+        
         var tableId = order.TableId;
         await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
         await _unitOfWork.SaveChangesAsync();
