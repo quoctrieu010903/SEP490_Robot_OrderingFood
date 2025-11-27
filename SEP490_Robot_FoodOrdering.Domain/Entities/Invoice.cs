@@ -9,7 +9,7 @@ public class Invoice: BaseEntity
     public virtual Order Order { get; set; }
     public Guid TableId { get; set; }
     public virtual Table Table { get; set; }
-   // public string InvoiceCode { get; set; } = $"INV{Guid.NewGuid():N}"[..8].ToUpper();
+    public string InvoiceCode { get; set; } = $"INV{Guid.NewGuid():N}"[..8].ToUpper();
 
     public decimal TotalMoney { get; set; }        
     public PaymentStatusEnums Status { get; set; }        
