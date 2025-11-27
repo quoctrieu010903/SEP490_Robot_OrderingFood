@@ -125,9 +125,18 @@ public class InvoiceService : IInvoiceService
         throw new NotImplementedException();
     }
 
-    public Task<InvoiceResponse> getInvoiceById(Guid id)
+    public async Task<BaseResponseModel<InvoiceResponse>> getInvoiceById(Guid id)
     {
-        throw new NotImplementedException();
+        var invoice = await _unitOfWork.Repository<Invoice, Guid>()
+       .GetWithSpecAsync(new InvoiceSpecification(id));
+
+        if (invoice == null)
+            throw new ErrorException(StatusCodes.Status404NotFound,
+                ResponseCodeConstants.NOT_FOUND,
+                "Không tìm thấy hóa đơn.");
+        var response = _mapper.Map<InvoiceResponse>(invoice);
+        return new BaseResponseModel<InvoiceResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, response, "Invoice retrived successfully  ");
+
     }
 
     public async Task<BaseResponseModel<InvoiceResponse>> getInvoiceByTableId(Guid OrderId)

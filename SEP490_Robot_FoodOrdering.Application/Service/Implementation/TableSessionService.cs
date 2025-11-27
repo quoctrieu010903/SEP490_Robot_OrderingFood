@@ -16,7 +16,7 @@ public class TableSessionService : ITableSessionService
 
     public TableSessionService(
         IUnitOfWork unitOfWork,
-        ITableActivityService activityService , IMapper mapper)
+        ITableActivityService activityService, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
         _activityService = activityService;
@@ -163,13 +163,68 @@ public class TableSessionService : ITableSessionService
         });
     }
 
-    public async Task<PaginatedList<TableSessionResponse>> GetSessionByTableId(Guid tableId, PagingRequestModel request)
+    public async Task<PaginatedList<TableSessionResponse>> GetSessionByTableId(
+      Guid tableId, PagingRequestModel request)
     {
-        var existedSpec = new BaseSpecification<TableSession>(x => x.TableId == tableId);
-        var query = await _unitOfWork.Repository<TableSession, Guid>()
-            .GetAllWithSpecWithInclueAsync(existedSpec,  true , ts=> ts.Table , ts => ts.Customer , ts => ts.Activities);
-        var response =  _mapper.Map<List<TableSessionResponse>>(query);
-        return PaginatedList<TableSessionResponse>.Create(response, request.PageNumber, request.PageSize);
+        // 1) Lấy sessions (như bạn đang làm)
+        var sessionSpec = new BaseSpecification<TableSession>(x => x.TableId == tableId);
+        sessionSpec.AddOrderByDescending(x => x.CheckIn);
 
+        var sessions = await _unitOfWork.Repository<TableSession, Guid>()
+            .GetAllWithSpecWithInclueAsync(sessionSpec, true,
+                ts => ts.Table, ts => ts.Customer, ts => ts.Activities);
+
+        // 2) Gom sessionIds
+        var sessionIds = sessions.Select(s => s.Id).ToList();
+
+        // 3) Lấy orders theo các sessionIds + include Invoice (1 query)
+        //    (Nếu bạn chỉ muốn check invoice thì KHÔNG cần lọc status quá gắt)
+        var orderSpec = new BaseSpecification<Order>(o =>
+            o.TableId == tableId && o.TableSessionId.HasValue && sessionIds.Contains(o.TableSessionId.Value)
+        );
+
+        var orders = await _unitOfWork.Repository<Order, Guid>()
+            .GetAllWithSpecWithInclueAsync(orderSpec, true, o => o.Invoices);
+
+        // 4) Map sessionId -> (HasInvoice, InvoiceId)
+        var invoiceMap = orders
+      .Where(o => o.TableSessionId.HasValue)
+      .GroupBy(o => o.TableSessionId!.Value)
+      .ToDictionary(
+          g => g.Key,
+          g =>
+          {
+              Guid? invoiceId = g
+                  .Select(o => (Guid?)o.Invoices?.Id)      // ✅ null-safe
+                  .FirstOrDefault(id => id.HasValue);      // ✅ lấy cái đầu tiên khác null
+
+              return new
+              {
+                  HasInvoice = invoiceId.HasValue,
+                  InvoiceId = invoiceId
+              };
+          }
+      );
+
+
+
+        // 5) Map ra response + gắn HasInvoice
+        var response = _mapper.Map<List<TableSessionResponse>>(sessions);
+
+        foreach (var r in response)
+        {
+            if (invoiceMap.TryGetValue(r.Id, out var inv))
+            {
+                r.HasInvoice = inv.HasInvoice;
+                r.InvoiceId = inv.InvoiceId == Guid.Empty ? null : inv.InvoiceId;
+            }
+            else
+            {
+                r.HasInvoice = false;
+                r.InvoiceId = null;
+            }
+        }
+
+        return PaginatedList<TableSessionResponse>.Create(response, request.PageNumber, request.PageSize);
     }
 }
