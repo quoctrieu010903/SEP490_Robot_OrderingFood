@@ -8,6 +8,7 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Application.Mapping;
 using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
@@ -30,8 +31,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly ICancelledItemService _cancelledItemService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ITableActivityService _tableActivityService;
-
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<OrderService> logger, IOrderItemReposotory orderItemReposotory, INotificationService? notificationService, ICancelledItemService cancelledItemService, IRemakeItemService remakeItemService, IHttpContextAccessor httpContextAccessor, ITableActivityService tableActivityService)
+        private readonly IUtilsService  _utilService;
+        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<OrderService> logger, IOrderItemReposotory orderItemReposotory, INotificationService? notificationService, ICancelledItemService cancelledItemService, IRemakeItemService remakeItemService, IHttpContextAccessor httpContextAccessor, ITableActivityService tableActivityService, IUtilsService utilService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -42,6 +43,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _remakeItemService = remakeItemService;
             _httpContextAccessor = httpContextAccessor;
             _tableActivityService = tableActivityService;
+            _utilService = utilService;
         }
 
 
@@ -86,8 +88,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             order.PaymentStatus = PaymentStatusEnums.Pending;
             order.CreatedBy = request.deviceToken;
             order.LastUpdatedBy = request.deviceToken;
-
-            order.CreatedTime = DateTime.UtcNow;
+            order.OrderCode = _utilService.GenerateCode("ORD", 6);
+            order.CreatedTime = DateTime.UtcNow;    
             order.LastUpdatedTime = DateTime.UtcNow;
             
 

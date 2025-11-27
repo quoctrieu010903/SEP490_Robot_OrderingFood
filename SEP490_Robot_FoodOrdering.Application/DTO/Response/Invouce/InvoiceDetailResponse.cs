@@ -19,6 +19,7 @@ public class InvoiceResponse
     public Guid OrderId { get; set; }
     public Guid TableId { get; set; }
     public string TableName { get; set; }
+    public string InvoiceCode { get; set; }
     public DateTime CreatedTime { get; set; }
     public string PaymentMethod { get; set; }
     public decimal TotalAmount { get; set; }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
@@ -11,9 +12,11 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
-    partial class RobotFoodOrderingDBContextModelSnapshot : ModelSnapshot
+    [Migration("20251127064912_UpdateOrderAndInvoiceEntity")]
+    partial class UpdateOrderAndInvoiceEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -956,9 +959,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("ActivityCode")
-                        .HasColumnType("text");
-
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
@@ -1037,9 +1037,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 
                     b.Property<DateTime>("LastUpdatedTime")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("SessionCode")
-                        .HasColumnType("text");
 
                     b.Property<string>("SessionToken")
                         .IsRequired()

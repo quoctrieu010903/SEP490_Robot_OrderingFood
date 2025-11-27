@@ -12,6 +12,7 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.TableSession
         public string TableName { get; set; }
         public string Status { get; set; }   
         public string SessionToken { get; set; }
+        public string SessionCode { get; set; }
         public DateTime CheckIn { get; set; }
         public DateTime? CheckOut { get; set; }
         public string? CustomerName { get; set; }   

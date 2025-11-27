@@ -1,6 +1,7 @@
 ﻿using System.Net.NetworkInformation;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.invoice;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Invouce;
@@ -23,11 +24,13 @@ public class InvoiceService : IInvoiceService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly IUtilsService _utilsService;
 
-    public InvoiceService(IUnitOfWork unitOfWork, IMapper mapper)
+    public InvoiceService(IUnitOfWork unitOfWork, IMapper mapper, IUtilsService utilsService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
+        _utilsService = utilsService;
     }
 
     public async Task<InvoiceResponse> CreateInvoice(InvoiceCreatRequest request)
@@ -46,7 +49,7 @@ public class InvoiceService : IInvoiceService
             .GetWithSpecAsync(new BaseSpecification<Invoice>(x => x.OrderId == existedOrder.Id));
 
         if (existedInvoice != null)
-            return BuildInvoiceResponse(existedInvoice.Id, existedOrder);
+            return BuildInvoiceResponse(existedInvoice, existedOrder);
 
         // ✅ Tạo ID trước để detail dùng FK chuẩn
         //var invoiceId = Guid.NewGuid();
@@ -56,6 +59,7 @@ public class InvoiceService : IInvoiceService
             //Id = invoiceId, // ✅ QUAN TRỌNG
             OrderId = existedOrder.Id,
             TableId = existedOrder.TableId ?? request.TableId,
+            InvoiceCode = _utilsService.GenerateCode("HD", 6),
             CreatedTime = DateTime.UtcNow,
             TotalMoney = existedOrder.TotalPrice,
             PaymentMethod = existedOrder.paymentMethod,
@@ -85,17 +89,18 @@ public class InvoiceService : IInvoiceService
         await _unitOfWork.Repository<Invoice, Guid>().AddAsync(invoice);
         // ❌ KHÔNG SaveChanges ở đây (CheckoutTable sẽ SaveChanges ở cuối)
 
-        return BuildInvoiceResponse(invoice.Id, existedOrder);
+        return BuildInvoiceResponse(invoice, existedOrder);
     }
 
-    private InvoiceResponse BuildInvoiceResponse(Guid invoiceId, Order existedOrder)
+    private InvoiceResponse BuildInvoiceResponse(Invoice invoice, Order existedOrder)
     {
         return new InvoiceResponse
         {
-            Id = invoiceId,
+            Id = invoice.Id,
             OrderId = existedOrder.Id,
             TableId = existedOrder.TableId ?? Guid.Empty,
             TableName = existedOrder.Table?.Name,
+            InvoiceCode = invoice.InvoiceCode,
             CreatedTime = DateTime.UtcNow, // hoặc truyền createdTime vào nếu muốn đúng tuyệt đối
             PaymentMethod = existedOrder.paymentMethod.ToString(),
             TotalAmount = existedOrder.TotalPrice,

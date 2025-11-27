@@ -2,6 +2,7 @@
 
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Table;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.TableActivities;
@@ -18,9 +19,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
     public class TableActivityService : ITableActivityService
     {
         private readonly IUnitOfWork _unitOfWork;
-        public TableActivityService(IUnitOfWork unitOfWork)
+        private readonly IUtilsService _utilsService;
+        public TableActivityService(IUnitOfWork unitOfWork, IUtilsService utilsService)
         {
             _unitOfWork = unitOfWork;
+            _utilsService = utilsService;
         }
 
         public async Task<PaginatedList<TableActivityLogResponse>> GetLogAsync(Guid sessionId , PagingRequestModel requestModel)
@@ -41,6 +44,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     TableSessionId = a.TableSessionId,
                     DeviceId = a.DeviceId,
                     Type = a.Type.ToString(),
+                    ActivityCode = a.ActivityCode,
                     CreatedTime = a.CreatedTime,
 
                     Data = string.IsNullOrEmpty(a.Data)
@@ -62,6 +66,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 TableSessionId = session.Id,
                 DeviceId = deviceId,
                 Type = type,
+                ActivityCode = _utilsService.GenerateCode("SA", 6),
                 Data = data != null ? JsonSerializer.Serialize(data) : null,
                 CreatedTime = DateTime.UtcNow,
                 LastUpdatedTime = DateTime.UtcNow
