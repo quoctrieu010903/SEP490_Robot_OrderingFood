@@ -12,6 +12,7 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.TableActivities
         public Guid TableSessionId { get; set; }
         public string? DeviceId { get; set; }
         public string? Type { get; set; }
+        public string? ActivityCode { get; set; }
 
         // Cho phép kiểu object để bind JSON con
         public object? Data { get; set; }

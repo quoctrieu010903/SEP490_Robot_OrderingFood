@@ -44,6 +44,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     TableSessionId = a.TableSessionId,
                     DeviceId = a.DeviceId,
                     Type = a.Type.ToString(),
+                    ActivityCode = a.ActivityCode,
                     CreatedTime = a.CreatedTime,
 
                     Data = string.IsNullOrEmpty(a.Data)
