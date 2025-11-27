@@ -8,7 +8,13 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
     public class OrderSpecification : BaseSpecification<Order>
     {
 
-        public OrderSpecification(Guid tableId) : base(o => !o.DeletedTime.HasValue && o.TableId == tableId && o.Status == OrderStatus.Pending || o.Status == OrderStatus.Confirmed)
+        public OrderSpecification(Guid tableId)
+            // old logic (incorrect precedence) kept for reference:
+            // : base(o => !o.DeletedTime.HasValue && o.TableId == tableId && o.Status == OrderStatus.Pending || o.Status == OrderStatus.Confirmed)
+            : base(o =>
+                !o.DeletedTime.HasValue &&
+                o.TableId == tableId &&
+                (o.Status == OrderStatus.Pending || o.Status == OrderStatus.Confirmed))
         {
             AddIncludes();
         }
