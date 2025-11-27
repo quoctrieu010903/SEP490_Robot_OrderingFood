@@ -121,7 +121,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
              .ForMember(dest => dest.TableName, opt => opt.MapFrom(src => src.Table.Name))
              .ForMember(dest => dest.deviderId, opt => opt.MapFrom(src => src.Table.DeviceId.ToString()))
              .ForMember(dest => dest.TotalPaid , opt => opt.MapFrom(src => src.TotalPaid))
+             .ForMember(dest => dest.OrderCode, opt => opt.MapFrom(src => src.OrderCode))
              .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.OrderItems)); // Items instead of OrderItems
+           
 
             CreateMap<OrderItem, OrderItemResponse>()
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
