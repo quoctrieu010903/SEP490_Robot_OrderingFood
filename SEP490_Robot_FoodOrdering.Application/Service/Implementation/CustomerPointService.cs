@@ -50,8 +50,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
 
             if (!customerId.HasValue || customerId.Value == Guid.Empty)
-                throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.VALIDATION_ERROR,
-                    "Không có thông tin khách để tích điểm (Invoice/Order chưa có CustomerId)");
+            {
+                // throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.VALIDATION_ERROR,
+                //     "Không có thông tin khách để tích điểm (Invoice/Order chưa có CustomerId)");
+                //TODO: fix this based on Business RULE. 
+                return; // allow checkout even customer has no value. 
+            }
 
             var customer = await customerRepo.GetByIdAsync(customerId.Value);
             if (customer == null)
