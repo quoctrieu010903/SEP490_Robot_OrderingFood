@@ -8,6 +8,7 @@ using SEP490_Robot_FoodOrdering.Core.Constants;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain;
 using System.Threading;
+using static QRCoder.PayloadGenerator;
 
 public class DailyCleanupJob : IJob
 {
@@ -15,18 +16,24 @@ public class DailyCleanupJob : IJob
     private readonly ISettingsService _systemSettingService;
     private readonly ICancelledItemService _cancelledItemService;
     private readonly ILogger<DailyCleanupJob> _logger;
+    private readonly ITableSessionService _tableSessionService;
+    private readonly ITableActivityService _tableActivityService;
     private const string SystemUserId = "b9abf60c-9c0e-4246-a846-d9ab62303b13";
 
     public DailyCleanupJob(
         IUnitOfWork unitOfWork,
         ISettingsService systemSettingService,
         ICancelledItemService cancelItemService,
+        ITableSessionService tableSessionService,
+        ITableActivityService tableActivityService,
         ILogger<DailyCleanupJob> logger)
     {
         _unitOfWork = unitOfWork;
         _systemSettingService = systemSettingService;
         _logger = logger;
         _cancelledItemService = cancelItemService;
+        _tableSessionService = tableSessionService;
+        _tableActivityService = tableActivityService;
     }
 
     public async Task Execute(IJobExecutionContext context)
@@ -38,7 +45,7 @@ public class DailyCleanupJob : IJob
         {
             // 1) Đọc số ngày cleanup từ SystemSettings (OrderCleanupAfterDays)
             var days = await _systemSettingService
-                .GetByKeyAsync(SystemSettingKeys.OrderCleanupAfterDays); // default = 1 ngày (ngày hôm sau)
+                .GetByKeyAsync(SystemSettingKeys.OrderCleanupAfterDays); 
             var cleanupDays = 1; // default = 1 ngày (qua ngày hôm sau)
             if (!string.IsNullOrWhiteSpace(days.Data.Value)
            && int.TryParse(days.Data.Value, out var parsedDays))
@@ -70,53 +77,123 @@ public class DailyCleanupJob : IJob
         }
     }
 
-    private async Task AutoReleaseTables(DateTime thresholdDate,CancellationToken ct)
+    private async Task AutoReleaseTables(DateTime thresholdDate, CancellationToken ct)
     {
-        // Lấy tất cả các bàn đang occupied
         var tables = await _unitOfWork.Repository<Table, Guid>()
             .GetAllWithSpecWithInclueAsync(
                 new BaseSpecification<Table>(t => t.Status == TableEnums.Occupied),
                 true,
                 t => t.Orders,
                 t => t.Complains);
+
         _logger.LogInformation("DailyCleanupJob: found {Count} occupied tables to check for release", tables.Count());
+
         foreach (var table in tables)
         {
-            var hasActiveOrders = table.Orders.Any(o =>
-                o.Status != OrderStatus.Completed &&
-                o.Status != OrderStatus.Cancelled && o.CreatedTime >= thresholdDate); 
-           
-            var hasActiveComplains = table.Complains.Any(c => c.isPending);
-          
+            ct.ThrowIfCancellationRequested();
+
+            // 1) orders đang mở
+            var openOrders = table.Orders
+                .Where(o => o.Status != OrderStatus.Completed && o.Status != OrderStatus.Cancelled)
+                .ToList();
+
+            var hasOpenOrders = openOrders.Any();
+
+            // 2) complains pending
+            var pendingComplains = table.Complains
+                .Where(c => c.isPending)
+                .ToList();
+
+            var hasPendingComplains = pendingComplains.Any();
+
+            // 3) activity gần đây (>= thresholdDate)
+            var hasRecentActivity = table.Orders.Any(o =>
+                o.CreatedTime >= thresholdDate ||
+                (o.LastUpdatedTime >= thresholdDate));
+
             _logger.LogInformation(
-        "DailyCleanupJob: table {TableName} - orders={OrderCount}, complains={ComplainCount}, hasActiveOrders={HasActiveOrders}, hasActiveComplains={HasActiveComplains}",
-        table.Name,
-        table.Orders.Count,
-        table.Complains.Count,
-        hasActiveOrders,
-        hasActiveComplains
-    );
+                "DailyCleanupJob: table {TableName} - openOrders={HasOpenOrders}, pendingComplains={HasPendingComplains}, recentActivity={HasRecentActivity}",
+                table.Name, hasOpenOrders, hasPendingComplains, hasRecentActivity);
 
-            foreach (var o in table.Orders)
+            if (hasOpenOrders || hasPendingComplains || hasRecentActivity)
+                continue;
+
+            // 4) active session theo TableId
+            var activeSession = await _unitOfWork.Repository<TableSession, Guid>()
+                .GetWithSpecAsync(new BaseSpecification<TableSession>(
+                    ts => ts.TableId == table.Id && ts.Status == TableSessionStatus.Active));
+
+            if (activeSession == null)
             {
-                _logger.LogInformation(" -> Order {OrderId} status: {Status}", o.Id, o.Status);
+                _logger.LogWarning("DailyCleanupJob: table {TableName} has no active session -> skip", table.Name);
+                continue;
             }
 
-            foreach (var c in table.Complains)
-            {
-                _logger.LogInformation(" -> Complain {ComplainId} isPending: {IsPending}", c.Id, c.isPending);
-            }
-            if (!hasActiveOrders && !hasActiveComplains)
-            {
-                table.Status = TableEnums.Available;
-                table.LastUpdatedTime = DateTime.UtcNow;
-                table.LastAccessedAt = null;
-                table.LockedAt = null;
-                table.DeviceId = null;
-                table.IsQrLocked = false;
-                _logger.LogInformation("DailyCleanupJob: released table {TableName} as it has no active orders or complains", table.Name);
-            }
+            // 5) Build payload log activity (theo threshold)
+            var payload = BuildAutoReleasePayload(
+                table,
+                activeSession,
+                thresholdDate,
+                openOrders,
+                pendingComplains);
+
+            // ✅ Khuyên dùng type riêng để khỏi trùng log CloseSession
+            await _tableActivityService.LogAsync(
+                activeSession,
+                deviceId: null, // System
+                TableActivityType.AutoReleaseAfterMidnight, // tạo type riêng (khuyên)
+                payload);
+
+            // 6) Close session
+            await _tableSessionService.CloseSessionAsync(
+                activeSession,
+                reason: "AUTO_RELEASE_NO_ACTIVITY_OVER_THRESHOLD",
+                invoiceId: null,
+                actorDeviceId: null);
+
+            _logger.LogInformation(
+                "DailyCleanupJob: released table {TableName} by closing session {SessionId}",
+                table.Name, activeSession.Id);
         }
+    }
+
+    private object BuildAutoReleasePayload(
+        Table table,
+        TableSession session,
+        DateTime thresholdUtc,
+        IReadOnlyList<Order> openOrders,
+        IReadOnlyList<Complain> pendingComplains)
+    {
+        return new
+        {
+            reason = "AUTO_RELEASE_NO_ACTIVITY_OVER_THRESHOLD",
+            thresholdUtc = thresholdUtc.ToString("O"),
+            table = new
+            {
+                id = table.Id,
+                name = table.Name,
+                statusBefore = table.Status.ToString(),
+                statusAfter = TableEnums.Available.ToString()
+            },
+            session = new
+            {
+                id = session.Id,
+                checkInUtc = session.CheckIn.ToString("O"),
+                lastActivityAtUtc = session.LastActivityAt?.ToString("O")
+            },
+            checks = new
+            {
+                openOrdersCount = openOrders.Count,
+                pendingComplainsCount = pendingComplains.Count,
+                openOrderIds = openOrders.Select(o => o.Id).ToList(),
+                pendingComplainIds = pendingComplains.Select(c => c.Id).ToList()
+            },
+            job = new
+            {
+                name = "DailyCleanupJob",
+                runAtUtc = DateTime.UtcNow.ToString("O")
+            }
+        };
     }
 
     private async Task AutoCancelPendingItems(DateTime thresholdDate, CancellationToken ct)
@@ -185,4 +262,6 @@ public class DailyCleanupJob : IJob
         }
       }
 
-    }
+   
+
+}
