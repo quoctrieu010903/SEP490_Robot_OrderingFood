@@ -60,8 +60,18 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
         {   
             AddIncludes();
         }
-
-    public OrderSpecification(Guid orderId, Guid tableId, bool byOrderId) :base(o=> o.Id == orderId && o.TableId == tableId && !o.DeletedTime.HasValue  ) {
+        public OrderSpecification(Guid tableId, Guid sessionId)
+        : base(o =>
+            o.TableId == tableId &&
+            o.TableSessionId == sessionId &&
+            !o.DeletedTime.HasValue &&
+            o.Status != OrderStatus.Completed &&
+            o.Status != OrderStatus.Cancelled)
+        {
+            AddIncludes();
+            AddOrderByDescending(o => o.CreatedTime);
+        }
+        public OrderSpecification(Guid orderId, Guid tableId, bool byOrderId) :base(o=> o.Id == orderId && o.TableId == tableId && !o.DeletedTime.HasValue  ) {
             AddIncludes();
         }
 

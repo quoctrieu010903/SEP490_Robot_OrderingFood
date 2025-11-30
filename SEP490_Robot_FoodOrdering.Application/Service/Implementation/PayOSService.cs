@@ -113,6 +113,8 @@ public class PayOSService: IPayOSService
         //     await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
         // }
         order.PaymentStatus = PaymentStatusEnums.Pending;
+        //update payment method to payos.
+        order.paymentMethod = PaymentMethodEnums.PayOS;
         payment.PaymentStatus = PaymentStatusEnums.Pending; 
         payment.LastUpdatedTime = DateTime.UtcNow;
 

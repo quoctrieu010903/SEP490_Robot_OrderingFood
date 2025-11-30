@@ -25,11 +25,13 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
         ShareStop = 42,
 
         RequestCheckout = 50,
-        CreateInvoice = 50,
+        CreateInvoice = 52,
         CloseSession = 51,
 
         AutoRelease = 60,
         AttachDeviceFromModerator = 70,
+        AutoReleaseAfterMidnight = 80,
+        AutoReleaseNoOrderTimeout = 90 , 
     }
 
 }

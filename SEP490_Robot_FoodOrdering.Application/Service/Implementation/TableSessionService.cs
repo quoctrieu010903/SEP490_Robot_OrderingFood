@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.TableSession;
+using SEP490_Robot_FoodOrdering.Application.DTO.TableActivity;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
@@ -100,10 +101,10 @@ public class TableSessionService : ITableSessionService
     }
 
     public async Task CloseSessionAsync(
-        TableSession session,
-        string reason,
-        Guid? invoiceId,
-        string? actorDeviceId)
+     TableSession session,
+     string reason,
+     Guid? invoiceId,
+     string? actorDeviceId)
     {
         if (session.Status != TableSessionStatus.Active)
             return;
@@ -114,23 +115,35 @@ public class TableSessionService : ITableSessionService
         session.CheckOut = now;
         session.LastActivityAt = now;
 
-        // Reset table to available state with all fields
         session.Table.Status = TableEnums.Available;
         session.Table.DeviceId = null;
-        session.Table.IsQrLocked = false;        // Unlock QR for next customer
-        session.Table.LockedAt = null;           // Clear lock timestamp
+        session.Table.IsQrLocked = false;
+        session.Table.LockedAt = null;
         session.Table.isShared = false;
         session.Table.ShareToken = null;
         session.Table.LastAccessedAt = now;
 
-        await _activityService.LogAsync(session, actorDeviceId, TableActivityType.CloseSession, new
-        {
-            reason,
-            tableId = session.TableId,
-            invoiceId
-        });
-    }
+        var actorType = string.IsNullOrWhiteSpace(actorDeviceId) ? "System" : "Customer";
 
+        var payload = TableActivityPayloadFactory.Build(
+            action: TableActivityType.CloseSession.ToString(),     // "SESSION_CLOSED"
+            actorType: actorType,
+            actorUserId: null,
+            actorDeviceId: actorDeviceId,
+            reasonCode: "CHECKOUT",
+            reasonText: reason,
+            snapshot: new { tablename
+            = session.Table.Name, invoiceId }
+        );
+
+        await _activityService.LogAsync(
+            session,
+            actorDeviceId,
+            TableActivityType.CloseSession,
+            payload
+            
+        );
+    }
     public async Task MoveTableAsync(TableSession session, Table newTable, string? actorDeviceId)
     {
         var oldTable = session.Table;

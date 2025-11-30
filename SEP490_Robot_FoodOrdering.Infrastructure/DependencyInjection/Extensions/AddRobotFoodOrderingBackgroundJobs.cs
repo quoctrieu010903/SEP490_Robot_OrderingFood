@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Quartz;
+using SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob;
 
 namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extensions
 {
@@ -8,26 +9,31 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
         public static IServiceCollection AddRobotFoodOrderingBackgroundJobs(
             this IServiceCollection services)
         {
-            
+
             services.AddQuartz(q =>
             {
-                q.UseMicrosoftDependencyInjectionJobFactory();
 
                 var jobKey = new JobKey("DailyCleanupJob");
-
                 q.AddJob<DailyCleanupJob>(opts => opts.WithIdentity(jobKey));
 
-                // chạy mỗi ngày 00:05
+                var vnTz = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+
                 q.AddTrigger(t => t
                     .ForJob(jobKey)
                     .WithIdentity("DailyCleanupJob-trigger")
-                    .WithCronSchedule("0 21 7 * * ?"));
+                    .WithCronSchedule("0 5 00 * * ?", x => x
+                        .InTimeZone(vnTz)
+                        .WithMisfireHandlingInstructionDoNothing()
+                    )
+                );
             });
 
             services.AddQuartzHostedService(options =>
             {
                 options.WaitForJobsToComplete = true;
             });
+
+            services.AddHostedService<TableReleaseBackgroundService>();
 
             return services;
         }

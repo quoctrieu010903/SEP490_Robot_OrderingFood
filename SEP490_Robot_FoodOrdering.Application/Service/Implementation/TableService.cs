@@ -443,7 +443,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             await _tableSessionService.CloseSessionAsync(
                                  tableSession,
-                                 "người điều phối trưởng muốn huỷ bàn vì lý do sau :  " + reason,
+                                 "Người điều phối trưởng muốn huỷ bàn vì lý do sau :  " + reason,
                                   null,
                                  table.DeviceId
                              );

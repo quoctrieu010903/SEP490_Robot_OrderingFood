@@ -278,10 +278,23 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (request.Items == null || !request.Items.Any())
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ITEMS",
                     "Order must have at least one item.");
+            var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
+            if (table == null /* || table.DeletedTime.HasValue */)
+                return new BaseResponseModel<OrderResponse>(StatusCodes.Status404NotFound, "TABLE_NOT_FOUND",
+                    "Không tìm thấy bàn.");
 
-            // 1. Tìm order đang pending của bàn này
+            // 1) Get active session của bàn (đi theo session để tránh nhầm order cũ)
+            var activeSession = await _unitOfWork.Repository<TableSession, Guid>()
+                .GetWithSpecAsync(new BaseSpecification<TableSession>(
+                    s => s.TableId == request.TableId && s.Status == TableSessionStatus.Active));
+
+            if (activeSession == null)
+                return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ACTIVE_SESSION",
+                    "Bàn hiện không có phiên hoạt động (session).");
+
+            // 2) Tìm order đang mở của session này (KRITICAL: tránh 1 bàn nhiều order lịch sử)
             var existingOrder = await _unitOfWork.Repository<Order, Guid>()
-                .GetWithSpecAsync(new OrderSpecification(request.TableId), true);
+                .GetWithSpecAsync(new OrderSpecification(request.TableId, activeSession.Id), true);
 
             
             // 2. Nếu có order -> thêm item vào và cập nhật lại giá
@@ -297,7 +310,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     existingOrder.PaymentStatus = PaymentStatusEnums.Pending;
                 }
                 // Ensure table is marked as occupi ed when adding items to existing order
-                var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(request.TableId);
                 if (table != null && table.Status != TableEnums.Occupied)
                 {
                     table.Status = TableEnums.Occupied;
@@ -444,9 +456,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     }
                 }
 
-                // ===== LOG TABLE ACTIVITY: AddOrderItems =====
-                TableSession? activeSession = null;
-
+             
                 // Try to get session from order first
                 if (existingOrder.TableSessionId.HasValue)
                 {
@@ -764,6 +774,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                             orderId = order.Id,
                             tableId = order.TableId,
                             tableName = order.Table?.Name,
+                            orderCode = order.OrderCode,
                             previousOrderStatus = oldOrderStatus,
                             newOrderStatus = order.Status,
                             updatedItems = targets.Select(i => new

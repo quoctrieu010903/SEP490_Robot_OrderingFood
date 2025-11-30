@@ -61,7 +61,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
             services.AddRobotFoodOrderingBackgroundJobs();
 
             services.AddScoped<IServerEndpointService, ServerEndpointService>();
-            services.AddHostedService<TableReleaseBackgroundService>();
 
 
 
