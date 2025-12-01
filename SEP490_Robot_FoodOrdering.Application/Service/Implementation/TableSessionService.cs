@@ -183,65 +183,95 @@ public class TableSessionService : ITableSessionService
     public async Task<PaginatedList<TableSessionResponse>> GetSessionByTableId(
       Guid tableId, PagingRequestModel request)
     {
-        // 1) Lấy sessions (như bạn đang làm)
+        // 1) Lấy sessions
         var sessionSpec = new BaseSpecification<TableSession>(x => x.TableId == tableId);
         sessionSpec.AddOrderByDescending(x => x.CheckIn);
 
         var sessions = await _unitOfWork.Repository<TableSession, Guid>()
-            .GetAllWithSpecWithInclueAsync(sessionSpec, true,
-                ts => ts.Table, ts => ts.Customer, ts => ts.Activities);
+            .GetAllWithSpecWithInclueAsync(
+                sessionSpec,
+                true,
+                ts => ts.Table,
+                ts => ts.Customer,
+                ts => ts.Activities
+            );
 
-        // 2) Gom sessionIds
+        var response = _mapper.Map<List<TableSessionResponse>>(sessions);
+
         var sessionIds = sessions.Select(s => s.Id).ToList();
+        if (sessionIds.Count == 0)
+            return PaginatedList<TableSessionResponse>.Create(response, request.PageNumber, request.PageSize);
 
-        // 3) Lấy orders theo các sessionIds + include Invoice (1 query)
-        //    (Nếu bạn chỉ muốn check invoice thì KHÔNG cần lọc status quá gắt)
+        // 2) Query orders đúng sessionIds (như bạn đang làm)
         var orderSpec = new BaseSpecification<Order>(o =>
-            o.TableId == tableId && o.TableSessionId.HasValue && sessionIds.Contains(o.TableSessionId.Value)
+            o.TableId == tableId
+            && o.TableSessionId.HasValue
+            && sessionIds.Contains(o.TableSessionId.Value)
         );
 
         var orders = await _unitOfWork.Repository<Order, Guid>()
             .GetAllWithSpecWithInclueAsync(orderSpec, true, o => o.Invoices);
 
-        // 4) Map sessionId -> (HasInvoice, InvoiceId)
+        // 3) Map theo Order -> Invoice (chuẩn nếu data đúng)
         var invoiceMap = orders
-      .Where(o => o.TableSessionId.HasValue)
-      .GroupBy(o => o.TableSessionId!.Value)
-      .ToDictionary(
-          g => g.Key,
-          g =>
-          {
-              Guid? invoiceId = g
-                  .Select(o => (Guid?)o.Invoices?.Id)      // ✅ null-safe
-                  .FirstOrDefault(id => id.HasValue);      // ✅ lấy cái đầu tiên khác null
+            .Where(o => o.TableSessionId.HasValue)
+            .GroupBy(o => o.TableSessionId!.Value)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    Guid? invoiceId = g
+                        .Select(o => (Guid?)o.Invoices?.Id)
+                        .FirstOrDefault(id => id.HasValue && id.Value != Guid.Empty);
 
-              return new
-              {
-                  HasInvoice = invoiceId.HasValue,
-                  InvoiceId = invoiceId
-              };
-          }
-      );
+                    return invoiceId; // trả thẳng Guid?
+                }
+            );
 
+        // 4) Fallback: nếu mismatch (không có invoice theo order) thì map theo thời gian invoice nằm trong session
+        // Lưu ý: đổi "CreatedAt" đúng tên field của Invoice entity của bạn
+        var minTime = sessions.Min(s => s.CheckIn).AddMinutes(-5);
+        var maxTime = (sessions.Max(s => s.CheckOut ?? DateTime.UtcNow)).AddMinutes(5);
 
+        var invoiceSpec = new BaseSpecification<Invoice>(i =>
+            i.TableId == tableId
+            && i.CreatedTime >= minTime
+            && i.CreatedTime <= maxTime
+            && i.Id != Guid.Empty
+        );
 
-        // 5) Map ra response + gắn HasInvoice
-        var response = _mapper.Map<List<TableSessionResponse>>(sessions);
+        var invoices = await _unitOfWork.Repository<Invoice, Guid>()
+            .GetAllWithSpecAsync(invoiceSpec);
 
         foreach (var r in response)
         {
-            if (invoiceMap.TryGetValue(r.Id, out var inv))
+            Guid? invId = null;
+
+            // ưu tiên map chuẩn theo order
+            if (invoiceMap.TryGetValue(r.Id, out var mappedId) && mappedId.HasValue)
             {
-                r.HasInvoice = inv.HasInvoice;
-                r.InvoiceId = inv.InvoiceId == Guid.Empty ? null : inv.InvoiceId;
+                invId = mappedId.Value;
             }
             else
             {
-                r.HasInvoice = false;
-                r.InvoiceId = null;
+                // fallback theo khoảng thời gian session
+                var session = sessions.First(s => s.Id == r.Id);
+
+                var start = session.CheckIn.AddMinutes(-1);
+                var end = (session.CheckOut ?? DateTime.UtcNow).AddMinutes(1);
+
+                invId = invoices
+                    .Where(i => i.CreatedTime >= start && i.CreatedTime <= end)
+                    .OrderByDescending(i => i.CreatedTime)
+                    .Select(i => (Guid?)i.Id)
+                    .FirstOrDefault();
             }
+
+            r.InvoiceId = invId;
+            r.HasInvoice = invId.HasValue;
         }
 
         return PaginatedList<TableSessionResponse>.Create(response, request.PageNumber, request.PageSize);
     }
+
 }
