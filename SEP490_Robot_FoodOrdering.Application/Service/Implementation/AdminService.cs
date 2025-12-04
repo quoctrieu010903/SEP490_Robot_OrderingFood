@@ -143,7 +143,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 await file.CopyToAsync(stream);
                 using (var package = new ExcelPackage(stream))
                 {
-                    var ws = package.Workbook.Worksheets[0];
+                    var ws = package.Workbook.Worksheets.FirstOrDefault();
+                    if (ws == null)
+                        throw new InvalidOperationException("Template Excel không có worksheet nào.");
 
                     if (ws.Dimension == null)
                     {
@@ -198,13 +200,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<byte[]> ExportExcel()
         {
-            var products = await _unitOfWork.Repository<Product, Product>()
-                .GetAllWithSpecWithInclueAsync(
-                    null,
-                    true,
-                    p => p.Sizes,
-                    p => p.ProductCategories
-                );
+            var spec = new ProductExportSpecification();
+            var products = await _unitOfWork.Repository<Product, Guid>()
+                      .GetAllWithSpecAsync(spec, true
+                      );
+
+
 
             var templatePath = Path.Combine(Directory.GetCurrentDirectory(),
                 "wwwroot/excel-templates/ProductionItem.xlsx");
@@ -219,9 +220,15 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     decimal sizeS = p.Sizes?.FirstOrDefault(x => x.SizeName == SizeNameEnum.Small)?.Price ?? 0;
                     decimal sizeL = p.Sizes?.FirstOrDefault(x => x.SizeName == SizeNameEnum.Large)?.Price ?? 0;
 
-                    string categoryName = p.ProductCategories?
-                        .Select(pc => pc.Category.Name)
-                        .FirstOrDefault() ?? "";
+                    string categoryName = p.ProductCategories == null
+                         ? ""
+                         : string.Join(", ",
+                             p.ProductCategories
+                                 .Select(pc => pc.Category?.Name)
+                                 .Where(n => !string.IsNullOrWhiteSpace(n))
+                                 .Distinct()
+                           );
+
 
                     ws.Cells[row, 1].Value = p.Name;
                     ws.Cells[row, 2].Value = sizeM;
@@ -247,7 +254,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<byte[]> ExportExcelTopping(Guid id)
         {
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
 
             var toppings = await _toppingRepository.getToppingbyProductionId(id);
 
@@ -258,7 +265,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             using (var package = new ExcelPackage(new FileInfo(templatePath)))
             {
-                var ws = package.Workbook.Worksheets[0];
+                var ws = package.Workbook.Worksheets.FirstOrDefault();
+                if (ws == null)
+                    throw new InvalidOperationException("Template Excel không có worksheet nào.");
 
                 int row = 2;
 
@@ -281,7 +290,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (file == null || file.Length == 0)
                 return new BaseResponseModel<bool>(500, "ERROR", "File is empty");
 
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
             List<Table> tables = new List<Table>();
 
