@@ -123,7 +123,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         /// <response code="500">Internal server error occurred</response>
         /// <remarks>
         /// Sample request:
-        /// 
+        ///
         ///     GET /api/Product/4ae13a6b-eeb1-4089-ba41-cc661da91d4a/toppings
         /// 
         /// Returns:
@@ -178,6 +178,26 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         public async Task<ActionResult<BaseResponseModel<ProductResponse>>> Update([FromForm] CreateProductRequest request, Guid id)
         {
             var result = await _service.Update(request, id);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Soft delete a product by updating its LastUpdatedTime and DeletedTime
+        /// </summary>
+        /// <param name="id">ID of the product to delete</param>
+        /// <returns>Result of delete operation</returns>
+        /// <response code="200">Product deleted (soft) successfully</response>
+        /// <response code="404">Product with specified ID not found</response>
+        /// <response code="400">Invalid product ID format</response>
+        /// <response code="500">Internal server error occurred</response>
+        /// <remarks>
+        /// This operation does NOT remove the record from the database.
+        /// It only updates LastUpdatedTime and DeletedTime fields for soft delete.
+        /// </remarks>
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<BaseResponseModel>> Delete(Guid id)
+        {
+            var result = await _service.Delete(id);
             return Ok(result);
         }
     }
