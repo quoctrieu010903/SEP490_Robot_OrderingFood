@@ -32,7 +32,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ITableActivityService _tableActivityService;
         private readonly IUtilsService  _utilService;
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper, ILogger<OrderService> logger, IOrderItemReposotory orderItemReposotory, INotificationService? notificationService, ICancelledItemService cancelledItemService, IRemakeItemService remakeItemService, IHttpContextAccessor httpContextAccessor, ITableActivityService tableActivityService, IUtilsService utilService)
+        private readonly ITableSessionService _tableSessionService;
+        public OrderService(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            ILogger<OrderService> logger,
+            IOrderItemReposotory orderItemReposotory,
+            INotificationService? notificationService,
+            ICancelledItemService cancelledItemService,
+            IRemakeItemService remakeItemService,
+            IHttpContextAccessor httpContextAccessor,
+            ITableActivityService tableActivityService,
+            IUtilsService utilService,
+            ITableSessionService tableSessionService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -44,6 +56,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _httpContextAccessor = httpContextAccessor;
             _tableActivityService = tableActivityService;
             _utilService = utilService;
+            _tableSessionService = tableSessionService;
         }
 
 
@@ -283,10 +296,29 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status404NotFound, "TABLE_NOT_FOUND",
                     "Không tìm thấy bàn.");
 
+            TableSession? activeSession = null;
+
+            // CASE: Moderator places order when table is free and no device is attached yet
+            if (table.Status == TableEnums.Available && string.IsNullOrEmpty(table.DeviceId))
+            {
+                var moderatorDeviceId = TableDeviceOwnerEnums.Moderator.ToString();
+                request.deviceToken ??= moderatorDeviceId;
+
+                // Tạo TableSession chuẩn thông qua TableSessionService (đã tự log TableActivity CheckIn)
+                activeSession = await _tableSessionService.CreateSessionAsync(table, moderatorDeviceId);
+
+                _logger.LogInformation(
+                    "HandleOrderAsync: Table {TableId} was available with no device. Auto-attached Moderator device.",
+                    request.TableId);
+            }
+
             // 1) Get active session của bàn (đi theo session để tránh nhầm order cũ)
-            var activeSession = await _unitOfWork.Repository<TableSession, Guid>()
-                .GetWithSpecAsync(new BaseSpecification<TableSession>(
-                    s => s.TableId == request.TableId && s.Status == TableSessionStatus.Active));
+            if (activeSession == null)
+            {
+                activeSession = await _unitOfWork.Repository<TableSession, Guid>()
+                    .GetWithSpecAsync(new BaseSpecification<TableSession>(
+                        s => s.TableId == request.TableId && s.Status == TableSessionStatus.Active));
+            }
 
             if (activeSession == null)
                 return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "NO_ACTIVE_SESSION",
@@ -300,10 +332,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // 2. Nếu có order -> thêm item vào và cập nhật lại giá
             if (existingOrder != null)
             {
-                if (!existingOrder.Table.DeviceId.Equals(request.deviceToken))
+                // Chỉ kiểm tra quyền khi client gửi deviceToken (khách trên thiết bị thật).
+                // Trường hợp Moderator (không gửi deviceToken) được phép gọi thêm món.
+                if (!string.IsNullOrEmpty(request.deviceToken))
                 {
-                    return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "",
-                        "Thiết bị không có quyền đặt hàng");
+                    var tableDeviceId = existingOrder.Table?.DeviceId;
+                    if (!string.IsNullOrEmpty(tableDeviceId) &&
+                        !tableDeviceId.Equals(request.deviceToken, StringComparison.Ordinal))
+                    {
+                        return new BaseResponseModel<OrderResponse>(StatusCodes.Status400BadRequest, "",
+                            "Thiết bị không có quyền đặt hàng");
+                    }
                 }
                if(existingOrder.PaymentStatus == PaymentStatusEnums.Paid)
                 {
@@ -1267,8 +1306,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             if (existingOrder != null)
             {
-                if (!existingOrder.LastUpdatedBy.Equals(request.deviceToken))
-                    return BadRequest("INVALID_DEVICE", "Thiết bị không có quyền đặt hàng");
+                // Chỉ kiểm tra quyền khi client gửi deviceToken (khách trên thiết bị thật).
+                // Trường hợp Moderator (không gửi deviceToken) được phép gọi thêm món.
+                if (!string.IsNullOrEmpty(request.deviceToken))
+                {
+                    if (!string.IsNullOrEmpty(existingOrder.LastUpdatedBy) &&
+                        !existingOrder.LastUpdatedBy.Equals(request.deviceToken, StringComparison.Ordinal))
+                    {
+                        return BadRequest("INVALID_DEVICE", "Thiết bị không có quyền đặt hàng");
+                    }
+                }
 
                 if (existingOrder.Table != null && existingOrder.Table.Status != TableEnums.Occupied)
                 {

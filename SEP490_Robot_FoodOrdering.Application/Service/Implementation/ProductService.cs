@@ -65,7 +65,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             existedProduct.LastUpdatedTime = DateTime.UtcNow;
             existedProduct.DeletedBy = "";
             existedProduct.DeletedTime = DateTime.UtcNow;
-            _unitOfWork.Repository<Product, Product>().Update(existedProduct);
+            _unitOfWork.Repository<Product, Guid>().Update(existedProduct);
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Xoá thành công");
         }

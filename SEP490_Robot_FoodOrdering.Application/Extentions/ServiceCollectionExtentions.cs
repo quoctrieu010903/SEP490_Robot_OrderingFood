@@ -3,6 +3,8 @@ using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+
+using OfficeOpenXml;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.JWT;
 using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
@@ -39,9 +41,15 @@ namespace SEP490_Robot_FoodOrdering.Application.Extentions
             services.AddScoped<IProductSizeService, ProductSizeService>();
             services.AddScoped<IToppingService, ToppingService>();
             services.AddScoped<IFeedbackService, FeedbackService>();
+            services.AddScoped<IAdminService, AdminService>();
 
-           
-                services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+
+            ExcelPackage.License.SetNonCommercialPersonal("Dat");
+
+
+
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
           
            
 
