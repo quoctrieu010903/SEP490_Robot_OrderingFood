@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Constants;
@@ -16,12 +17,15 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob
     {
         private readonly ILogger<TableReleaseBackgroundService> _logger;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
 
         public TableReleaseBackgroundService(
             IServiceScopeFactory serviceScopeFactory,
-            ILogger<TableReleaseBackgroundService> logger)
+            ILogger<TableReleaseBackgroundService> logger , 
+            IModeratorDashboardRefresher dashboardRefresher)
         {
             _serviceScopeFactory = serviceScopeFactory;
+            _moderatorDashboardRefresher = dashboardRefresher;
             _logger = logger;
         }
 
@@ -107,6 +111,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob
                             TableActivityType.AutoReleaseNoOrderTimeout,
                             payload);
 
+                        await _moderatorDashboardRefresher.PushTableAsync(t.Id);
+
                         await tableSessionService.CloseSessionAsync(
                             activeSession,
                             reason: reason,
@@ -117,6 +123,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob
                             "Released table {TableName} (tableId={TableId}) by closing session {SessionId}",
                             t.Name, t.Id, activeSession.Id);
                     }
+                  
 
                     await unitOfWork.SaveChangesAsync(stoppingToken);
                 }

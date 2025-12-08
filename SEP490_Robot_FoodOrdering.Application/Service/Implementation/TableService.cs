@@ -22,6 +22,7 @@ using static System.Net.WebRequestMethods;
 using Microsoft.Extensions.Logging;
 using System.Net.WebSockets;
 using ZXing;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -37,8 +38,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IInvoiceService _invoiceService;
         private readonly ICustomerPointService _customerPointService;
         private readonly ILogger<TableService> _logger;
+        private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
 
-        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService, ITableActivityService tableActivityService, IInvoiceService invoiceService, ICustomerPointService customerPointService)
+        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService, ITableActivityService tableActivityService, IInvoiceService invoiceService, ICustomerPointService customerPointService, IModeratorDashboardRefresher moderatorDashboardRefresher)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -51,6 +53,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _tableActivityService = tableActivityService;
             _invoiceService = invoiceService;
             _customerPointService = customerPointService;
+            _moderatorDashboardRefresher = moderatorDashboardRefresher;
         }
         public async Task<BaseResponseModel> Create(CreateTableRequest request)
         {
@@ -728,6 +731,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // ✅ CHỈ COMMIT 1 LẦN Ở CUỐI
             await _unitOfWork.SaveChangesAsync();
 
+            await _moderatorDashboardRefresher.PushTableAsync(existedTable.Id);
             var resp = new BaseResponseModel<TableResponse>(
                 StatusCodes.Status200OK,
                 ResponseCodeConstants.SUCCESS,
@@ -837,6 +841,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     TableActivityType.AttachDeviceFromModerator,
                     new { tableId = table.Id, tableName = table.Name });
 
+
+                await _moderatorDashboardRefresher.PushTableAsync(id);
                 var respAttach = _mapper.Map<TableResponse>(table);
                 // nếu có SessionToken trong response:
                 // respAttach.SessionToken = activeSession.SessionToken;
@@ -957,6 +963,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // respNew.SessionToken = createdSession.SessionToken;
 
             await _unitOfWork.SaveChangesAsync();
+            await _moderatorDashboardRefresher.PushTableAsync(id);
             return new BaseResponseModel<TableResponse>(
                 StatusCodes.Status200OK,
                 ResponseCodeConstants.SUCCESS,
@@ -1192,6 +1199,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     oldTable.Name, newTable.Name);
 
                 // ===== RETURN RESPONSE =====
+
+
+                await _moderatorDashboardRefresher.PushTableAsync(newTable.Id);
                 var response = _mapper.Map<TableResponse>(newTable);
                 return new BaseResponseModel<TableResponse>(
                     StatusCodes.Status200OK,

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Net.payOS;
 using Net.payOS.Types;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.ServerEndPoint;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
@@ -24,14 +25,16 @@ public class PayOSService: IPayOSService
     private readonly IConfiguration _config;
     private readonly ILogger<PayOSService> _logger;
     private readonly IServerEndpointService _serverEndpointService;
+    private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
 
-    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger, IServerEndpointService serverEndpointService )
+    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger, IServerEndpointService serverEndpointService  , IModeratorDashboardRefresher moderatorDashboardRefresher)
     {
         _unitOfWork = unitOfWork;
         _payOS = payOS;
         _config = config;
         _logger = logger;
         _serverEndpointService = serverEndpointService;
+        _moderatorDashboardRefresher = moderatorDashboardRefresher;
     }
 
     public async Task<BaseResponseModel<OrderPaymentResponse>> CreatePaymentLink(Guid orderId, bool isCustomer)
@@ -81,6 +84,8 @@ public class PayOSService: IPayOSService
 
         await _unitOfWork.Repository<Payment, Guid>().AddAsync(payment);
         await _unitOfWork.SaveChangesAsync(); // Lưu trước để có mã PayOSOrderCode
+
+        await _moderatorDashboardRefresher.PushTableAsync(order.TableId ?? Guid.Empty );
 
         // 6️⃣ Gọi PayOS để tạo link thanh toán
         var items = new List<ItemData> { new ItemData(shortLabel, 1, amount) };
@@ -269,6 +274,8 @@ public class PayOSService: IPayOSService
 
        
         await _unitOfWork.SaveChangesAsync();
+        await _moderatorDashboardRefresher.PushTableAsync(order.TableId ?? Guid.Empty);
+
 
         // 5️⃣ Trả kết quả đồng bộ
         return new BaseResponseModel<OrderPaymentResponse>(
@@ -319,6 +326,8 @@ public class PayOSService: IPayOSService
             finalReturnUrl = $"{cancelUrl}{separator}id={tableId}";
             _logger.LogInformation($"Final payment return: {finalReturnUrl}");
         }
+        await _moderatorDashboardRefresher.PushTableAsync(order.TableId ?? Guid.Empty);
+
         return new BaseResponseModel<OrderPaymentResponse>(
             StatusCodes.Status200OK,
             "CANCELLED",
