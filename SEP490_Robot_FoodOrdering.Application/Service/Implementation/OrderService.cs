@@ -610,7 +610,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var endUtc = startUtc.AddDays(1);
             var specification = new OrderSpecification(ProductName, startUtc, endUtc);
 
-            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(specification, true);
+            var orders = await _unitOfWork.Repository<Order, Guid>().GetAllWithSpecAsync(specification, true);
                 var response = _mapper.Map<List<OrderResponse>>(orders);
 
 
@@ -640,13 +640,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         //public async Task<PaginatedList<OrderResponse>> GetOrdersAsync(PagingRequestModel paging)
         //{
-        //    var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync( new OrderSpecification(), true);
+        //    var orders = await _unitOfWork.Repository<Order, Guid>().GetAllWithSpecAsync( new OrderSpecification(), true);
         //    var response = _mapper.Map<List<OrderResponse>>(orders);
         //    return  PaginatedList<OrderResponse>.Create(response, paging.PageNumber, paging.PageSize);      
         //}
         public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersbyTableiDAsync(Guid Orderid, Guid TableId)
         {
-            var orders = await _unitOfWork.Repository<Order, Order>()
+            var orders = await _unitOfWork.Repository<Order, Guid>()
                 .GetAllWithSpecAsync(new OrderSpecification(Orderid, TableId, true), true);
             var response = _mapper.Map<List<OrderResponse>>(orders);
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
@@ -665,7 +665,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 ? TimeZoneInfo.ConvertTimeToUtc(endDate.Value.Date.AddDays(1), vnTimeZone)
                 : null;
 
-            var orders = await _unitOfWork.Repository<Order, Order>()
+            var orders = await _unitOfWork.Repository<Order, Guid>()
                 .GetAllWithSpecAsync(new OrderSpecification(tableId,startUtc,endUtc), true);
                 var response = _mapper.Map<List<OrderResponse>>(orders);
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
@@ -674,7 +674,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdWithStatusAsync(Guid tableId,
             OrderStatus status)
         {
-            var orders = await _unitOfWork.Repository<Order, Order>()
+            var orders = await _unitOfWork.Repository<Order, Guid>()
                 .GetAllWithSpecAsync(new OrderSpecification(tableId, status), true);
             
 

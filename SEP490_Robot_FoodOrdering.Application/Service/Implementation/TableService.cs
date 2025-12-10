@@ -166,7 +166,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                                 .FirstOrDefault();                                     // nếu không có thì = null
 
             // Load orders + orderItems của bàn
-            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(
+            var orders = await _unitOfWork.Repository<Order, Guid>().GetAllWithSpecAsync(
                 new OrdersByTableIdsSpecification(tableId)
             );
             var allItems = orders.SelectMany(o => o.OrderItems).ToList();
@@ -432,14 +432,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 {
                     order.LastUpdatedTime = DateTime.UtcNow;
                     order.LastUpdatedBy = updatedBy;
-                    _unitOfWork.Repository<Order, Order>().Update(order);
+                    _unitOfWork.Repository<Order, Guid>().Update(order);
                 }
 
                 // Đánh dấu order đã đóng lại (vì bàn đã được giải phóng)
                 order.LastUpdatedBy = "";
                 order.LastUpdatedTime = DateTime.UtcNow;
                 order.PaymentStatus = PaymentStatusEnums.None;
-                _unitOfWork.Repository<Order, Order>().Update(order);
+                _unitOfWork.Repository<Order, Guid>().Update(order);
             }
 
             await _unitOfWork.SaveChangesAsync();
@@ -1055,7 +1055,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
 
             // ===== VALIDATION 4: Get the latest order from old table =====
-            var latestOrder = await _unitOfWork.Repository<Order, Order>()
+            var latestOrder = await _unitOfWork.Repository<Order, Guid>()
                 .GetAllWithSpecAsync(new OrdersByTableIdsSpecification(oldTableId));
 
             if (latestOrder == null || !latestOrder.Any())
@@ -1120,7 +1120,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 orderToMove.TableId = request.NewTableId;
                 orderToMove.LastUpdatedTime = now;
                 orderToMove.LastUpdatedBy = "Moderator";
-                _unitOfWork.Repository<Order, Order>().Update(orderToMove);
+                _unitOfWork.Repository<Order, Guid>().Update(orderToMove);
 
                 _logger.LogInformation(
                     "MoveTable: Updated order {OrderId} TableId to {NewTableId}",
@@ -1214,27 +1214,37 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 _logger.LogInformation(
                     "MoveTable: Successfully moved table from {OldTableName} to {NewTableName}",
                     oldTable.Name, newTable.Name);
-
-                // ===== RETURN RESPONSE =====
-
-
-                await _moderatorDashboardRefresher.PushTableAsync(newTable.Id);
-                var response = _mapper.Map<TableResponse>(newTable);
-                return new BaseResponseModel<TableResponse>(
-                    StatusCodes.Status200OK,
-                    ResponseCodeConstants.SUCCESS,
-                    response,
-                    null,
-                    $"Đã chuyển bàn thành công từ {oldTable.Name} sang {newTable.Name}");
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                try
+                {
+                    await transaction.RollbackAsync();
+                }
+                catch (Exception rollbackEx)
+                {
+                    _logger.LogError(rollbackEx,
+                        "MoveTable: Error occurred during rollback for table {OldTableId} to {NewTableId}",
+                        oldTableId, request.NewTableId);
+                }
+                
                 _logger.LogError(ex,
                     "MoveTable: Error occurred while moving from table {OldTableId} to {NewTableId}",
                     oldTableId, request.NewTableId);
                 throw;
             }
+
+            // ===== RETURN RESPONSE (Outside transaction scope) =====
+            // PushTableAsync is called outside transaction to avoid "transaction has completed" error
+            // The DbContext needs to be in a clean state after transaction disposal
+            await _moderatorDashboardRefresher.PushTableAsync(newTable.Id);
+            var response = _mapper.Map<TableResponse>(newTable);
+            return new BaseResponseModel<TableResponse>(
+                StatusCodes.Status200OK,
+                ResponseCodeConstants.SUCCESS,
+                response,
+                null,
+                $"Đã chuyển bàn thành công từ {oldTable.Name} sang {newTable.Name}");
         }
 
         /// <summary>
