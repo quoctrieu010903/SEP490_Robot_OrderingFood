@@ -38,8 +38,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly ITableSessionService _tableSessionService;
         private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
         private readonly IAdminDashboardRefresher _adminDashboardRefresher;
-        // TODO: remove this hardcoded and get real user id claim.
-        private static readonly Guid DefaultRemakeUserId = Guid.Parse("b9abf60c-9c0e-4246-a846-d9ab62303b13"); // seeded moderator user
         public OrderService(
             IUnitOfWork unitOfWork,
             IMapper mapper,
@@ -710,8 +708,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<BaseResponseModel<OrderItemResponse>> UpdateOrderItemStatusAsync(Guid orderId,
             Guid orderItemId, UpdateOrderItemStatusRequest request)
         {
-            // var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("Id")?.Value;
-            // Guid.TryParse(userIdClaim, out var userId);
+            var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("Id")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status401Unauthorized, "UNAUTHORIZED",
+                    "User is not authenticated.");
+            }
             var order = await _unitOfWork.Repository<Order, Guid>()
                 .GetWithSpecAsync(new OrderSpecification(orderId, true), true);
             if (order == null)
@@ -759,7 +761,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
                 request.Status = OrderItemStatus.Preparing;
                 item.IsUrgent = true;
-                await _remakeItemService.CreateRemakeItemAsync(orderItemId, request.RemarkNote ?? string.Empty, DefaultRemakeUserId);
+                await _remakeItemService.CreateRemakeItemAsync(orderItemId, request.RemarkNote ?? string.Empty, userId);
             }
             // Determine which items to update.
             // For Cancelled or Remake, update ONLY the selected item.
