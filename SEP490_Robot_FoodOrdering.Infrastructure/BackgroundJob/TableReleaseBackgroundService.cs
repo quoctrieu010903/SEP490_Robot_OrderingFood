@@ -17,15 +17,12 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob
     {
         private readonly ILogger<TableReleaseBackgroundService> _logger;
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
 
         public TableReleaseBackgroundService(
             IServiceScopeFactory serviceScopeFactory,
-            ILogger<TableReleaseBackgroundService> logger , 
-            IModeratorDashboardRefresher dashboardRefresher)
+            ILogger<TableReleaseBackgroundService> logger )
         {
             _serviceScopeFactory = serviceScopeFactory;
-            _moderatorDashboardRefresher = dashboardRefresher;
             _logger = logger;
         }
 
@@ -110,8 +107,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob
                             deviceId: null, // System
                             TableActivityType.AutoReleaseNoOrderTimeout,
                             payload);
-
-                        await _moderatorDashboardRefresher.PushTableAsync(t.Id);
 
                         await tableSessionService.CloseSessionAsync(
                             activeSession,

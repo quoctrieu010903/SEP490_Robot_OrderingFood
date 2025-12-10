@@ -388,7 +388,8 @@ public class PayOSService: IPayOSService
         //     orderSuccessResponse.Data.PaymentUrl = returnUrl;
         // }
         // return orderSuccessResponse;
-        
+       await _moderatorDashboardRefresher.PushTableAsync(order.TableId ?? Guid.Empty);
+
         return new BaseResponseModel<OrderPaymentResponse>(
             StatusCodes.Status200OK,
             "SUCCESSS",
