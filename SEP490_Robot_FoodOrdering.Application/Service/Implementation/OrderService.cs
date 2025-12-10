@@ -264,6 +264,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         orderId = order.Id,
                         tableId = order.TableId,
                         tableName = table.Name,
+                        orderCode = order.OrderCode,
                         itemCount = order.OrderItems.Count,
                         totalPrice = order.TotalPrice,
                         items = order.OrderItems.Select(i => new {

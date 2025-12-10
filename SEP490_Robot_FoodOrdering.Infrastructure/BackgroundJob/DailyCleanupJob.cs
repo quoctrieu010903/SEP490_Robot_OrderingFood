@@ -149,6 +149,7 @@ public class DailyCleanupJob : IJob
                 activeSession,
                 reason: "AUTO_RELEASE_NO_ACTIVITY_OVER_THRESHOLD",
                 invoiceId: null,
+                invoiceCode: null,
                 actorDeviceId: null);
 
             _logger.LogInformation(

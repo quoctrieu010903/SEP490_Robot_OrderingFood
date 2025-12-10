@@ -212,6 +212,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             // Send notification
             await SendTableStatusChangeNotification(table, oldStatus, newStatus, reason, updatedBy);
+            await _moderatorDashboardRefresher.PushTableAsync(table.Id);
 
             return _mapper.Map<TableResponse>(table);
         }
@@ -714,10 +715,20 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 TableActivityType.CreateInvoice,
                 new
                 {
-                    InvoiceId = invoice.Id,
-                    OrderId = order.Id,
-                    InvoiceTotal = invoice.TotalAmount, // đổi theo field của bạn
-                    PaymentStatus = order.PaymentStatus    // đổi theo field của bạn
+                    invoiceId = invoice.Id.ToString(),
+                    invoiceCode = invoice.InvoiceCode,
+
+                    orderId = order.Id.ToString(),
+                    orderCode = order.OrderCode,
+
+                    totalAmount = invoice.TotalAmount,
+                    paymentMethod = invoice.PaymentMethod,   // int/enum/string đều được, nhưng phải thống nhất
+                    paymentStatus = order.PaymentStatus,     // idem
+
+                    createdAtUtc = DateTime.UtcNow,          // rất nên có
+                    tableSessionId = tableSession.Id.ToString(),
+                    tableId = existedTable.Id.ToString(),
+                    tableName = existedTable.Name
                 });
 
             // ✅ Close session (không SaveChanges bên trong)
@@ -725,6 +736,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 tableSession,
                 "Checkout table",
                 invoice.Id,
+                invoice.InvoiceCode,
                 existedTable.DeviceId
             );
 
