@@ -108,9 +108,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     ? productOrderCounts.LastOrDefault()
                     : null;
 
-                // 7. Get total cancelled items
-                var totalCancelledItems = orderItemsWithProducts
-                    .Count(oi => oi.Status == OrderItemStatus.Cancelled);
+                // 7. Get total cancelled items in Range.
+                // var totalCancelledItems = orderItemsWithProducts
+                //     .Count(oi => oi.Status == OrderItemStatus.Cancelled);
+                var totalCancelledItems = await _unitOfWork.Repository<CancelledOrderItem, Guid>()
+                    .CountAsync(new BaseSpecification<CancelledOrderItem>(r =>
+                        r.CreatedTime >= startDate && r.CreatedTime < endDate));
 
                 // 8.1 Get total complains in range
                 var totalComplains = await _unitOfWork.Repository<Complain, Guid>()
