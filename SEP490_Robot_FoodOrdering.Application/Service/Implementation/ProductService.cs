@@ -1,4 +1,4 @@
-﻿
+
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
@@ -13,6 +13,7 @@ using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
 using SEP490_Robot_FoodOrdering.Domain.Specifications;
 using SEP490_Robot_FoodOrdering.Domain.Specifications.Params;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Cloudinary;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -21,12 +22,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ICloudinaryService _cloudinaryService;
+        private readonly IAdminDashboardRefresher _adminDashboardRefresher;
 
-        public ProductService(IUnitOfWork unitOfWork, IMapper mapper, ICloudinaryService cloudinaryService)
+        public ProductService(IUnitOfWork unitOfWork, IMapper mapper, ICloudinaryService cloudinaryService, IAdminDashboardRefresher adminDashboardRefresher)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _cloudinaryService = cloudinaryService;
+            _adminDashboardRefresher = adminDashboardRefresher;
         }
 
         public async Task<BaseResponseModel> Create(CreateProductRequest request)
@@ -51,6 +54,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             await _unitOfWork.Repository<Product, bool>().AddAsync(entity);
             await _unitOfWork.SaveChangesAsync();
+            await _adminDashboardRefresher.PushDashboardAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, entity);
         }
 
@@ -67,6 +71,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             existedProduct.DeletedTime = DateTime.UtcNow;
             _unitOfWork.Repository<Product, Guid>().Update(existedProduct);
             await _unitOfWork.SaveChangesAsync();
+            await _adminDashboardRefresher.PushDashboardAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Xoá thành công");
         }
 
@@ -123,6 +128,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
             await _unitOfWork.Repository<Product, Product>().UpdateAsync(existedProduct);
             await _unitOfWork.SaveChangesAsync();
+            await _adminDashboardRefresher.PushDashboardAsync();
             var productResponse = _mapper.Map<ProductResponse>(existedProduct);
             return new BaseResponseModel<ProductResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, productResponse);
         }

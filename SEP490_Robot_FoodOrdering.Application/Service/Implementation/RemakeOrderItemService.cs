@@ -1,4 +1,4 @@
-﻿
+
 
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Domain;
@@ -22,7 +22,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var orderitem = await _unitOfWork.Repository<OrderItem , Guid>().GetByIdAsync(orderItemId);
             if (orderitem == null) return false;
 
-            if (orderitem.Status != OrderItemStatus.Served || orderitem.Status != OrderItemStatus.Ready)
+            if (orderitem.Status != OrderItemStatus.Served && orderitem.Status != OrderItemStatus.Ready)
                 return false;
 
             var remakeItem = new RemakeOrderItem

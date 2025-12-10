@@ -1,4 +1,4 @@
-﻿
+
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,6 +44,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Extentions
             services.AddScoped<IFeedbackService, FeedbackService>();
             services.AddScoped<IAdminService, AdminService>();
             services.AddScoped<IModeratorDashboardQuery, ModeratorDashboardQuery>();
+            services.AddScoped<IAdminDashboardRefresher, AdminDashboardRefresher>();
+            services.AddScoped<IDashboardService, DashboardService>();
 
 
             ExcelPackage.License.SetNonCommercialPersonal("Dat");
