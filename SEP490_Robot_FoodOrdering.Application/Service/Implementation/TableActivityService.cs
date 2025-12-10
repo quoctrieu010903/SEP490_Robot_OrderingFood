@@ -73,7 +73,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             };
 
             await _unitOfWork.Repository<TableActivity, Guid>().AddAsync(activity);
-            await _unitOfWork.SaveChangesAsync();
+            // ❗ REMOVED SaveChangesAsync() - Caller must commit transaction
+            // This prevents transaction conflicts when LogAsync is called within a transaction
+            // (e.g., in MoveTable method which uses BeginTransactionAsync)
         }
 
         

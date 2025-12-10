@@ -271,6 +271,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         }).ToList()
                     });
 
+                // ✅ Save changes after logging activity
+                await _unitOfWork.SaveChangesAsync();
+
                 _logger.LogInformation(
                     "CreateOrder: Logged activity for order {OrderId} in session {SessionId}",
                     order.Id, activeSession.Id);
@@ -556,6 +559,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                             }).ToList()
                         });
 
+                    // ✅ Save changes after logging activity
+                    await _unitOfWork.SaveChangesAsync();
+
                     _logger.LogInformation(
                         "HandleOrderAsync: Logged AddOrderItems activity for order {OrderId} in session {SessionId}. Added {ItemCount} items, total: {AddedTotal}",
                         existingOrder.Id, activeSession.Id, request.Items.Count, addedTotal);
@@ -828,6 +834,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                                 remarkNote = i.RemakeNote
                             }).ToList()
                         });
+
+                    // ✅ Save changes after logging activity
+                    await _unitOfWork.SaveChangesAsync();
 
                     _logger.LogInformation(
                         "UpdateOrderItemStatusAsync: Logged activity for order {OrderId} in session {SessionId}",

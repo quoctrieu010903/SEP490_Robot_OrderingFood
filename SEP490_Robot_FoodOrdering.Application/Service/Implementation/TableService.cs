@@ -837,6 +837,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     TableActivityType.AttachDeviceFromModerator,
                     new { tableId = table.Id, tableName = table.Name });
 
+                // ✅ Save changes after logging activity
+                await _unitOfWork.SaveChangesAsync();
+
                 var respAttach = _mapper.Map<TableResponse>(table);
                 // nếu có SessionToken trong response:
                 // respAttach.SessionToken = activeSession.SessionToken;
