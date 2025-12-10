@@ -104,6 +104,7 @@ public class TableSessionService : ITableSessionService
      TableSession session,
      string reason,
      Guid? invoiceId,
+     string? invoiceCode,
      string? actorDeviceId)
     {
         if (session.Status != TableSessionStatus.Active)

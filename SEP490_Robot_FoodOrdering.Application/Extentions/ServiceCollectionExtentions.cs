@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 using OfficeOpenXml;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.JWT;
 using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
@@ -42,7 +43,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Extentions
             services.AddScoped<IToppingService, ToppingService>();
             services.AddScoped<IFeedbackService, FeedbackService>();
             services.AddScoped<IAdminService, AdminService>();
-
+            services.AddScoped<IModeratorDashboardQuery, ModeratorDashboardQuery>();
 
 
             ExcelPackage.License.SetNonCommercialPersonal("Dat");

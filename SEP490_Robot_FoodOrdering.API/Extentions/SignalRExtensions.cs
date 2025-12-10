@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.SignalR;
 using SEP490_Robot_FoodOrdering.API.Hubs;
 using SEP490_Robot_FoodOrdering.API.Services;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
+using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 
 namespace SEP490_Robot_FoodOrdering.API.Extentions
@@ -26,7 +28,15 @@ namespace SEP490_Robot_FoodOrdering.API.Extentions
                 // Create the specialized service that works with the OrderNotificationHub
                 return new OrderNotificationService(hubContext, logger);
             });
+            services.AddScoped<IOrderStatsQuery, OrderStatsQuery>();
+            services.AddScoped<IModeratorDashboardRefresher, ModeratorDashboardRefresher>();
+
+            // Notifier (API)
+            services.AddScoped<IModeratorDashboardNotifier, ModeratorDashboardNotifier>();
+
             
+
+
             return services;
         }
     }

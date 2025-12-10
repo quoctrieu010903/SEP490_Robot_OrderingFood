@@ -22,6 +22,7 @@ using static System.Net.WebRequestMethods;
 using Microsoft.Extensions.Logging;
 using System.Net.WebSockets;
 using ZXing;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -37,8 +38,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IInvoiceService _invoiceService;
         private readonly ICustomerPointService _customerPointService;
         private readonly ILogger<TableService> _logger;
+        private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
 
-        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService, ITableActivityService tableActivityService, IInvoiceService invoiceService, ICustomerPointService customerPointService)
+        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService, ITableActivityService tableActivityService, IInvoiceService invoiceService, ICustomerPointService customerPointService, IModeratorDashboardRefresher moderatorDashboardRefresher)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -51,6 +53,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _tableActivityService = tableActivityService;
             _invoiceService = invoiceService;
             _customerPointService = customerPointService;
+            _moderatorDashboardRefresher = moderatorDashboardRefresher;
         }
         public async Task<BaseResponseModel> Create(CreateTableRequest request)
         {
@@ -163,7 +166,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                                 .FirstOrDefault();                                     // nếu không có thì = null
 
             // Load orders + orderItems của bàn
-            var orders = await _unitOfWork.Repository<Order, Order>().GetAllWithSpecAsync(
+            var orders = await _unitOfWork.Repository<Order, Guid>().GetAllWithSpecAsync(
                 new OrdersByTableIdsSpecification(tableId)
             );
             var allItems = orders.SelectMany(o => o.OrderItems).ToList();
@@ -209,6 +212,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             // Send notification
             await SendTableStatusChangeNotification(table, oldStatus, newStatus, reason, updatedBy);
+            await _moderatorDashboardRefresher.PushTableAsync(table.Id);
 
             return _mapper.Map<TableResponse>(table);
         }
@@ -428,14 +432,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 {
                     order.LastUpdatedTime = DateTime.UtcNow;
                     order.LastUpdatedBy = updatedBy;
-                    _unitOfWork.Repository<Order, Order>().Update(order);
+                    _unitOfWork.Repository<Order, Guid>().Update(order);
                 }
 
                 // Đánh dấu order đã đóng lại (vì bàn đã được giải phóng)
                 order.LastUpdatedBy = "";
                 order.LastUpdatedTime = DateTime.UtcNow;
                 order.PaymentStatus = PaymentStatusEnums.None;
-                _unitOfWork.Repository<Order, Order>().Update(order);
+                _unitOfWork.Repository<Order, Guid>().Update(order);
             }
 
             await _unitOfWork.SaveChangesAsync();
@@ -444,6 +448,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             await _tableSessionService.CloseSessionAsync(
                                  tableSession,
                                  "Người điều phối trưởng muốn huỷ bàn vì lý do sau :  " + reason,
+                                  null,
                                   null,
                                  table.DeviceId
                              );
@@ -711,10 +716,20 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 TableActivityType.CreateInvoice,
                 new
                 {
-                    InvoiceId = invoice.Id,
-                    OrderId = order.Id,
-                    InvoiceTotal = invoice.TotalAmount, // đổi theo field của bạn
-                    PaymentStatus = order.PaymentStatus    // đổi theo field của bạn
+                    invoiceId = invoice.Id.ToString(),
+                    invoiceCode = invoice.InvoiceCode,
+
+                    orderId = order.Id.ToString(),
+                    orderCode = order.OrderCode,
+
+                    totalAmount = invoice.TotalAmount,
+                    paymentMethod = invoice.PaymentMethod,   // int/enum/string đều được, nhưng phải thống nhất
+                    paymentStatus = order.PaymentStatus,     // idem
+
+                    createdAtUtc = DateTime.UtcNow,          // rất nên có
+                    tableSessionId = tableSession.Id.ToString(),
+                    tableId = existedTable.Id.ToString(),
+                    tableName = existedTable.Name
                 });
 
             // ✅ Close session (không SaveChanges bên trong)
@@ -722,12 +737,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 tableSession,
                 "Checkout table",
                 invoice.Id,
+                invoice.InvoiceCode,
                 existedTable.DeviceId
             );
 
             // ✅ CHỈ COMMIT 1 LẦN Ở CUỐI
             await _unitOfWork.SaveChangesAsync();
 
+            await _moderatorDashboardRefresher.PushTableAsync(existedTable.Id);
             var resp = new BaseResponseModel<TableResponse>(
                 StatusCodes.Status200OK,
                 ResponseCodeConstants.SUCCESS,
@@ -797,6 +814,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         currentSessionForDevice,
                         "Auto close when device switches to another table",
                         null,
+                        null,
                         deviceId);
                 }
             }
@@ -837,6 +855,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     TableActivityType.AttachDeviceFromModerator,
                     new { tableId = table.Id, tableName = table.Name });
 
+
+                await _moderatorDashboardRefresher.PushTableAsync(id);
                 // ✅ Save changes after logging activity
                 await _unitOfWork.SaveChangesAsync();
 
@@ -960,6 +980,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // respNew.SessionToken = createdSession.SessionToken;
 
             await _unitOfWork.SaveChangesAsync();
+            await _moderatorDashboardRefresher.PushTableAsync(id);
             return new BaseResponseModel<TableResponse>(
                 StatusCodes.Status200OK,
                 ResponseCodeConstants.SUCCESS,
@@ -1034,7 +1055,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
 
             // ===== VALIDATION 4: Get the latest order from old table =====
-            var latestOrder = await _unitOfWork.Repository<Order, Order>()
+            var latestOrder = await _unitOfWork.Repository<Order, Guid>()
                 .GetAllWithSpecAsync(new OrdersByTableIdsSpecification(oldTableId));
 
             if (latestOrder == null || !latestOrder.Any())
@@ -1099,7 +1120,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 orderToMove.TableId = request.NewTableId;
                 orderToMove.LastUpdatedTime = now;
                 orderToMove.LastUpdatedBy = "Moderator";
-                _unitOfWork.Repository<Order, Order>().Update(orderToMove);
+                _unitOfWork.Repository<Order, Guid>().Update(orderToMove);
 
                 _logger.LogInformation(
                     "MoveTable: Updated order {OrderId} TableId to {NewTableId}",
@@ -1193,24 +1214,37 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 _logger.LogInformation(
                     "MoveTable: Successfully moved table from {OldTableName} to {NewTableName}",
                     oldTable.Name, newTable.Name);
-
-                // ===== RETURN RESPONSE =====
-                var response = _mapper.Map<TableResponse>(newTable);
-                return new BaseResponseModel<TableResponse>(
-                    StatusCodes.Status200OK,
-                    ResponseCodeConstants.SUCCESS,
-                    response,
-                    null,
-                    $"Đã chuyển bàn thành công từ {oldTable.Name} sang {newTable.Name}");
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                try
+                {
+                    await transaction.RollbackAsync();
+                }
+                catch (Exception rollbackEx)
+                {
+                    _logger.LogError(rollbackEx,
+                        "MoveTable: Error occurred during rollback for table {OldTableId} to {NewTableId}",
+                        oldTableId, request.NewTableId);
+                }
+                
                 _logger.LogError(ex,
                     "MoveTable: Error occurred while moving from table {OldTableId} to {NewTableId}",
                     oldTableId, request.NewTableId);
                 throw;
             }
+
+            // ===== RETURN RESPONSE (Outside transaction scope) =====
+            // PushTableAsync is called outside transaction to avoid "transaction has completed" error
+            // The DbContext needs to be in a clean state after transaction disposal
+            await _moderatorDashboardRefresher.PushTableAsync(newTable.Id);
+            var response = _mapper.Map<TableResponse>(newTable);
+            return new BaseResponseModel<TableResponse>(
+                StatusCodes.Status200OK,
+                ResponseCodeConstants.SUCCESS,
+                response,
+                null,
+                $"Đã chuyển bàn thành công từ {oldTable.Name} sang {newTable.Name}");
         }
 
         /// <summary>
