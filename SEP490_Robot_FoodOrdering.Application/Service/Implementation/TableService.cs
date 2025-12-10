@@ -449,6 +449,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                                  tableSession,
                                  "Người điều phối trưởng muốn huỷ bàn vì lý do sau :  " + reason,
                                   null,
+                                  null,
                                  table.DeviceId
                              );
 
@@ -812,6 +813,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     await _tableSessionService.CloseSessionAsync(
                         currentSessionForDevice,
                         "Auto close when device switches to another table",
+                        null,
                         null,
                         deviceId);
                 }
