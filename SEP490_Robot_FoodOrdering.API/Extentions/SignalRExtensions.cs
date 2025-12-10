@@ -30,6 +30,8 @@ namespace SEP490_Robot_FoodOrdering.API.Extentions
             });
             services.AddScoped<IOrderStatsQuery, OrderStatsQuery>();
             services.AddScoped<IModeratorDashboardRefresher, ModeratorDashboardRefresher>();
+            services.AddScoped<IAdminDashboardNotifier, AdminDashboardNotifier>();
+            services.AddScoped<IAdminDashboardRefresher, AdminDashboardRefresher>();
 
             // Notifier (API)
             services.AddScoped<IModeratorDashboardNotifier, ModeratorDashboardNotifier>();

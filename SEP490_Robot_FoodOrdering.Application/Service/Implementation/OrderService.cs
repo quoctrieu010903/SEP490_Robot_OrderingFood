@@ -9,6 +9,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Application.Mapping;
 using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
@@ -35,6 +36,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IUtilsService  _utilService;
         private readonly ITableSessionService _tableSessionService;
         private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
+        private readonly IAdminDashboardRefresher _adminDashboardRefresher;
         public OrderService(
             IUnitOfWork unitOfWork,
             IMapper mapper,
@@ -47,7 +49,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             ITableActivityService tableActivityService,
             IUtilsService utilService,
             ITableSessionService tableSessionService,
-            IModeratorDashboardRefresher moderatorDashboardRefresher)
+            IModeratorDashboardRefresher moderatorDashboardRefresher,
+            IAdminDashboardRefresher adminDashboardRefresher)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -61,6 +64,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _utilService = utilService;
             _tableSessionService = tableSessionService;
             _moderatorDashboardRefresher = moderatorDashboardRefresher;
+            _adminDashboardRefresher = adminDashboardRefresher;
         }
 
 
@@ -172,6 +176,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             
             await _unitOfWork.Repository<Order, Guid>().AddAsync(order);
             await _unitOfWork.SaveChangesAsync();
+            await _adminDashboardRefresher.PushDashboardAsync();
 
             // ===== SEND SIGNALR NOTIFICATIONS FOR NEW ORDER ITEMS =====
             if (_notificationService != null)
@@ -291,6 +296,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
 
             await _moderatorDashboardRefresher.PushTableAsync(table.Id);
+            await _adminDashboardRefresher.PushDashboardAsync();
             var response = _mapper.Map<OrderResponse>(order);
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status201Created, "ORDER_CREATED", response);
             }
@@ -427,6 +433,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                 _unitOfWork.Repository<Order, Guid>().Update(existingOrder);
                 await _unitOfWork.SaveChangesAsync();
+                await _adminDashboardRefresher.PushDashboardAsync();
 
                 // ===== SEND SIGNALR NOTIFICATIONS FOR NEW ORDER ITEMS =====
                 if (_notificationService != null)
@@ -567,6 +574,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                     // ✅ Save changes after logging activity
                     await _unitOfWork.SaveChangesAsync();
+                    await _adminDashboardRefresher.PushDashboardAsync();
 
                     _logger.LogInformation(
                         "HandleOrderAsync: Logged AddOrderItems activity for order {OrderId} in session {SessionId}. Added {ItemCount} items, total: {AddedTotal}",
@@ -783,6 +791,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
             await _unitOfWork.SaveChangesAsync();
+            await _adminDashboardRefresher.PushDashboardAsync();
 
             var shouldLogStatusChange = request.Status == OrderItemStatus.Ready ||
                                         request.Status == OrderItemStatus.Completed;
@@ -844,6 +853,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                     // ✅ Save changes after logging activity
                     await _unitOfWork.SaveChangesAsync();
+                    await _adminDashboardRefresher.PushDashboardAsync();
 
                     _logger.LogInformation(
                         "UpdateOrderItemStatusAsync: Logged activity for order {OrderId} in session {SessionId}",
