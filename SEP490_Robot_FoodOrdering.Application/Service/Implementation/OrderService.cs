@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
+using System.Security.Claims;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Application.Mapping;
 using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
@@ -37,6 +38,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly ITableSessionService _tableSessionService;
         private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
         private readonly IAdminDashboardRefresher _adminDashboardRefresher;
+        // TODO: remove this hardcoded and get real user id claim.
+        private static readonly Guid DefaultRemakeUserId = Guid.Parse("b9abf60c-9c0e-4246-a846-d9ab62303b13"); // seeded moderator user
         public OrderService(
             IUnitOfWork unitOfWork,
             IMapper mapper,
@@ -707,7 +710,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<BaseResponseModel<OrderItemResponse>> UpdateOrderItemStatusAsync(Guid orderId,
             Guid orderItemId, UpdateOrderItemStatusRequest request)
         {
-            // var userid = Guid.Parse(_httpContextAccessor.HttpContext?.User?.FindFirst("Id")?.Value);
+            // var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("Id")?.Value;
+            // Guid.TryParse(userIdClaim, out var userId);
             var order = await _unitOfWork.Repository<Order, Guid>()
                 .GetWithSpecAsync(new OrderSpecification(orderId, true), true);
             if (order == null)
@@ -750,9 +754,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
 
             var oldStatus = item.Status;
+            var isRemakeFromServed = oldStatus == OrderItemStatus.Served;
+            if (isRemakeFromServed)
+            {
+                request.Status = OrderItemStatus.Preparing;
+                item.IsUrgent = true;
+                await _remakeItemService.CreateRemakeItemAsync(orderItemId, request.RemarkNote ?? string.Empty, DefaultRemakeUserId);
+            }
             // Determine which items to update.
             // For Cancelled or Remake, update ONLY the selected item.
-            var isSingleItemOnly = request.Status == OrderItemStatus.Cancelled || request.Status == OrderItemStatus.Remark;
+            var isSingleItemOnly = isRemakeFromServed ||
+                                   request.Status == OrderItemStatus.Cancelled ||
+                                   request.Status == OrderItemStatus.Remark;
             var targets = isSingleItemOnly
                 ? new List<OrderItem> { item }
                 : order.OrderItems
