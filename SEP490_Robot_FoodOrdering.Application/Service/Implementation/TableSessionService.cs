@@ -143,6 +143,9 @@ public class TableSessionService : ITableSessionService
             payload
             
         );
+        // ✅ Save changes after logging activity
+        // Note: If called within a transaction, this will be part of the transaction
+        await _unitOfWork.SaveChangesAsync();
     }
     public async Task MoveTableAsync(TableSession session, Table newTable, string? actorDeviceId)
     {
@@ -178,6 +181,9 @@ public class TableSessionService : ITableSessionService
             toTableId = newTable.Id,
             toTableName = newTable.Name
         });
+        // ✅ Save changes after logging activity
+        // Note: If called within a transaction, this will be part of the transaction
+        await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task<PaginatedList<TableSessionResponse>> GetSessionByTableId(
