@@ -756,6 +756,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
 
             var oldStatus = item.Status;
+            if (request.Status == OrderItemStatus.Cancelled)
+            {
+                await _cancelledItemService.CreateCancelledItemAsync(orderItemId, request.RemarkNote ?? string.Empty, userId);
+            }
             var isRemakeFromServed = oldStatus == OrderItemStatus.Served;
             if (isRemakeFromServed)
             {
