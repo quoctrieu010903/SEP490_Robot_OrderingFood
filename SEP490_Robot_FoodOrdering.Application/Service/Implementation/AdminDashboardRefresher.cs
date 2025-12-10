@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Dashboard;
+using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {

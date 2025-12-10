@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
+using SEP490_Robot_FoodOrdering.API.Services;
 
 namespace SEP490_Robot_FoodOrdering.API.Hubs
 {
