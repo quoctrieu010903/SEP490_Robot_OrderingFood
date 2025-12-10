@@ -112,6 +112,24 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 var totalCancelledItems = orderItemsWithProducts
                     .Count(oi => oi.Status == OrderItemStatus.Cancelled);
 
+                // 8.1 Get total complains in range
+                var totalComplains = await _unitOfWork.Repository<Complain, Guid>()
+                    .CountAsync(new BaseSpecification<Complain>(c =>
+                        c.CreatedTime >= startDate && c.CreatedTime < endDate));
+
+                var totalComplainsPending = await _unitOfWork.Repository<Complain, Guid>()
+                    .CountAsync(new BaseSpecification<Complain>(c =>
+                        c.CreatedTime >= startDate && c.CreatedTime < endDate && c.isPending));
+
+                var totalComplainsHandled = await _unitOfWork.Repository<Complain, Guid>()
+                    .CountAsync(new BaseSpecification<Complain>(c =>
+                        c.CreatedTime >= startDate && c.CreatedTime < endDate && !c.isPending));
+
+                // 8.2 Get total remade order items in range
+                var totalRemakeItems = await _unitOfWork.Repository<RemakeOrderItem, Guid>()
+                    .CountAsync(new BaseSpecification<RemakeOrderItem>(r =>
+                        r.CreatedTime >= startDate && r.CreatedTime < endDate));
+
                 // 8. Get total order items
                 var totalOrderItems = orderItemsWithProducts.Count;
 
@@ -128,6 +146,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     MostOrderedProduct = mostOrderedProduct,
                     LeastOrderedProduct = leastOrderedProduct,
                     TotalCancelledItems = totalCancelledItems,
+                    TotalComplains = totalComplains,
+                    TotalComplainsPending = totalComplainsPending,
+                    TotalComplainsHandled = totalComplainsHandled,
+                    TotalRemakeItems = totalRemakeItems,
                     TotalOrderItems = totalOrderItems,
                     Top5MostOrderedProducts = top5MostOrderedProducts
                 };

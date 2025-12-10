@@ -31,6 +31,26 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Dashboard
         public int TotalCancelledItems { get; set; }
 
         /// <summary>
+        /// Total number of complaints in the selected period
+        /// </summary>
+        public int TotalComplains { get; set; }
+
+        /// <summary>
+        /// Total number of pending complaints in the selected period
+        /// </summary>
+        public int TotalComplainsPending { get; set; }
+
+        /// <summary>
+        /// Total number of resolved/handled complaints in the selected period
+        /// </summary>
+        public int TotalComplainsHandled { get; set; }
+
+        /// <summary>
+        /// Total number of remade order items in the selected period
+        /// </summary>
+        public int TotalRemakeItems { get; set; }
+
+        /// <summary>
         /// Total number of order items in the selected period
         /// </summary>
         public int TotalOrderItems { get; set; }
