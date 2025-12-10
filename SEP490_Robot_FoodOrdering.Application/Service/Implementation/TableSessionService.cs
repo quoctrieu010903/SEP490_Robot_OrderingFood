@@ -134,7 +134,7 @@ public class TableSessionService : ITableSessionService
             reasonCode: "CHECKOUT",
             reasonText: reason,
             snapshot: new { tablename
-            = session.Table.Name, invoiceId }
+            = session.Table.Name, invoiceId , invoiceCode}
         );
 
         await _activityService.LogAsync(
