@@ -112,6 +112,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob
                             activeSession,
                             reason: reason,
                             invoiceId: null,
+                            invoiceCode: null,
                             actorDeviceId: null); // System
 
                         _logger.LogInformation(

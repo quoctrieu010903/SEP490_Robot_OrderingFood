@@ -326,7 +326,7 @@ public class PayOSService: IPayOSService
             finalReturnUrl = $"{cancelUrl}{separator}id={tableId}";
             _logger.LogInformation($"Final payment return: {finalReturnUrl}");
         }
-        await _moderatorDashboardRefresher.PushTableAsync(order.TableId ?? Guid.Empty);
+        await _moderatorDashboardRefresher.PushTableAsync(order.TableId ?? Guid.Empty); 
 
         return new BaseResponseModel<OrderPaymentResponse>(
             StatusCodes.Status200OK,
