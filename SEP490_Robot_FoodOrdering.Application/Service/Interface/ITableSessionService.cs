@@ -18,7 +18,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
 
         Task TouchSessionAsync(TableSession session); // update LastActivityAt + Table.LastAccessedAt
 
-        Task CloseSessionAsync(TableSession session, string reason, Guid? invoiceId , string? invoiceCode, string? actorDeviceId);
+        Task CloseSessionAsync(TableSession session, string reason, Guid? invoiceId, string? actorDeviceId);
 
         Task MoveTableAsync(TableSession session, Table newTable, string? actorDeviceId);
     }

@@ -14,7 +14,6 @@ using SEP490_Robot_FoodOrdering.Domain;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
-using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -22,15 +21,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly IOrderStatsQuery _orderStatsService;
-        private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
-        public ComplainService(IUnitOfWork unitOfWork, IMapper mapper, IOrderStatsQuery orderStatsService , IModeratorDashboardRefresher moderatorDashboardRefresher)
+        private readonly IOrderService _orderService;
+        public ComplainService(IUnitOfWork unitOfWork, IMapper mapper, IOrderService orderService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _orderStatsService = orderStatsService;
-            _moderatorDashboardRefresher = moderatorDashboardRefresher;
-
+            _orderService = orderService;
         }
 
         public async Task<BaseResponseModel<List<ComplainCreate>>> ComfirmComplain(
@@ -151,9 +147,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // ✅ 4. Lưu thay đổi
             await _unitOfWork.SaveChangesAsync();
 
-            // Gửi thông báo cập nhật dashboard cho moderator
-            await _moderatorDashboardRefresher.PushTableAsync(request.TableId);
-
             // ✅ 5. Trả kết quả
             var response = new ComplainCreate(DateTime.UtcNow, true, "Tạo complain thành công");
             return new BaseResponseModel<ComplainCreate>(
@@ -229,8 +222,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (tables == null || !tables.Any())
                 throw new ErrorException(404, "No tables found");
 
-            var orderStatsDict = await _orderStatsService.GetOrderStatsByTableIdsAsync(tables.Select(x => x.Id));
-               
+            var orderStatsDict = await _orderService
+                .GetOrderStatsByTableIds(tables.Select(x => x.Id));
 
             var result = tables.Select(table =>
             {
@@ -318,8 +311,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     WaitingDurationInMinutes: waitingDurationInMinutes
                 );
             }).ToDictionary(x => x.Id.ToString(), x => x);
-
-            await _moderatorDashboardRefresher.PushSnapshotAsync();
 
             return new BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>(
                 StatusCodes.Status200OK,

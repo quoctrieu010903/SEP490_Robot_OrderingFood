@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Constants;
@@ -20,7 +19,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob
 
         public TableReleaseBackgroundService(
             IServiceScopeFactory serviceScopeFactory,
-            ILogger<TableReleaseBackgroundService> logger )
+            ILogger<TableReleaseBackgroundService> logger)
         {
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
@@ -118,7 +117,6 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob
                             "Released table {TableName} (tableId={TableId}) by closing session {SessionId}",
                             t.Name, t.Id, activeSession.Id);
                     }
-                  
 
                     await unitOfWork.SaveChangesAsync(stoppingToken);
                 }

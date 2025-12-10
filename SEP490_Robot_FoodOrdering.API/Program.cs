@@ -76,7 +76,6 @@ app.UseMiddleware<CustomExceptionHandlerMiddleware>();
 
 // Map SignalR Hub
 app.MapHub<OrderNotificationHub>("/orderNotificationHub");
-app.MapHub<ModeratorDashboardHub>("hubs/moderator-dashboard");
 
 app.MapControllers();
 app.Logger.LogInformation("ContentRootPath: {ContentRoot}", app.Environment.ContentRootPath);
