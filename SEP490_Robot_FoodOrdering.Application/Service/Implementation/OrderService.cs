@@ -684,7 +684,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             OrderStatus status)
         {
             var orders = await _unitOfWork.Repository<Order, Guid>()
-                .GetAllWithSpecAsync(new OrderSpecification(tableId, status), true);
+                .GetAllWithSpecAsync(new OrderSpecification(tableId, status,true), true);
             
 
             // Debug: Log the orders to see what data is being returned

@@ -1,8 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.User;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Product;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
+using SEP490_Robot_FoodOrdering.Domain.Specifications.Params;
+using SEP490_Robot_FoodOrdering.Domain;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.User;
+using SEP490_Robot_FoodOrdering.Domain.Enums;
 
 namespace SEP490_Robot_FoodOrdering.API.Controllers
 {
@@ -35,5 +41,14 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             var response = await _authenticationService.GetProfileAsync();
             return StatusCode(response.StatusCode, response);
         }
+        [Authorize()]
+        [HttpGet("users")]
+        public async Task<ActionResult<PaginatedList<UserProfileResponse>>> GetAll(
+      [FromQuery] PagingRequestModel paging)
+        {
+            var result = await _authenticationService.GetAllUser(paging);
+            return Ok(result);
+        }
+
     }
 }
