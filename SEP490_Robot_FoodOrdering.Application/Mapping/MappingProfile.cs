@@ -211,23 +211,20 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                   .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
                   .ForMember(dest => dest.isPending, opt => opt.MapFrom(_ => true))
                   .ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                  .ForMember(dest => dest.Title, opt => opt.Ignore())           // set sau
-                  .ForMember(dest => dest.OrderItemId, opt => opt.Ignore())    // set sau
+                  .ForMember(dest => dest.Title, opt => opt.Ignore())          
                   .ForMember(dest => dest.Table, opt => opt.Ignore())
-                  .ForMember(dest => dest.OrderItem, opt => opt.Ignore())
                   .ForMember(dest => dest.HandledBy, opt => opt.Ignore())
                   .ForMember(dest => dest.Handler, opt => opt.Ignore())
                   .ForMember(dest => dest.ResolvedAt, opt => opt.Ignore())
                   .ForMember(dest => dest.ResolutionNote, opt => opt.Ignore());
 
-           
+
             CreateMap<Complain, ComplainResponse>()
                 .ForMember(dest => dest.ComplainId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.IdTable, opt => opt.MapFrom(src => src.TableId))
                 .ForMember(dest => dest.FeedBack, opt => opt.MapFrom(src => src.Description))
                 .ForMember(dest => dest.IsPending, opt => opt.MapFrom(src => src.isPending))
-                .ForMember(dest => dest.CreateData, opt => opt.MapFrom(src => src.CreatedTime))
-                .ForMember(dest => dest.Dtos, opt => opt.MapFrom(src => src.OrderItem)); // tạm thời bỏ qua nếu chưa có mapping OrderItem
+                .ForMember(dest => dest.CreateData, opt => opt.MapFrom(src => src.CreatedTime));
 
             CreateMap<OrderItem, OrderItemDTO>()
                 .ForMember(dest => dest.OrderItemId, opt => opt.MapFrom(src => src.Id))

@@ -6,7 +6,12 @@ using System.Threading.Tasks;
 
 namespace SEP490_Robot_FoodOrdering.Application.DTO.Request
 {
-    internal class CreateSystemSettingRequest
+    public class CreateSystemSettingRequest
     {
+       
+        public string Key { get; set; }
+        public string Value { get; set; }
+        public string Description { get; set; }
+
     }
 }

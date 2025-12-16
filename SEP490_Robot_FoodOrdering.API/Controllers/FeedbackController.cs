@@ -34,12 +34,12 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("order-item/{orderItemId}")]
-        public async Task<ActionResult<PaginatedList<FeedbackResponse>>> GetByOrderItemId(Guid orderItemId, [FromQuery] PagingRequestModel paging)
-        {
-            var result = await _feedbackService.GetByOrderItemId(orderItemId, paging);
-            return Ok(result);
-        }
+        //[HttpGet("order-item/{orderItemId}")]
+        //public async Task<ActionResult<PaginatedList<FeedbackResponse>>> GetByTableid(Guid tableid, [FromQuery] PagingRequestModel paging)
+        //{
+        //    var result = await _feedbackService.GetByOrderItemId(tableid, paging);
+        //    return Ok(result);
+        //}
 
         [HttpGet("{id}")]
         public async Task<ActionResult<BaseResponseModel<FeedbackResponse>>> GetById(Guid id)

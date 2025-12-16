@@ -44,8 +44,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 .GetAllWithSpecWithInclueAsync(
                     new BaseSpecification<Complain>(f => f.TableId == idTable),
                     true,
-                    f => f.OrderItem, // include nếu có, vẫn null-safe
-                    f => f.OrderItem.Product
+                    f=>f.Table
                 );
 
             if (feedbackEntities == null || !feedbackEntities.Any())
@@ -75,8 +74,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 updatedFeedbacks.Add(new ComplainCreate(
                     feedback.CreatedTime,
                     feedback.isPending,
-                    feedback.Description +
-                    (feedback.OrderItem != null ? $" (Món: {feedback.OrderItem.Product?.Name})" : "")
+                    feedback.Description 
+                   
                 ));
             }
 
@@ -107,10 +106,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     StatusCodes.Status404NotFound,
                     ResponseCodeConstants.NOT_FOUND,
                     "Không tìm thấy bàn (table).");
-
             
-            if (request.OrderItemIds == null || !request.OrderItemIds.Any())
-            {
+            
+          
                 var complain = new Complain
                 {
                     Id = Guid.NewGuid(),
@@ -123,32 +121,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 };
 
                 await _unitOfWork.Repository<Complain, Guid>().AddAsync(complain);
-            }
-            else
-            {
-                // 🔹 Case 2: Khiếu nại theo từng OrderItem cụ thể
-                foreach (var orderItemId in request.OrderItemIds)
-                {
-                    var existedItem = await _unitOfWork.Repository<OrderItem, Guid>().GetByIdAsync(orderItemId);
-                    if (existedItem == null)
-                        throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, $"Không tìm thấy OrderItem: {orderItemId}");
-
-                    var complain = new Complain
-                    {
-                        Id = Guid.NewGuid(),
-                        TableId = request.TableId,
-                        OrderItemId = orderItemId,
-                        Title = request.Title,
-                        Description = request.ComplainNote,
-                        isPending = true, // ❗ pending để waiter/bếp xử lý
-                        CreatedTime = DateTime.UtcNow,
-                        LastUpdatedTime = DateTime.UtcNow
-                    };
-
-                    await _unitOfWork.Repository<Complain, Guid>().AddAsync(complain);
-                }
-            }
-
+            
             // ✅ 4. Lưu thay đổi
             await _unitOfWork.SaveChangesAsync();
 
@@ -371,8 +344,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 .GetAllWithSpecWithInclueAsync(
                     spec,
                     true,
-                    o => o.OrderItem,
-                    o => o.OrderItem.Product
+                     o=>o.Table
                 );
 
             if (complains == null || !complains.Any())
@@ -390,19 +362,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 FeedBack = c.Description,
                 CreateData = c.CreatedTime,
                 IsPending = c.isPending,
-                ResolutionNote = c.ResolutionNote,
-
-                Dtos = c.OrderItem != null
-                    ? new List<OrderItemDTO>
-                    {
-                new OrderItemDTO(
-                    c.OrderItem.Id,
-                    c.OrderItem.Product?.Name ?? "N/A",
-                    c.OrderItem.Product?.ImageUrl ?? "N/A",
-                    c.OrderItem.Status
-                )
-                    }
-                    : new List<OrderItemDTO>()
+                ResolutionNote = c.ResolutionNote    
             }).ToList();
 
             return new BaseResponseModel<List<ComplainResponse>>(

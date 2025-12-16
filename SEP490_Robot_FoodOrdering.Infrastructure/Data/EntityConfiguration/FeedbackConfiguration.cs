@@ -13,9 +13,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.EntityConfiguration
                    .WithMany(t => t.Feedbacks)
                    .HasForeignKey(f => f.TableId);
 
-            builder.HasOne(f => f.OrderItem)
-                   .WithMany(oi => oi.Feedbacks)
-                   .HasForeignKey(f => f.OrderItemId);
+          
         }
     }
 }
