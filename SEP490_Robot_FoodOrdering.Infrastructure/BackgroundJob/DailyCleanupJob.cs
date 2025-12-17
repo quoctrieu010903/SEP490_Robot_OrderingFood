@@ -92,7 +92,7 @@ public class DailyCleanupJob : IJob
                 t => t.Complains);
 
         _logger.LogInformation("DailyCleanupJob: found {Count} occupied tables to check for release", tables.Count());
-
+        var releasedTableIds = new List<Guid>();
         foreach (var table in tables)
         {
             ct.ThrowIfCancellationRequested();
@@ -157,13 +157,17 @@ public class DailyCleanupJob : IJob
                 invoiceCode: null,
                 actorDeviceId: null);
             // 7) Gửi hub refresh dashboard moderator
-            await _moderatorHub.PushTableAsync(table.Id, ct);
-
+            releasedTableIds.Add(table.Id);
 
             _logger.LogInformation(
                 "DailyCleanupJob: released table {TableName} by closing session {SessionId}",
                 table.Name, activeSession.Id);
         }
+        foreach (var tableId in releasedTableIds)
+        {
+            await _moderatorHub.PushTableAsync(tableId, ct);
+        }
+
     }
 
     private object BuildAutoReleasePayload(
