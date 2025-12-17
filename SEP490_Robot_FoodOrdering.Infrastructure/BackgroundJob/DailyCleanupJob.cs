@@ -9,6 +9,7 @@ using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain;
 using System.Threading;
 using static QRCoder.PayloadGenerator;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 
 public class DailyCleanupJob : IJob
 {
@@ -18,6 +19,7 @@ public class DailyCleanupJob : IJob
     private readonly ILogger<DailyCleanupJob> _logger;
     private readonly ITableSessionService _tableSessionService;
     private readonly ITableActivityService _tableActivityService;
+    private readonly IModeratorDashboardRefresher _moderatorHub;
     private const string SystemUserId = "b9abf60c-9c0e-4246-a846-d9ab62303b13";
 
     public DailyCleanupJob(
@@ -26,6 +28,7 @@ public class DailyCleanupJob : IJob
         ICancelledItemService cancelItemService,
         ITableSessionService tableSessionService,
         ITableActivityService tableActivityService,
+        IModeratorDashboardRefresher moderatorHub,
         ILogger<DailyCleanupJob> logger)
     {
         _unitOfWork = unitOfWork;
@@ -34,6 +37,7 @@ public class DailyCleanupJob : IJob
         _cancelledItemService = cancelItemService;
         _tableSessionService = tableSessionService;
         _tableActivityService = tableActivityService;
+        _moderatorHub = moderatorHub;
     }
 
     public async Task Execute(IJobExecutionContext context)
@@ -65,6 +69,7 @@ public class DailyCleanupJob : IJob
 
             //5) Giải phóng bàn không còn order/ complain active
              await AutoReleaseTables(thresholdUtc,ct);
+            
 
             await _unitOfWork.SaveChangesAsync(ct);
 
@@ -151,6 +156,9 @@ public class DailyCleanupJob : IJob
                 invoiceId: null,
                 invoiceCode: null,
                 actorDeviceId: null);
+            // 7) Gửi hub refresh dashboard moderator
+            await _moderatorHub.PushTableAsync(table.Id, ct);
+
 
             _logger.LogInformation(
                 "DailyCleanupJob: released table {TableName} by closing session {SessionId}",
