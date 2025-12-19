@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request.Complain;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Complain;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
@@ -31,6 +32,7 @@ public class ComplainController
         => FeedbackService.GetComplainByTable(idTable,isCustomer);
 
     [HttpPut("{idTable}")]
+   
     public Task<BaseResponseModel<List<ComplainCreate>>> ConfirmFeedback(
         Guid idTable,
         [FromQuery] List<Guid>? idFeedback,
