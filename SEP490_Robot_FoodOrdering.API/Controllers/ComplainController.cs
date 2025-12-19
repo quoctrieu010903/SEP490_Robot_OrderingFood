@@ -32,7 +32,7 @@ public class ComplainController
         => FeedbackService.GetComplainByTable(idTable,isCustomer);
 
     [HttpPut("{idTable}")]
-   
+    [Authorize()]
     public Task<BaseResponseModel<List<ComplainCreate>>> ConfirmFeedback(
         Guid idTable,
         [FromQuery] List<Guid>? idFeedback,
