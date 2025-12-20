@@ -31,6 +31,9 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
          !o.DeletedTime.HasValue &&
         o.CreatedTime >= startUtc &&
         o.CreatedTime < endUtc &&
+        o.TableSession != null &&
+        o.TableSession.Status == TableSessionStatus.Active &&
+        o.TableSession.CheckOut == null &&
         (string.IsNullOrEmpty(productName) ||
          o.OrderItems.Any(oi =>
             oi.Product != null &&
