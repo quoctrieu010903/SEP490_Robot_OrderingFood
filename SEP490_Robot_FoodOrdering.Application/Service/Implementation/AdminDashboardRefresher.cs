@@ -1,8 +1,10 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Dashboard;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -25,10 +27,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<DashboardResponse> PushDashboardAsync(DashboardRequest? request = null)
         {
             var dashboard = await _dashboardService.GetDashboardAsync(request);
-            if (dashboard.Data != null)
+
+            if (dashboard.Data is not null)
             {
                 await _notifier.BroadcastDashboardUpdatedAsync(dashboard.Data);
-                _logger.LogInformation("AdminDashboardRefresher: broadcasted dashboard update");
+
+                _logger.LogInformation(
+                    "AdminDashboardRefresher: broadcasted dashboard update: {DashboardJson}",
+                    JsonSerializer.Serialize(dashboard.Data, new JsonSerializerOptions
+                    {
+                        WriteIndented = false
+                    })
+                );
             }
             else
             {

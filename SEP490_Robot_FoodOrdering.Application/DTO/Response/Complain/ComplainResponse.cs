@@ -11,7 +11,7 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Complain
     {
        public Guid ComplainId { get; set; }
         public Guid IdTable { get; set; }
-        public string FeedBack { get; set; }
+        public string FeedBack { get; set; }    
         public bool IsPending { get; set; }
         public DateTime CreateData { get; set; }
        
