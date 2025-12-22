@@ -96,7 +96,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // 🔹 4️⃣ Lưu thay đổi
             await _unitOfWork.SaveChangesAsync();
 
-            _moderatorDashboardRefresher.PushTableAsync(idTable);
+          await  _moderatorDashboardRefresher.PushTableAsync(idTable);
             // 🔹 5️⃣ Trả kết quả
             return new BaseResponseModel<List<ComplainCreate>>(
                 StatusCodes.Status200OK,
