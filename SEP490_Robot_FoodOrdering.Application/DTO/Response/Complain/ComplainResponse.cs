@@ -11,10 +11,11 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Complain
     {
        public Guid ComplainId { get; set; }
         public Guid IdTable { get; set; }
-        public string FeedBack { get; set; }
+        public string FeedBack { get; set; }    
         public bool IsPending { get; set; }
         public DateTime CreateData { get; set; }
-        public List<OrderItemDTO> Dtos { get; set; }
+       
         public string? ResolutionNote { get; set; } // Ghi chú xử lý từ moderator (chứa "Yêu cầu nhanh:" khi được gửi phục vụ nhanh)
+        public string? HandledBy { get; set; } // tên moderator xử lý
     }
 }

@@ -40,6 +40,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob
                     var settingsService = scope.ServiceProvider.GetRequiredService<ISettingsService>();
                     var tableSessionService = scope.ServiceProvider.GetRequiredService<ITableSessionService>();
                     var tableActivityService = scope.ServiceProvider.GetRequiredService<ITableActivityService>();
+                    var moderatorHub = scope.ServiceProvider.GetRequiredService<IModeratorDashboardRefresher>();
 
                     var response = await settingsService.GetByKeyAsync(SystemSettingKeys.TableAccessTimeoutWithoutOrderMinutes);
                     var autoReleaseMinutes = 15;
@@ -115,6 +116,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob
                             invoiceCode: null,
                             actorDeviceId: null); // System
 
+                        await moderatorHub.PushTableAsync(t.Id,stoppingToken);
+
                         _logger.LogInformation(
                             "Released table {TableName} (tableId={TableId}) by closing session {SessionId}",
                             t.Name, t.Id, activeSession.Id);
@@ -125,7 +128,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.BackgroundJob
                 }
                 catch (OperationCanceledException)
                 {
-                    break;
+                    break;  
                 }
                 catch (Exception ex)
                 {

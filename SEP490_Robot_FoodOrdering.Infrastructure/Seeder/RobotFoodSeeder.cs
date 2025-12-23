@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using SEP490_Robot_FoodOrdering.Core.Constants;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
@@ -11,7 +12,7 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
 {
-    public class RobotFoodSeeder(RobotFoodOrderingDBContext _dbContext) : IRobotFoodSeeder
+    public class RobotFoodSeeder(RobotFoodOrderingDBContext _dbContext, IConfiguration _configuration) : IRobotFoodSeeder
     {
 
         public async Task Seed()
@@ -61,7 +62,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                 }
                 if (!_dbContext.Users.Any())
                 {
-                    var users = GetUsers();
+                    var users = GetUsers(_configuration);
                     await _dbContext.Users.AddRangeAsync(users);
                 }
                 if(!_dbContext.SystemSettings.Any())
@@ -879,9 +880,10 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
         };
         }
 
-        public static List<User> GetUsers()
+        public static List<User> GetUsers(IConfiguration configuration)
         {
-            var hashedPassword = BCrypt.Net.BCrypt.HashPassword("123456");
+            var defaultPassword = configuration["Environment:DefaultUserPassword"] ?? " ";
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(defaultPassword);
 
             return new List<User>
     {

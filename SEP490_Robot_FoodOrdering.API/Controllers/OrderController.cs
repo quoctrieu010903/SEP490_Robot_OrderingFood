@@ -177,7 +177,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             [FromQuery] string? ProductName )
         {
             var result = await _orderService.GetOrdersAsync(paging, ProductName);
-            return StatusCode(200, result);
+                return StatusCode(200, result);
         }
 
         /// <summary>

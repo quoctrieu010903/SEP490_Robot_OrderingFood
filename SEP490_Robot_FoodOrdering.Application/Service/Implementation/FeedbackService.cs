@@ -45,7 +45,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
                 // Giả sử feedback có OrderId
                 var requested = new InvoiceCreatRequest(
-                     entity.OrderItem.OrderId,
+                     entity.Table.Orders.FirstOrDefault().Id,
                      entity.TableId
                 );
                 await _invoiceService.CreateInvoice(requested);
@@ -87,13 +87,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return PaginatedList<FeedbackResponse>.Create(responses, paging.PageNumber, paging.PageSize);
         }
 
-        public async Task<PaginatedList<FeedbackResponse>> GetByOrderItemId(Guid orderItemId, PagingRequestModel paging)
-        {
-            var list = await _unitOfWork.Repository<Feedback, Guid>().GetListAsync(x => x.OrderItemId == orderItemId);
-            var ordered = list.OrderByDescending(x => x.CreatedTime).ToList();
-            var responses = _mapper.Map<List<FeedbackResponse>>(ordered);
-            return PaginatedList<FeedbackResponse>.Create(responses, paging.PageNumber, paging.PageSize);
-        }
+        //public async Task<PaginatedList<FeedbackResponse>> GetByOrderItemId(Guid orderItemId, PagingRequestModel paging)
+        //{
+        //    var list = await _unitOfWork.Repository<Feedback, Guid>().GetListAsync(x => x.OrderItemId == orderItemId);
+        //    var ordered = list.OrderByDescending(x => x.CreatedTime).ToList();
+        //    var responses = _mapper.Map<List<FeedbackResponse>>(ordered);
+        //    return PaginatedList<FeedbackResponse>.Create(responses, paging.PageNumber, paging.PageSize);
+        //}
 
         public async Task<BaseResponseModel<FeedbackResponse>> GetById(Guid id)
         {

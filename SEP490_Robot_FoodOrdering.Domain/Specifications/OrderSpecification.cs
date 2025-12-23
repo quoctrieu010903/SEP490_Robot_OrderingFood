@@ -31,6 +31,9 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
          !o.DeletedTime.HasValue &&
         o.CreatedTime >= startUtc &&
         o.CreatedTime < endUtc &&
+        o.TableSession != null &&
+        o.TableSession.Status == TableSessionStatus.Active &&
+        o.TableSession.CheckOut == null &&
         (string.IsNullOrEmpty(productName) ||
          o.OrderItems.Any(oi =>
             oi.Product != null &&
@@ -85,14 +88,22 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
             AddIncludes();
     }
 
-    // Get orders by table ID with Delivering status for payment
-    public OrderSpecification(Guid tableId, OrderStatus status) : base(o => !o.DeletedTime.HasValue && o.TableId == tableId && o.Status == status)
-    {
-        AddIncludes();
-    }
+        // Get orders by table ID with Delivering status for payment
+        public OrderSpecification(Guid tableId, OrderStatus status, bool onlyActiveSession)
+            : base(o =>
+                !o.DeletedTime.HasValue
+                && o.TableId == tableId
+                && o.Status == status
+                && (!onlyActiveSession
+                    || (o.TableSession != null
+                        && o.TableSession.Status == TableSessionStatus.Active))
+            )
+        {
+            AddIncludes();
+        }
         // Get orders by table IDs for the current day
 
-       
+
         private void AddIncludes()
         {
             ApplyInclude(q => q

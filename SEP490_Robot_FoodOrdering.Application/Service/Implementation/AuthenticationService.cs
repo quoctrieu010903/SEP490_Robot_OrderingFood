@@ -27,12 +27,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IJwtService _jwtService; 
+        private readonly IJwtService _jwtService;
         private readonly IUtilsService _utils;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IMapper _mapper;
         private readonly ICloudinaryService _cloudinaryService;
-        public AuthenticationService(IUnitOfWork unitOfWork, IJwtService jwtService , IUtilsService utils , IHttpContextAccessor httpContextAccessor, IMapper mapper , ICloudinaryService cloudinaryService)
+        public AuthenticationService(IUnitOfWork unitOfWork, IJwtService jwtService, IUtilsService utils, IHttpContextAccessor httpContextAccessor, IMapper mapper, ICloudinaryService cloudinaryService)
         {
             _unitOfWork = unitOfWork;
             _jwtService = jwtService;
@@ -41,6 +41,25 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _mapper = mapper;
             _cloudinaryService = cloudinaryService;
         }
+
+        public async Task<PaginatedList<UserProfileResponse>> GetAllUser(PagingRequestModel paging)
+        {
+            // 1. Lấy danh sách user + include Role
+            var users = await _unitOfWork.Repository<User, Guid>()
+                .GetAllWithIncludeAsync(
+                    true,      // isTracking hay AsNoTracking tuỳ bạn define
+                    u => u.Role
+                );
+
+            // 2. Map sang DTO
+            var response = _mapper.Map<List<UserProfileResponse>>(users);
+
+
+            return PaginatedList<UserProfileResponse>.Create(response,paging.PageNumber,paging.PageSize);
+        }
+
+
+
 
         public async Task<BaseResponseModel<UserProfileResponse>> GetProfileAsync()
         {
@@ -55,18 +74,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             {
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, ErrorMessages.NOT_FOUND);
             }
-           var response = _mapper.Map<UserProfileResponse>(user);
+            var response = _mapper.Map<UserProfileResponse>(user);
             return new BaseResponseModel<UserProfileResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, response);
         }
 
-       
+
         public async Task<BaseResponseModel<AuthenticationResponse>> SignInAsync(SignInRequest request)
         {
             var user = await _unitOfWork.Repository<User, Guid>()
                 .GetByIdWithIncludeAsync(
                     (u => u.UserName == request.Username),
                     true,
-                      u => u.Role 
+                      u => u.Role
                 );
             if (user == null)
             {
@@ -84,7 +103,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<AuthenticationResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, response);
         }
 
-       
+
 
         public async Task<BaseResponseModel<bool>> UpdateProfileAsync(UpdateProfileRequest request)
         {

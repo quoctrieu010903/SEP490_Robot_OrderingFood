@@ -15,6 +15,8 @@ using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
+using SEP490_Robot_FoodOrdering.Domain.Specifications;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -24,12 +26,15 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IMapper _mapper;
         private readonly IOrderStatsQuery _orderStatsService;
         private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
-        public ComplainService(IUnitOfWork unitOfWork, IMapper mapper, IOrderStatsQuery orderStatsService , IModeratorDashboardRefresher moderatorDashboardRefresher)
+
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public ComplainService(IUnitOfWork unitOfWork, IMapper mapper, IOrderStatsQuery orderStatsService , IModeratorDashboardRefresher moderatorDashboardRefresher , IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _orderStatsService = orderStatsService;
             _moderatorDashboardRefresher = moderatorDashboardRefresher;
+            _httpContextAccessor = httpContextAccessor;
 
         }
 
@@ -39,13 +44,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         bool isPending,
         string content)
         {
+            var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("Id")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                throw new ErrorException(StatusCodes.Status401Unauthorized, "UNAUTHORIZED",
+                    "User is not authenticated.");
+            }
+
             // 🔹 1️⃣ Lấy tất cả complain theo bàn
             var feedbackEntities = await _unitOfWork.Repository<Complain, Guid>()
                 .GetAllWithSpecWithInclueAsync(
                     new BaseSpecification<Complain>(f => f.TableId == idTable),
                     true,
-                    f => f.OrderItem, // include nếu có, vẫn null-safe
-                    f => f.OrderItem.Product
+                    f=>f.Table
                 );
 
             if (feedbackEntities == null || !feedbackEntities.Any())
@@ -68,6 +79,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 feedback.isPending = isPending;
                 feedback.ResolutionNote = content;
                 feedback.ResolvedAt = DateTime.UtcNow;
+                feedback.HandledBy = Guid.Parse(userIdClaim);
 
                 await _unitOfWork.Repository<Complain, Guid>().UpdateAsync(feedback);
 
@@ -75,15 +87,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 updatedFeedbacks.Add(new ComplainCreate(
                     feedback.CreatedTime,
                     feedback.isPending,
-                    feedback.Description +
-                    (feedback.OrderItem != null ? $" (Món: {feedback.OrderItem.Product?.Name})" : "")
+                    feedback.Description 
+                   
+                   
                 ));
             }
 
             // 🔹 4️⃣ Lưu thay đổi
             await _unitOfWork.SaveChangesAsync();
 
-            _moderatorDashboardRefresher.PushTableAsync(idTable);
+          await  _moderatorDashboardRefresher.PushTableAsync(idTable);
             // 🔹 5️⃣ Trả kết quả
             return new BaseResponseModel<List<ComplainCreate>>(
                 StatusCodes.Status200OK,
@@ -107,10 +120,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     StatusCodes.Status404NotFound,
                     ResponseCodeConstants.NOT_FOUND,
                     "Không tìm thấy bàn (table).");
-
             
-            if (request.OrderItemIds == null || !request.OrderItemIds.Any())
-            {
+            
+          
                 var complain = new Complain
                 {
                     Id = Guid.NewGuid(),
@@ -123,32 +135,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 };
 
                 await _unitOfWork.Repository<Complain, Guid>().AddAsync(complain);
-            }
-            else
-            {
-                // 🔹 Case 2: Khiếu nại theo từng OrderItem cụ thể
-                foreach (var orderItemId in request.OrderItemIds)
-                {
-                    var existedItem = await _unitOfWork.Repository<OrderItem, Guid>().GetByIdAsync(orderItemId);
-                    if (existedItem == null)
-                        throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, $"Không tìm thấy OrderItem: {orderItemId}");
-
-                    var complain = new Complain
-                    {
-                        Id = Guid.NewGuid(),
-                        TableId = request.TableId,
-                        OrderItemId = orderItemId,
-                        Title = request.Title,
-                        Description = request.ComplainNote,
-                        isPending = true, // ❗ pending để waiter/bếp xử lý
-                        CreatedTime = DateTime.UtcNow,
-                        LastUpdatedTime = DateTime.UtcNow
-                    };
-
-                    await _unitOfWork.Repository<Complain, Guid>().AddAsync(complain);
-                }
-            }
-
+            
             // ✅ 4. Lưu thay đổi
             await _unitOfWork.SaveChangesAsync();
 
@@ -221,37 +208,119 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>> GetAllComplainIsPending()
         {
+            // 1) Load ALL tables (giữ nguyên để grid hiện đủ)
             var tables = await _unitOfWork.Repository<Table, Guid>()
                 .GetAllWithIncludeAsync(true, t => t.Orders, t => t.Sessions);
-
-            var complains = await _unitOfWork.Repository<Complain, Guid>()
-                .GetAllWithSpecAsync(new BaseSpecification<Complain>(x => x.isPending));
 
             if (tables == null || !tables.Any())
                 throw new ErrorException(404, "No tables found");
 
-            var orderStatsDict = await _orderStatsService.GetOrderStatsByTableIdsAsync(tables.Select(x => x.Id));
-               
+            // 2) Active sessions
+            var activeSessions = await _unitOfWork.Repository<TableSession, Guid>()
+                .GetAllWithSpecAsync(new BaseSpecification<TableSession>(s =>
+                    s.CheckOut == null && s.Status == TableSessionStatus.Active
+                ));
 
+            // Nếu không có session active -> vẫn trả ALL tables nhưng counter = 0
+            if (activeSessions == null || !activeSessions.Any())
+            {
+                var emptyResult = tables.Select(table => new ComplainPeedingInfo(
+                    Id: table.Id,
+                    SessionId: "",
+                    TableName: table.Name,
+                    tableStatus: table.Status,
+                    paymentStatus: 0,
+                    Counter: 0,
+                    DeliveredCount: 0,
+                    ServeredCount: 0,
+                    PaidCount: 0,
+                    TotalItems: 0,
+                    LastOrderUpdatedTime: null,
+                    PendingItems: 0,
+                    IsWaitingDish: false,
+                    WaitingDurationInMinutes: null
+                )).ToDictionary(x => x.Id.ToString(), x => x);
+
+                await _moderatorDashboardRefresher.PushSnapshotAsync();
+
+                return new BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>(
+                    StatusCodes.Status200OK,
+                    ResponseCodeConstants.SUCCESS,
+                    emptyResult
+                );
+            }
+
+            // 3) Map active session mới nhất theo TableId
+            var activeSessionByTable = activeSessions
+                .GroupBy(s => s.TableId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.CheckIn).First());
+
+            var activeTableIds = activeSessionByTable.Keys.ToHashSet();
+            var activeSessionIds = activeSessions.Select(s => s.Id).ToHashSet();
+
+            // 4) Lấy first orders của tất cả active sessions (1 query)
+            var ordersInActiveSessions = await _unitOfWork.Repository<Order, Guid>()
+                .GetAllWithSpecAsync(new FirstOrderInSessionsSpec(activeSessionIds));
+
+            var firstOrderTimeBySession = ordersInActiveSessions
+                .Where(o => o.TableSessionId.HasValue)
+                .GroupBy(o => o.TableSessionId!.Value)
+                .ToDictionary(g => g.Key, g => g.Min(x => x.CreatedTime));
+
+            // 5) sessionStart theo TableId (first order time ?? checkin)
+            var sessionStartByTable = activeSessionByTable.ToDictionary(
+                kvp => kvp.Key,
+                kvp =>
+                {
+                    var session = kvp.Value;
+                    return firstOrderTimeBySession.TryGetValue(session.Id, out var tFirst)
+                        ? (DateTime?)tFirst
+                        : (DateTime?)session.CheckIn;
+                });
+
+            // 6) lấy pending complains của active tables
+            var pendingComplainsRaw = await _unitOfWork.Repository<Complain, Guid>()
+                .GetAllWithSpecAsync(new BaseSpecification<Complain>(c =>
+                    c.isPending && activeTableIds.Contains(c.TableId)
+                ));
+
+            // 7) lọc belong session hiện tại theo sessionStart
+            var pendingComplains = pendingComplainsRaw
+                .Where(c =>
+                    sessionStartByTable.TryGetValue(c.TableId, out var start)
+                    && start.HasValue
+                    && c.CreatedTime >= start.Value
+                )
+                .ToList();
+
+            // 8) count theo tableId
+            var pendingCountByTable = pendingComplains
+                .GroupBy(c => c.TableId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // 9) order stats (bạn có thể lấy cho ALL tables hoặc chỉ activeTables)
+            // Nếu muốn UI full table vẫn có stats đúng -> dùng ALL tables
+            var orderStatsDict = await _orderStatsService
+                .GetOrderStatsByTableIdsAsync(tables.Select(x => x.Id));
+
+            // 10) Build result cho ALL tables
             var result = tables.Select(table =>
             {
-                int pendingCount = complains.Count(c => c.TableId == table.Id);
+                // active session theo map
+                activeSessionByTable.TryGetValue(table.Id, out var activeSession);
+                var sessionId = activeSession?.Id.ToString() ?? "";
 
-                var activeSession = table.Sessions
-                    .Where(s => s.Status == TableSessionStatus.Active)
-                    .OrderByDescending(s => s.CheckIn)
-                    .FirstOrDefault();
+                // counter chỉ tính nếu table có active session
+                int pendingCount = 0;
+                if (activeSession != null && pendingCountByTable.TryGetValue(table.Id, out var cnt))
+                    pendingCount = cnt;
 
-                var sessionId = activeSession?.Id.ToString() ?? string.Empty;
+                // lastOrderUpdatedTime tối ưu O(k)
+                DateTime? lastOrderUpdatedTime =
+                    table.Orders != null && table.Orders.Any()
+                        ? table.Orders.Max(o => o.LastUpdatedTime)
+                        : (DateTime?)null;
 
-                DateTime? lastOrderUpdatedTime = table.Orders != null && table.Orders.Any()
-                    ? table.Orders
-                        .OrderByDescending(o => o.LastUpdatedTime)
-                        .Select(o => (DateTime?)o.LastUpdatedTime)
-                        .FirstOrDefault()
-                    : null;
-
-                // mặc định stats = 0
                 var stats = new OrderStaticsResponse
                 {
                     PaymentStatus = 0,
@@ -261,46 +330,21 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     TotalOrderItems = 0
                 };
 
-                // Nếu có session active và có thống kê thì lấy
-                if (activeSession != null && orderStatsDict.TryGetValue(table.Id, out var s))
-                {
+                if (orderStatsDict.TryGetValue(table.Id, out var s))
                     stats = s;
-                }
 
-                // Nếu bàn trống + không có session active → ép về 0 luôn cho chắc
-                if (table.Status == (int)TableEnums.Available && activeSession == null)
-                {
-                    stats = new OrderStaticsResponse
-                    {
-                        PaymentStatus = 0,
-                        DeliveredCount = 0,
-                        ServedCount = 0,
-                        PaidCount = 0,
-                        TotalOrderItems = 0
-                    };
-                    lastOrderUpdatedTime = null;
-                }
-
-                // 👉 Số món chưa serve (Completed coi như đã serve)
                 var pendingItems = Math.Max(0, stats.TotalOrderItems - stats.ServedCount);
 
-                // Bàn đang chờ món nếu:
-                // - còn món chưa serve
-                // - bàn đang có khách
                 bool isWaitingDish =
                     pendingItems > 0 && table.Status == TableEnums.Occupied;
 
                 int? waitingDurationInMinutes = null;
                 if (isWaitingDish && lastOrderUpdatedTime.HasValue)
                 {
-                    var now = DateTime.UtcNow; // hoặc DateTime.Now tùy convention
+                    var now = DateTime.UtcNow;
                     waitingDurationInMinutes =
                         (int)Math.Floor((now - lastOrderUpdatedTime.Value).TotalMinutes);
                 }
-
-                // TODO: nếu muốn FE hiển thị pill "Chờ món: X phút"
-                // thì thêm pendingItems / isWaitingDish / waitingDurationInMinutes
-                // vào ComplainPeedingInfo
 
                 return new ComplainPeedingInfo(
                     Id: table.Id,
@@ -332,78 +376,77 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
         public async Task<BaseResponseModel<List<ComplainResponse>>> GetComplainByTable(
-       Guid idTable,
-       bool forCustomer = false
-   )
+      Guid idTable,
+      bool forCustomer = false
+  )
         {
-            // 1) Nếu customer -> lấy Active Session mới nhất của bàn
-            Guid? activeSessionId = null;
+            DateTime? sessionStart = null;
+            DateTime? sessionEnd = null;
 
             if (forCustomer)
             {
                 var activeSession = await _unitOfWork.Repository<TableSession, Guid>()
                     .GetWithSpecAsync(new BaseSpecification<TableSession>(s =>
                         s.TableId == idTable
+                        && s.CheckOut == null
                         && s.Status == TableSessionStatus.Active
                     ));
 
+                // ✅ Không có session => coi như không có complain trong session hiện tại
                 if (activeSession == null)
-                    throw new ErrorException(
-                        StatusCodes.Status404NotFound,
-                        ResponseCodeConstants.NOT_FOUND,
-                        "Bàn hiện không có phiên hoạt động (Active session)."
+                {
+                    return new BaseResponseModel<List<ComplainResponse>>(
+                        StatusCodes.Status200OK,
+                        ResponseCodeConstants.SUCCESS,
+                        new List<ComplainResponse>()
                     );
+                }
 
-                activeSessionId = activeSession.Id;
+                var firstOrder = await _unitOfWork.Repository<Order, Guid>()
+                    .GetWithSpecAsync(new FirstOrderInSessionSpec(idTable, activeSession.Id));
+
+                sessionStart = firstOrder?.CreatedTime ?? activeSession.CheckIn;
+                sessionEnd = activeSession.CheckOut; // đang null vì active session, nhưng vẫn giữ logic
             }
 
-            // 2) Build predicate
-            // Customer: lọc theo TableId + ActiveSessionId
-            // Moderator/Admin: lọc theo TableId (lấy tất cả)
             var spec = new BaseSpecification<Complain>(c =>
-        c.TableId == idTable &&
-        (!forCustomer || c.Table.Sessions.Any(s => s.Id == activeSessionId))
-    );
-
-
-            // 3) Query + include OrderItem + Product
-            var complains = await _unitOfWork.Repository<Complain, Guid>()
-                .GetAllWithSpecWithInclueAsync(
-                    spec,
-                    true,
-                    o => o.OrderItem,
-                    o => o.OrderItem.Product
-                );
-
-            if (complains == null || !complains.Any())
-                throw new ErrorException(
-                    StatusCodes.Status404NotFound,
-                    ResponseCodeConstants.NOT_FOUND,
-                    "Không tìm thấy complain"
-                );
-
-            // 4) Map response
-            var responseList = complains.Select(c => new ComplainResponse
-            {
-                ComplainId = c.Id,
-                IdTable = c.TableId,
-                FeedBack = c.Description,
-                CreateData = c.CreatedTime,
-                IsPending = c.isPending,
-                ResolutionNote = c.ResolutionNote,
-
-                Dtos = c.OrderItem != null
-                    ? new List<OrderItemDTO>
-                    {
-                new OrderItemDTO(
-                    c.OrderItem.Id,
-                    c.OrderItem.Product?.Name ?? "N/A",
-                    c.OrderItem.Product?.ImageUrl ?? "N/A",
-                    c.OrderItem.Status
+                c.TableId == idTable
+                && (
+                    !forCustomer
+                    || (
+                        sessionStart.HasValue
+                        && c.CreatedTime >= sessionStart.Value
+                        && (!sessionEnd.HasValue || c.CreatedTime <= sessionEnd.Value)
+                    )
                 )
-                    }
-                    : new List<OrderItemDTO>()
-            }).ToList();
+            );
+
+            var complains = await _unitOfWork.Repository<Complain, Guid>()
+                .GetAllWithSpecWithInclueAsync(spec, true, c => c.Handler);
+
+            // ✅ Tuỳ bạn: forCustomer thì có thể trả list rỗng thay vì 404
+            if (complains == null || !complains.Any())
+            {
+                return new BaseResponseModel<List<ComplainResponse>>(
+                    StatusCodes.Status200OK,
+                    ResponseCodeConstants.SUCCESS,
+                    new List<ComplainResponse>()
+                );
+            }
+
+            var responseList = complains
+                .OrderByDescending(c => c.CreatedTime)
+                .Select(c => new ComplainResponse
+                {
+                    ComplainId = c.Id,
+                    IdTable = c.TableId,
+                    FeedBack = c.Description,
+                    CreateData = c.CreatedTime,
+                    IsPending = c.isPending,
+                    ResolutionNote = c.ResolutionNote,
+                    HandledBy = c.Handler != null ? c.Handler.FullName : null
+                })
+                .ToList();
 
             return new BaseResponseModel<List<ComplainResponse>>(
                 StatusCodes.Status200OK,
@@ -411,6 +454,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 responseList
             );
         }
+
+
 
 
     }

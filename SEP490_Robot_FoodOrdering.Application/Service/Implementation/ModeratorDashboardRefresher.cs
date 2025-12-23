@@ -29,5 +29,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var snap = await _query.BuildSnapshotAsync();
             await _notifier.BroadcastPendingComplainsSnapshotAsync(snap);
         }
+
+        public async Task PushTableAsync(Guid tableId, CancellationToken ct = default)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var info = await _query.BuildForTableAsync(tableId); // nếu query có overload ct thì truyền vào
+            if (info == null) return;
+
+            ct.ThrowIfCancellationRequested();
+
+            await _notifier.BroadcastTableUpdatedAsync(tableId.ToString(), info);
+        }
     }
 }

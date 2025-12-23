@@ -8,9 +8,6 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public Guid TableId { get; set; }
         public virtual Table Table { get; set; }
 
-        public Guid? OrderItemId { get; set; }
-        public virtual OrderItem? OrderItem { get; set; }
-
         public string Title { get; set; } = string.Empty; // ví dụ: “Món nguội”, “Phục vụ chậm”
         public string Description { get; set; } = string.Empty; // chi tiết khiếu nạ
         public bool isPending { get; set; } = false;

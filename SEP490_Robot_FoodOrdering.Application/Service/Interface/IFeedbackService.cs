@@ -16,7 +16,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
         Task<BaseResponseModel<FeedbackResponse>> GetById(Guid id);
         Task<PaginatedList<FeedbackResponse>> GetAll(PagingRequestModel paging);
         Task<PaginatedList<FeedbackResponse>> GetByTableId(Guid tableId, PagingRequestModel paging);
-        Task<PaginatedList<FeedbackResponse>> GetByOrderItemId(Guid orderItemId, PagingRequestModel paging);
+        //Task<PaginatedList<FeedbackResponse>> GetByOrderItemId(Guid tableid, PagingRequestModel paging);
         Task<BaseResponseModel> Delete(Guid id);
     }
 }

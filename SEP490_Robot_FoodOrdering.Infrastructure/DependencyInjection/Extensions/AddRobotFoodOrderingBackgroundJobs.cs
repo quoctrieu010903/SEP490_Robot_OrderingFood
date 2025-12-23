@@ -12,6 +12,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
 
             services.AddQuartz(q =>
             {
+                q.UseMicrosoftDependencyInjectionJobFactory(); // ✅ thêm dòng này
 
                 var jobKey = new JobKey("DailyCleanupJob");
                 q.AddJob<DailyCleanupJob>(opts => opts.WithIdentity(jobKey));
@@ -34,6 +35,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.DependencyInjection.Extension
             });
 
             services.AddHostedService<TableReleaseBackgroundService>();
+
 
             return services;
         }
