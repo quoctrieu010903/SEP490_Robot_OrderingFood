@@ -382,7 +382,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         {
             DateTime? sessionStart = null;
             DateTime? sessionEnd = null;
-
+            DateTime? lastOrderUpdatedTime = null;
             if (forCustomer)
             {
                 var activeSession = await _unitOfWork.Repository<TableSession, Guid>()
@@ -402,11 +402,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     );
                 }
 
-                var firstOrder = await _unitOfWork.Repository<Order, Guid>()
-                    .GetWithSpecAsync(new FirstOrderInSessionSpec(idTable, activeSession.Id));
+                var orderInSession = await _unitOfWork.Repository<Order, Guid>()
+                               .GetWithSpecAsync(new BaseSpecification<Order>(o =>
+                                   o.TableSessionId == activeSession.Id
+                               ));
 
-                sessionStart = firstOrder?.CreatedTime ?? activeSession.CheckIn;
+                sessionStart = activeSession.CheckIn;
                 sessionEnd = activeSession.CheckOut; // đang null vì active session, nhưng vẫn giữ logic
+                lastOrderUpdatedTime = orderInSession?.LastUpdatedTime;
             }
 
             var spec = new BaseSpecification<Complain>(c =>
@@ -443,8 +446,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     FeedBack = c.Description,
                     CreateData = c.CreatedTime,
                     IsPending = c.isPending,
+                    LastOrderUpdate = lastOrderUpdatedTime,
                     ResolutionNote = c.ResolutionNote,
                     HandledBy = c.Handler != null ? c.Handler.FullName : null
+
                 })
                 .ToList();
 
