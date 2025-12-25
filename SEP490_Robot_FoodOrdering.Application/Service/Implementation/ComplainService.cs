@@ -377,7 +377,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
      
        
-        private async Task<(DateTime?, int, int, int)> GetOrderSnapshotAsync(Guid tableSessionId)
+        private async Task<(DateTime?, int, int, int, int, string)> GetOrderSnapshotAsync(Guid tableSessionId)
         {
             var order = await _unitOfWork.Repository<Order, Guid>()
                 .GetWithSpecAsync(new BaseSpecification<Order>(o =>
@@ -385,7 +385,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 ));
 
             if (order == null)
-                return (null, 0, 0, 0);
+                return (null, 0, 0,0, 0, null );
 
             var orderItems = await _unitOfWork.Repository<OrderItem, Guid>()
                 .GetAllWithSpecAsync(new BaseSpecification<OrderItem>(i =>
@@ -401,17 +401,21 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var waiterCount = orderItems.Count(i =>
                 i.Status == OrderItemStatus.Ready
                 || i.Status == OrderItemStatus.Served
+                ||i.Status == OrderItemStatus.Completed
             );
 
             var cancelledCount = orderItems.Count(i =>
                 i.Status == OrderItemStatus.Cancelled
             );
+            var totalItemCount = orderItems.Count();
 
             return (
                 order.LastUpdatedTime,
                 kitchenCount,
                 waiterCount,
-                cancelledCount
+                cancelledCount,
+                totalItemCount ,
+                order.Status.ToString()
             );
         }
         public async Task<BaseResponseModel<List<ComplainResponse>>> GetComplainByTable(
@@ -438,7 +442,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
 
             // 2️⃣ Snapshot đơn hàng (dùng hàm bạn đã viết)
-            var (lastOrderUpdatedTime, kitchenCount, waiterCount, cancelledCount)
+            var (lastOrderUpdatedTime, kitchenCount, waiterCount, cancelledCount, totalitemCount, orderStatus)
                 = await GetOrderSnapshotAsync(activeSession.Id);
 
             // 3️⃣ Build spec complain (customer mới bị giới hạn theo session)
@@ -489,6 +493,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         res.CancelledItemCount = cancelledCount;
                         res.ResolutionNote = c.ResolutionNote;
                         res.HandledBy = c.Handler?.FullName;
+                        res.totalItemCount = totalitemCount;
+                        res.OrderStatus = orderStatus;
+
                     }
                     else
                     {
