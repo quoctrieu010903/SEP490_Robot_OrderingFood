@@ -780,6 +780,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                                 && i.Status == oldStatus)
                     .ToList();
 
+            // Store old status for each item before updating (for accurate logging)
+            var itemOldStatuses = targets.ToDictionary(oi => oi.Id, oi => oi.Status);
+
             foreach (var oi in targets)
             {
                 if (request.Status == OrderItemStatus.Remark)
@@ -793,7 +796,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     oi.Order.LastUpdatedTime = DateTime.UtcNow;
                 }
                 _logger.LogInformation(
-                    $"OrderItem {oi.Id} status changed from {oldStatus} to {oi.Status} in Order {orderId}");
+                    $"OrderItem {oi.Id} status changed from {itemOldStatuses[oi.Id]} to {oi.Status} in Order {orderId}");
             }
             _logger.LogInformation(
                 $"Update applied: {targets.Count} item(s) for Product {item.ProductId} Size {item.ProductSizeId} changed from {oldStatus} to {request.Status} in Order {orderId}");
@@ -812,12 +815,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             await _unitOfWork.SaveChangesAsync();
             await _adminDashboardRefresher.PushDashboardAsync();
 
-            var shouldLogStatusChange = request.Status == OrderItemStatus.Ready ||
+            var shouldLogStatusChange = request.Status == OrderItemStatus.Ready || 
+                                        request.Status == OrderItemStatus.Served || 
                                         request.Status == OrderItemStatus.Completed;
 
             if (shouldLogStatusChange)
             {
-                // ===== LOG TABLE ACTIVITY: UpdateOrderItemStatus (Ready/Completed only) =====
+                // ===== LOG TABLE ACTIVITY: UpdateOrderItemStatus (Ready/Served/Completed only) =====
                 TableSession? activitySession = null;
 
                 if (order.TableSessionId.HasValue)
@@ -864,7 +868,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                                 productName = i.Product?.Name,
                                 sizeId = i.ProductSizeId,
                                 sizeName = i.ProductSize?.SizeName,
-                                previousStatus = oldStatus,
+                                previousStatus = itemOldStatuses.ContainsKey(i.Id) ? itemOldStatuses[i.Id] : oldStatus,
                                 newStatus = i.Status,
                                 remarkNote = i.RemakeNote
                             }).ToList()
