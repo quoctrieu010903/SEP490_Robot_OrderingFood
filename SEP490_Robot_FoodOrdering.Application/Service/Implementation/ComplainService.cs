@@ -504,7 +504,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         res.WaiterItemCount = 0;
                         res.CancelledItemCount = 0;
                         res.HandledBy = null;
-                        res.ResolutionNote = BuildCustomerResolution(c.Title,c.ResolutionNote,c.isPending);
+                        //res.ResolutionNote = BuildCustomerResolution(c.Title,c.ResolutionNote,c.isPending);
+                        res.ResolutionNote = c.ResolutionNote;
                     }
 
                     return res;
