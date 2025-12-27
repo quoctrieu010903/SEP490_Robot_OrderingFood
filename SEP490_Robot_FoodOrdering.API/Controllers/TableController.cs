@@ -1,12 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using SEP490_Robot_FoodOrdering.Application.DTO.Request;
-using SEP490_Robot_FoodOrdering.Application.DTO.Response.Table;
-using SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Response;
-using SEP490_Robot_FoodOrdering.Domain.Enums;
 using System;
 using System.Threading.Tasks;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Table;
+using SEP490_Robot_FoodOrdering.Domain.Enums;
 
 namespace SEP490_Robot_FoodOrdering.API.Controllers
 {
@@ -15,6 +14,7 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
     public class TableController : ControllerBase
     {
         private readonly ITableService _service;
+        
         public TableController(ITableService service)
         {
             _service = service;
@@ -188,6 +188,34 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         {
             var result = await _service.CheckTableAndDeviceToken(tableId, deviceId);
             return Ok(result);
+        }
+
+        /// <summary>
+        /// Random script to scan a table and create an order with random products (no toppings).
+        /// </summary>
+        /// <remarks>
+        /// This endpoint performs the following steps:
+        /// 1. Generates a random deviceId
+        /// 2. Scans the specified table (or a random available table if tableId is not provided)
+        /// 3. Randomly selects 1-3 products from the database
+        /// 4. For each product, randomly selects a product size
+        /// 5. Creates an order with no toppings
+        /// 6. Sets payment status to Paid for order and all order items
+        /// 
+        /// Sample request:
+        /// GET /api/Table/random-scan-and-order
+        /// GET /api/Table/random-scan-and-order?tableId=3fa85f64-5717-4562-b3fc-2c963f66afa6
+        /// </remarks>
+        /// <param name="tableId">Optional table ID. If not provided, a random available table will be selected.</param>
+        /// <returns>Result containing scan result and order creation result</returns>
+        /// <response code="200">Operation completed successfully</response>
+        /// <response code="400">Invalid request or no available tables/products found</response>
+        /// <response code="500">Internal server error</response>
+        [HttpGet("random-scan-and-order")]
+        public async Task<IActionResult> RandomScanAndOrder([FromQuery] Guid? tableId = null)
+        {
+            var result = await _service.RandomScanAndOrderAsync(tableId);
+            return StatusCode(result.StatusCode, result);
         }
     }
 }

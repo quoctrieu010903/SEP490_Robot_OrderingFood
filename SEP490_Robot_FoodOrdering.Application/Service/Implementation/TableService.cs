@@ -3,8 +3,10 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using QRCoder;
 using System.Drawing;
+using System.Linq;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Table;
+using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Constants;
 using SEP490_Robot_FoodOrdering.Core.CustomExceptions;
@@ -39,8 +41,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly ICustomerPointService _customerPointService;
         private readonly ILogger<TableService> _logger;
         private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
+        private readonly IOrderService _orderService;
 
-        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService, ITableActivityService tableActivityService, IInvoiceService invoiceService, ICustomerPointService customerPointService, IModeratorDashboardRefresher moderatorDashboardRefresher)
+        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService, ITableActivityService tableActivityService, IInvoiceService invoiceService, ICustomerPointService customerPointService, IModeratorDashboardRefresher moderatorDashboardRefresher, IOrderService orderService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -54,6 +57,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _invoiceService = invoiceService;
             _customerPointService = customerPointService;
             _moderatorDashboardRefresher = moderatorDashboardRefresher;
+            _orderService = orderService;
         }
         public async Task<BaseResponseModel> Create(CreateTableRequest request)
         {
@@ -1318,6 +1322,180 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 response,
                 null,
                 message);
+        }
+
+        /// <summary>
+        /// Random script to scan a table and create an order with random products (no toppings).
+        /// </summary>
+        /// <param name="tableId">Optional table ID. If not provided, a random available table will be selected.</param>
+        /// <returns>Result containing scan result and order creation result</returns>
+        public async Task<BaseResponseModel<RandomScanAndOrderResponse>> RandomScanAndOrderAsync(Guid? tableId = null)
+        {
+            try
+            {
+                var random = new Random();
+                
+                // Step 1: Generate random deviceId
+                var randomDeviceId = Guid.NewGuid().ToString();
+
+                // Step 2: Get table (random or specified)
+                Guid selectedTableId;
+                if (tableId.HasValue)
+                {
+                    selectedTableId = tableId.Value;
+                    var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(selectedTableId);
+                    if (table == null)
+                    {
+                        return new BaseResponseModel<RandomScanAndOrderResponse>(
+                            StatusCodes.Status400BadRequest,
+                            "TABLE_NOT_FOUND",
+                            "Table not found");
+                    }
+                }
+                else
+                {
+                    // Get a random available table
+                    var availableTables = (await _unitOfWork.Repository<Table, Guid>()
+                        .GetListAsync(t => t.Status == TableEnums.Available && !t.DeletedTime.HasValue)).ToList();
+                    
+                    if (availableTables == null || !availableTables.Any())
+                    {
+                        return new BaseResponseModel<RandomScanAndOrderResponse>(
+                            StatusCodes.Status400BadRequest,
+                            "NO_AVAILABLE_TABLES",
+                            "No available tables found");
+                    }
+                    
+                    selectedTableId = availableTables[random.Next(availableTables.Count)].Id;
+                }
+
+                // Step 3: Scan QR Code
+                var scanResult = await ScanQrCode01(selectedTableId, randomDeviceId);
+                if (scanResult.StatusCode != StatusCodes.Status200OK)
+                {
+                    return new BaseResponseModel<RandomScanAndOrderResponse>(
+                        scanResult.StatusCode,
+                        scanResult.ResponseCode ?? "SCAN_FAILED",
+                        null,
+                        null,
+                        scanResult.Message ?? "Failed to scan table");
+                }
+
+                // Step 4: Get all products from database
+                var allProducts = (await _unitOfWork.Repository<Product, Guid>()
+                    .GetListAsync(p => !p.DeletedTime.HasValue)).ToList();
+                
+                if (allProducts == null || !allProducts.Any())
+                {
+                    return new BaseResponseModel<RandomScanAndOrderResponse>(
+                        StatusCodes.Status400BadRequest,
+                        "NO_PRODUCTS",
+                        "No products found in database");
+                }
+
+                // Step 5: Randomly select 1-3 products
+                var numberOfItems = random.Next(1, 4); // 1 to 3 items
+                var selectedProducts = allProducts.OrderBy(x => random.Next()).Take(numberOfItems).ToList();
+
+                // Step 6: For each product, get a random product size
+                var orderItems = new List<CreateOrderItemRequest>();
+                foreach (var product in selectedProducts)
+                {
+                    var productSizes = (await _unitOfWork.Repository<ProductSize, Guid>()
+                        .GetListAsync(ps => ps.ProductId == product.Id && !ps.DeletedTime.HasValue)).ToList();
+                    
+                    if (productSizes == null || !productSizes.Any())
+                    {
+                        continue; // Skip products without sizes
+                    }
+
+                    var randomSize = productSizes[random.Next(productSizes.Count)];
+                    
+                    orderItems.Add(new CreateOrderItemRequest
+                    {
+                        ProductId = product.Id,
+                        ProductSizeId = randomSize.Id,
+                        ToppingIds = new List<Guid>(), // No toppings as requested
+                        Note = null
+                    });
+                }
+
+                if (!orderItems.Any())
+                {
+                    return new BaseResponseModel<RandomScanAndOrderResponse>(
+                        StatusCodes.Status400BadRequest,
+                        "NO_VALID_PRODUCTS",
+                        "No products with valid sizes found");
+                }
+
+                // Step 7: Create order
+                var createOrderRequest = new CreateOrderRequest
+                {
+                    TableId = selectedTableId,
+                    deviceToken = randomDeviceId,
+                    Items = orderItems
+                };
+
+                var orderResult = await _orderService.HandleOrderAsync(createOrderRequest);
+
+                // Step 8: Set payment status to Paid for order and all order items
+                if (orderResult.StatusCode == StatusCodes.Status200OK || orderResult.StatusCode == StatusCodes.Status201Created)
+                {
+                    if (orderResult.Data != null && orderResult.Data.Id != Guid.Empty)
+                    {
+                        var orderId = orderResult.Data.Id;
+                        
+                        // Load order with order items
+                        var order = await _unitOfWork.Repository<Order, Guid>()
+                            .GetByIdWithIncludeAsync(o => o.Id == orderId, true, o => o.OrderItems);
+                        
+                        if (order != null)
+                        {
+                            // Set payment status to Paid for order
+                            order.PaymentStatus = PaymentStatusEnums.Paid;
+                            order.LastUpdatedTime = DateTime.UtcNow;
+                            
+                            // Set payment status to Paid for all order items
+                            foreach (var orderItem in order.OrderItems)
+                            {
+                                orderItem.PaymentStatus = PaymentStatusEnums.Paid;
+                                orderItem.LastUpdatedTime = DateTime.UtcNow;
+                                _unitOfWork.Repository<OrderItem, Guid>().Update(orderItem);
+                            }
+                            
+                            // Update order
+                            _unitOfWork.Repository<Order, Guid>().Update(order);
+                            await _unitOfWork.SaveChangesAsync();
+                        }
+                    }
+                }
+
+                // Return combined result
+                var response = new RandomScanAndOrderResponse
+                {
+                    DeviceId = randomDeviceId,
+                    TableId = selectedTableId,
+                    ScanResult = scanResult,
+                    OrderResult = orderResult
+                };
+
+                return new BaseResponseModel<RandomScanAndOrderResponse>(
+                    StatusCodes.Status200OK,
+                    ResponseCodeConstants.SUCCESS,
+                    response,
+                    null,
+                    "Random scan and order created successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "RandomScanAndOrderAsync: Error occurred while executing random scan and order");
+                return new BaseResponseModel<RandomScanAndOrderResponse>(
+                    StatusCodes.Status500InternalServerError,
+                    "INTERNAL_ERROR",
+                    null,
+                    null,
+                    ex.Message);
+            }
         }
 
     }

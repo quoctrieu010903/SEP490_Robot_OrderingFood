@@ -5,6 +5,7 @@ namespace SEP490_Robot_FoodOrdering.Core.Response
 {
     public class BaseResponseModel<T>
     {
+        public string? ResponseCode = String.Empty;
         private List<string> data;
 
         public T? Data { get; set; }

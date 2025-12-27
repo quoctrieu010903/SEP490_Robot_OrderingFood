@@ -375,48 +375,85 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
 
-        public async Task<BaseResponseModel<List<ComplainResponse>>> GetComplainByTable(
-      Guid idTable,
-      bool forCustomer = false
-  )
+     
+       
+        private async Task<(DateTime?, int, int, int, int, string)> GetOrderSnapshotAsync(Guid tableSessionId)
         {
-            DateTime? sessionStart = null;
-            DateTime? sessionEnd = null;
+            var order = await _unitOfWork.Repository<Order, Guid>()
+                .GetWithSpecAsync(new BaseSpecification<Order>(o =>
+                    o.TableSessionId == tableSessionId
+                ));
 
-            if (forCustomer)
+            if (order == null)
+                return (null, 0, 0,0, 0, null );
+
+            var orderItems = await _unitOfWork.Repository<OrderItem, Guid>()
+                .GetAllWithSpecAsync(new BaseSpecification<OrderItem>(i =>
+                    i.OrderId == order.Id
+                ));
+
+            var kitchenCount = orderItems.Count(i =>
+                i.Status == OrderItemStatus.Pending
+                || i.Status == OrderItemStatus.Preparing
+                || i.Status == OrderItemStatus.Remark
+            );
+
+            var waiterCount = orderItems.Count(i =>
+                i.Status == OrderItemStatus.Ready
+                || i.Status == OrderItemStatus.Served
+                ||i.Status == OrderItemStatus.Completed
+            );
+
+            var cancelledCount = orderItems.Count(i =>
+                i.Status == OrderItemStatus.Cancelled
+            );
+            var totalItemCount = orderItems.Count();
+
+            return (
+                order.LastUpdatedTime,
+                kitchenCount,
+                waiterCount,
+                cancelledCount,
+                totalItemCount ,
+                order.Status.ToString()
+            );
+        }
+        public async Task<BaseResponseModel<List<ComplainResponse>>> GetComplainByTable(
+    Guid idTable,
+    bool forCustomer = false
+)
+        {
+            // 1️⃣ Lấy session active (luôn cần)
+            var activeSession = await _unitOfWork.Repository<TableSession, Guid>()
+                .GetWithSpecAsync(new BaseSpecification<TableSession>(s =>
+                    s.TableId == idTable &&
+                    s.CheckOut == null &&
+                    s.Status == TableSessionStatus.Active
+                ));
+
+            // Không có session → không có complain hợp lệ
+            if (activeSession == null)
             {
-                var activeSession = await _unitOfWork.Repository<TableSession, Guid>()
-                    .GetWithSpecAsync(new BaseSpecification<TableSession>(s =>
-                        s.TableId == idTable
-                        && s.CheckOut == null
-                        && s.Status == TableSessionStatus.Active
-                    ));
-
-                // ✅ Không có session => coi như không có complain trong session hiện tại
-                if (activeSession == null)
-                {
-                    return new BaseResponseModel<List<ComplainResponse>>(
-                        StatusCodes.Status200OK,
-                        ResponseCodeConstants.SUCCESS,
-                        new List<ComplainResponse>()
-                    );
-                }
-
-                var firstOrder = await _unitOfWork.Repository<Order, Guid>()
-                    .GetWithSpecAsync(new FirstOrderInSessionSpec(idTable, activeSession.Id));
-
-                sessionStart = firstOrder?.CreatedTime ?? activeSession.CheckIn;
-                sessionEnd = activeSession.CheckOut; // đang null vì active session, nhưng vẫn giữ logic
+                return new BaseResponseModel<List<ComplainResponse>>(
+                    StatusCodes.Status200OK,
+                    ResponseCodeConstants.SUCCESS,
+                    new List<ComplainResponse>()
+                );
             }
 
+            // 2️⃣ Snapshot đơn hàng (dùng hàm bạn đã viết)
+            var (lastOrderUpdatedTime, kitchenCount, waiterCount, cancelledCount, totalitemCount, orderStatus)
+                = await GetOrderSnapshotAsync(activeSession.Id);
+
+            // 3️⃣ Build spec complain (customer mới bị giới hạn theo session)
             var spec = new BaseSpecification<Complain>(c =>
-                c.TableId == idTable
-                && (
-                    !forCustomer
-                    || (
-                        sessionStart.HasValue
-                        && c.CreatedTime >= sessionStart.Value
-                        && (!sessionEnd.HasValue || c.CreatedTime <= sessionEnd.Value)
+                c.TableId == idTable &&
+                (
+                    !forCustomer ||
+                    (
+                        c.CreatedTime >= activeSession.CheckIn &&
+                        (!activeSession.CheckOut.HasValue ||
+                         c.CreatedTime <= activeSession.CheckOut.Value)
                     )
                 )
             );
@@ -424,7 +461,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var complains = await _unitOfWork.Repository<Complain, Guid>()
                 .GetAllWithSpecWithInclueAsync(spec, true, c => c.Handler);
 
-            // ✅ Tuỳ bạn: forCustomer thì có thể trả list rỗng thay vì 404
             if (complains == null || !complains.Any())
             {
                 return new BaseResponseModel<List<ComplainResponse>>(
@@ -434,17 +470,45 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 );
             }
 
+            // 4️⃣ Map response theo ROLE
             var responseList = complains
                 .OrderByDescending(c => c.CreatedTime)
-                .Select(c => new ComplainResponse
+                .Select(c =>
                 {
-                    ComplainId = c.Id,
-                    IdTable = c.TableId,
-                    FeedBack = c.Description,
-                    CreateData = c.CreatedTime,
-                    IsPending = c.isPending,
-                    ResolutionNote = c.ResolutionNote,
-                    HandledBy = c.Handler != null ? c.Handler.FullName : null
+                    var res = new ComplainResponse
+                    {
+                        ComplainId = c.Id,
+                        IdTable = c.TableId,
+                        FeedBack = c.Description,
+                        CreateData = c.CreatedTime,
+                        IsPending = c.isPending,
+                        LastOrderUpdateTime = lastOrderUpdatedTime
+                    };
+
+                    if (!forCustomer)
+                    {
+                        // 👉 MODERATOR
+                        res.KitchenItemCount = kitchenCount;
+                        res.WaiterItemCount = waiterCount;
+                        res.CancelledItemCount = cancelledCount;
+                        res.ResolutionNote = c.ResolutionNote;
+                        res.HandledBy = c.Handler?.FullName;
+                        res.totalItemCount = totalitemCount;
+                        res.OrderStatus = orderStatus;
+
+                    }
+                    else
+                    {
+                        // 👉 CUSTOMER
+                        res.KitchenItemCount = 0;
+                        res.WaiterItemCount = 0;
+                        res.CancelledItemCount = 0;
+                        res.HandledBy = null;
+                        //res.ResolutionNote = BuildCustomerResolution(c.Title,c.ResolutionNote,c.isPending);
+                        res.ResolutionNote = c.ResolutionNote;
+                    }
+
+                    return res;
                 })
                 .ToList();
 
@@ -454,6 +518,69 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 responseList
             );
         }
+
+        private string NormalizeTitle(string? title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                return "UNKNOWN";
+
+            var t = title.Trim().ToLowerInvariant();
+
+            if (t.Contains("phản hồi"))
+                return "FEEDBACK";
+
+            if (t.Contains("yêu cầu nhanh") || t.Contains("phục vụ nhanh"))
+                return "QUICK_REQUEST";
+
+            return "UNKNOWN";
+        }
+
+        private string BuildCustomerResolution(
+     string? title,
+     string? resolutionNote,
+     bool isPending
+ )
+        {
+            var normalizedTitle = NormalizeTitle(title);
+
+            // ===============================
+            // 1️⃣ ĐANG XỬ LÝ
+            // ===============================
+            if (isPending)
+            {
+                switch (normalizedTitle)
+                {
+                    case "FEEDBACK":
+                        return "Phản hồi của bạn đã được ghi nhận. Nhân viên sẽ kiểm tra trong thời gian sớm nhất.";
+
+                    case "QUICK_REQUEST":
+                        return "Yêu cầu của bạn đã được chuyển đến nhân viên phục vụ.";
+
+                    default:
+                        return "Yêu cầu của bạn đang được xử lý.";
+                }
+            }
+
+            // ===============================
+            // 2️⃣ ĐÃ XỬ LÝ
+            // ===============================
+            switch (normalizedTitle)
+            {
+                case "FEEDBACK":
+                    // Dù có resolutionNote hay không → KHÔNG show
+                    return "Phản hồi của bạn đã được tiếp nhận và xử lý. Cảm ơn bạn đã thông báo.";
+
+                case "QUICK_REQUEST":
+                    // Có resolutionNote nội bộ → vẫn chỉ nói đã xử lý
+                    return "Yêu cầu của bạn đã được xử lý.";
+
+                default:
+                    return "Yêu cầu của bạn đã được xử lý.";
+            }
+        }
+
+
+
 
 
 

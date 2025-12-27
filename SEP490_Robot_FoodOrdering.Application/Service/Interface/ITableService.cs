@@ -25,6 +25,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
         Task<BaseResponseModel<TableResponse>> ScanQrCode01(Guid id, string deviceId);
         Task<BaseResponseModel<TableResponse>> MoveTable(Guid oldTableId, MoveTableRequest request);
         Task<BaseResponseModel<CheckDeviceTokenResponse>> CheckTableAndDeviceToken(Guid tableId, string deviceId);
+        Task<BaseResponseModel<RandomScanAndOrderResponse>> RandomScanAndOrderAsync(Guid? tableId = null);
 
     }
 } 
