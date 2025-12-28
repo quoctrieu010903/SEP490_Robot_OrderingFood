@@ -277,7 +277,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                             productId = i.ProductId,
                             productName = i.Product?.Name,
                             sizeId = i.ProductSizeId,
-                            sizeName = i.ProductSize?.SizeName,
+                            sizeName = i.ProductSize?.SizeName.ToString(),
                             toppingCount = i.OrderItemTopping?.Count ?? 0
                         }).ToList()
                     });
@@ -867,7 +867,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                                 productId = i.ProductId,
                                 productName = i.Product?.Name,
                                 sizeId = i.ProductSizeId,
-                                sizeName = i.ProductSize?.SizeName,
+                                sizeName = i.ProductSize?.SizeName.ToString(),
                                 previousStatus = itemOldStatuses.ContainsKey(i.Id) ? itemOldStatuses[i.Id] : oldStatus,
                                 newStatus = i.Status,
                                 remarkNote = i.RemakeNote
