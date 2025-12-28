@@ -1242,6 +1242,36 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // PushTableAsync is called outside transaction to avoid "transaction has completed" error
             // The DbContext needs to be in a clean state after transaction disposal
             await _moderatorDashboardRefresher.PushTableAsync(newTable.Id);
+            
+            // ===== STEP 7: Send SignalR notification to customers =====
+            // Notify customers on the old table that they have been moved to a new table
+            try
+            {
+                var tableMovedNotification = new Application.DTO.Response.Notification.TableMovedNotification
+                {
+                    OldTableId = oldTableId,
+                    OldTableName = oldTable.Name,
+                    NewTableId = request.NewTableId,
+                    NewTableName = newTable.Name,
+                    Reason = request.Reason,
+                    MovedBy = "Moderator",
+                    MovedAt = now,
+                    Message = $"Bàn của bạn đã được chuyển từ {oldTable.Name} sang {newTable.Name}"
+                };
+
+                await _notificationService.SendTableMovedNotificationAsync(tableMovedNotification);
+
+                _logger.LogInformation(
+                    "MoveTable: Sent table moved notification to customers on table {OldTableId}",
+                    oldTableId);
+            }
+            catch (Exception ex)
+            {
+                // Don't fail the operation if notification fails
+                _logger.LogError(ex,
+                    "MoveTable: Failed to send table moved notification, but operation succeeded");
+            }
+
             var response = _mapper.Map<TableResponse>(newTable);
             return new BaseResponseModel<TableResponse>(
                 StatusCodes.Status200OK,

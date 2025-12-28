@@ -78,6 +78,7 @@ app.UseMiddleware<CustomExceptionHandlerMiddleware>();
 app.MapHub<OrderNotificationHub>("/orderNotificationHub");
 app.MapHub<ModeratorDashboardHub>("hubs/moderator-dashboard");
 app.MapHub<AdminDashboardHub>("hubs/admin-dashboard");
+app.MapHub<CustomerTableHub>("hubs/customer-table");
 
 app.MapControllers();
 app.Logger.LogInformation("ContentRootPath: {ContentRoot}", app.Environment.ContentRootPath);
