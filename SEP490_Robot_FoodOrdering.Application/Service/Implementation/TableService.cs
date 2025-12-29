@@ -95,7 +95,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
         public async Task<PaginatedList<TableResponse>> GetAll(PagingRequestModel paging, TableEnums? status, string? tableName)
         {
-            var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecWithInclueAsync(new TableSpecification(paging.PageNumber, paging.PageSize, status, tableName), true, t => t.Sessions);
+            var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecWithInclueAsync(new TableSpecification(paging.PageNumber, paging.PageSize, status, tableName), true, t => t.Sessions ,  t => t.Orders);
             var mapped = _mapper.Map<List<TableResponse>>(list);
             mapped = mapped
                         .OrderBy(t =>
@@ -375,17 +375,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 switch (item.Status)
                 {
                     case OrderItemStatus.Pending:
+                        item.Status = OrderItemStatus.Abandoned;
+                        break;
+
+                    // ❗ ĐÃ VÀO BẾP / ĐÃ HOÀN THÀNH → GIỮ NGUYÊN
                     case OrderItemStatus.Preparing:
                     case OrderItemStatus.Ready:
-                        item.Status = OrderItemStatus.Cancelled;
-                        break;
-                    // Các trạng thái đã hoàn thành thì giữ nguyên
                     case OrderItemStatus.Served:
                     case OrderItemStatus.Completed:
                     case OrderItemStatus.Cancelled:
-                    case OrderItemStatus.RequestCancel:
+                    case OrderItemStatus.Remark:
                         break;
                 }
+
 
                 if (item.Status != oldStatus)
                 {
