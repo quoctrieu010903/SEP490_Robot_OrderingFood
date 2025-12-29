@@ -252,10 +252,12 @@ namespace SEP490_Robot_FoodOrdering.API.Hubs
         {
             if (!string.IsNullOrEmpty(tableId))
             {
-                await Groups.AddToGroupAsync(Context.ConnectionId, $"CustomerTable_{tableId}");
+                // Normalize tableId to lowercase for consistent group naming
+                var normalizedTableId = tableId.ToLowerInvariant().Trim();
+                await Groups.AddToGroupAsync(Context.ConnectionId, $"CustomerTable_{normalizedTableId}");
                 _logger.LogInformation(
-                    "CustomerTableHub: Client {ConnectionId} joined table group {TableId}",
-                    Context.ConnectionId, tableId);
+                    "CustomerTableHub: Client {ConnectionId} joined table group CustomerTable_{TableId}",
+                    Context.ConnectionId, normalizedTableId);
             }
         }
 
@@ -267,10 +269,12 @@ namespace SEP490_Robot_FoodOrdering.API.Hubs
         {
             if (!string.IsNullOrEmpty(tableId))
             {
-                await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"CustomerTable_{tableId}");
+                // Normalize tableId to lowercase for consistent group naming
+                var normalizedTableId = tableId.ToLowerInvariant().Trim();
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"CustomerTable_{normalizedTableId}");
                 _logger.LogInformation(
-                    "CustomerTableHub: Client {ConnectionId} left table group {TableId}",
-                    Context.ConnectionId, tableId);
+                    "CustomerTableHub: Client {ConnectionId} left table group CustomerTable_{TableId}",
+                    Context.ConnectionId, normalizedTableId);
             }
         }
 

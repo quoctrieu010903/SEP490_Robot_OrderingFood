@@ -203,14 +203,18 @@ namespace SEP490_Robot_FoodOrdering.API.Services
         {
             try
             {
+                // Normalize Guid to lowercase string for consistent group naming
+                var oldTableIdStr = notification.OldTableId.ToString().ToLowerInvariant();
+                var newTableIdStr = notification.NewTableId.ToString().ToLowerInvariant();
+
                 // Send to OrderNotificationHub group (Table_{oldTableId})
                 // This is for customers using OrderNotificationHub
-                await _hubContext.Clients.Group($"Table_{notification.OldTableId}")
+                await _hubContext.Clients.Group($"Table_{oldTableIdStr}")
                     .SendAsync("TableMoved", notification);
 
                 // Send to CustomerTableHub group (CustomerTable_{oldTableId})
                 // This is for customers using CustomerTableHub
-                await _customerTableHubContext.Clients.Group($"CustomerTable_{notification.OldTableId}")
+                await _customerTableHubContext.Clients.Group($"CustomerTable_{oldTableIdStr}")
                     .SendAsync("TableMoved", notification);
 
                 _logger.LogInformation(
