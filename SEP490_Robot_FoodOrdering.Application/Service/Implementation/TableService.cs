@@ -95,7 +95,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         }
         public async Task<PaginatedList<TableResponse>> GetAll(PagingRequestModel paging, TableEnums? status, string? tableName)
         {
-            var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecWithInclueAsync(new TableSpecification(paging.PageNumber, paging.PageSize, status, tableName), true, t => t.Sessions ,  t => t.Orders);
+            var list = await _unitOfWork.Repository<Table, Table>().GetAllWithSpecWithInclueAsync(new TableSpecification(paging.PageNumber, paging.PageSize, status, tableName), true, t => t.Sessions, t => t.Orders);
             var mapped = _mapper.Map<List<TableResponse>>(list);
             mapped = mapped
                         .OrderBy(t =>
@@ -769,230 +769,153 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
 
-        public async Task<BaseResponseModel<TableResponse>> ScanQrCode01(Guid id, string deviceId)
+        public async Task<BaseResponseModel<TableResponse>> ScanQrCode01(Guid tableId, string deviceId)
         {
-            // 0. Lấy thông tin bàn
-            var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(id);
-            if (table == null)
-                throw new ErrorException(StatusCodes.Status404NotFound,
-                    ResponseCodeConstants.NOT_FOUND, "Table không tìm thấy");
-
-            _logger.LogInformation(
-                "ScanQrCode: tableId={TableId}, deviceId={DeviceId}, tableStatus={Status}, tableDeviceId={TableDeviceId}",
-                id, deviceId, table.Status, table.DeviceId);
-
-            // 1. Bàn Reserved -> luôn chặn
-            if (table.Status == TableEnums.Reserved)
-                throw new ErrorException(StatusCodes.Status403Forbidden,
-                    ResponseCodeConstants.FORBIDDEN, "Bàn không khả dụng");
-
             var now = DateTime.UtcNow;
 
-            // 2. Device này đang giữ bàn KHÁC không? (chỉ check nếu deviceId có giá trị)
-            if (!string.IsNullOrWhiteSpace(deviceId))
-            {
-                var currentSessionForDevice = await _tableSessionService.GetActiveSessionForDeviceAsync(deviceId);
+            // ======================================================
+            // STEP 0: Validate table
+            // ======================================================
+            var table = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(tableId);
+            if (table == null)
+                throw new ErrorException(
+                    StatusCodes.Status404NotFound,
+                    ResponseCodeConstants.NOT_FOUND,
+                    "Không tìm thấy bàn");
 
-                if (currentSessionForDevice != null && currentSessionForDevice.TableId != id)
-                {
-                    // Check còn bill pending ở bàn cũ không
-                    var unpaidInvoice = await _unitOfWork.Repository<Payment, Guid>()
-                        .GetWithSpecAsync(new BaseSpecification<Payment>(
-                            p => p.Order.TableId == currentSessionForDevice.TableId &&
-                                 p.PaymentStatus == PaymentStatusEnums.Pending &&
-                                 p.Order.OrderItems.Any(x => x.PaymentStatus != PaymentStatusEnums.Paid)));
+            if (table.Status == TableEnums.Reserved)
+                throw new ErrorException(
+                    StatusCodes.Status403Forbidden,
+                    ResponseCodeConstants.FORBIDDEN,
+                    "Bàn không khả dụng");
 
-                    if (unpaidInvoice != null)
-                    {
-                        var currentTableName = currentSessionForDevice.Table?.Name ?? "khác";
-
-                        _logger.LogWarning(
-                            "ScanQrCode: device {DeviceId} còn hóa đơn pending ở {TableName}",
-                            deviceId, currentTableName);
-
-                        throw new ErrorException(StatusCodes.Status403Forbidden,
-                            ResponseCodeConstants.FORBIDDEN,
-                            $"Bạn đang có hóa đơn chưa thanh toán ở {currentTableName}, vui lòng thanh toán trước khi đổi bàn.");
-                    }
-
-                    // Không còn bill pending -> close session cũ + release bàn cũ (Table fields sẽ được cập nhật trong CloseSessionAsync)
-                    await _tableSessionService.CloseSessionAsync(
-                        currentSessionForDevice,
-                        "Auto close when device switches to another table",
-                        null,
-                        null,
-                        deviceId);
-                }
-            }
-
-            // 3. Lấy session Active của chính bàn đang scan
-            var activeSession = await _unitOfWork.Repository<TableSession, Guid>()
+            // ======================================================
+            // STEP 1: Lấy session ACTIVE của bàn đang scan
+            // ======================================================
+            var tableSession = await _unitOfWork.Repository<TableSession, Guid>()
                 .GetWithSpecAsync(new BaseSpecification<TableSession>(
-                    s => s.TableId == id && s.Status == TableSessionStatus.Active));
+                    s => s.TableId == tableId && s.Status == TableSessionStatus.Active));
 
-            // ===== CASE A: Moderator mở bàn trước đó (DeviceId == null) =====
-            if (activeSession != null && string.IsNullOrEmpty(activeSession.DeviceId))
+            // ======================================================
+            // CASE 1: Bàn đã có khách – thiết bị khác quét vào
+            // ======================================================
+            if (tableSession != null
+                && !string.IsNullOrEmpty(tableSession.DeviceId)
+                && tableSession.DeviceId != deviceId)
             {
-                // Attach device mới (friend's phone) vào session
-                _logger.LogInformation(
-                    "ScanQrCode: attach new device {DeviceId} vào session {SessionId} (moderator đã mở bàn trước đó)",
-                    deviceId, activeSession.Id);
-
-                activeSession.DeviceId = deviceId;
-                activeSession.LastActivityAt = now;
-                _unitOfWork.Repository<TableSession, Guid>().Update(activeSession);
-
-                // Table cache sync
-                table.Status = TableEnums.Occupied;
-                table.DeviceId = deviceId;
-                table.IsQrLocked = true;
-                table.LockedAt = table.LockedAt ?? now;
-                table.LastAccessedAt = now;
-                table.ShareToken = null;
-                table.isShared = false;
-
-                _unitOfWork.Repository<Table, Guid>().Update(table);
-
-                await _unitOfWork.SaveChangesAsync();
-
-                await _tableActivityService.LogAsync(
-                    activeSession,
-                    deviceId,
-                    TableActivityType.AttachDeviceFromModerator,
-                    new { tableId = table.Id, tableName = table.Name });
-
-
-                await _moderatorDashboardRefresher.PushTableAsync(id);
-                // ✅ Save changes after logging activity
-                await _unitOfWork.SaveChangesAsync();
-
-                var respAttach = _mapper.Map<TableResponse>(table);
-                // nếu có SessionToken trong response:
-                // respAttach.SessionToken = activeSession.SessionToken;
-
-                return new BaseResponseModel<TableResponse>(
-                    StatusCodes.Status200OK,
-                    ResponseCodeConstants.SUCCESS,
-                    respAttach,
-                    null,
-                    "Đã gán thiết bị vào bàn thành công");
+                throw new ErrorException(
+                    StatusCodes.Status403Forbidden,
+                    ResponseCodeConstants.FORBIDDEN,
+                    $"{table.Name} đã có khách sử dụng");
             }
 
-            // ===== CASE B: Bàn có session Active & đúng cùng device (re-enter) =====
-            if (activeSession != null && activeSession.DeviceId == deviceId)
+            // ======================================================
+            // CASE 2: Re-enter – cùng thiết bị, cùng bàn
+            // ======================================================
+            if (tableSession != null && tableSession.DeviceId == deviceId)
             {
-                _logger.LogInformation(
-                    "ScanQrCode: re-enter session {SessionId} table {TableId} by device {DeviceId}",
-                    activeSession.Id, id, deviceId);
-
-                activeSession.LastActivityAt = now;
-                _unitOfWork.Repository<TableSession, Guid>().Update(activeSession);
-
-                // Sync lại trạng thái Table để đảm bảo consistency
-                // (Trường hợp moderator đã thay đổi trạng thái bàn bằng API PUT nhưng session vẫn Active)
-                table.Status = TableEnums.Occupied;
-                table.DeviceId = deviceId;
-                table.IsQrLocked = true;
-                table.LockedAt = table.LockedAt ?? now; // Giữ nguyên LockedAt cũ nếu có, hoặc set mới
+                tableSession.LastActivityAt = now;
                 table.LastAccessedAt = now;
+
+                _unitOfWork.Repository<TableSession, Guid>().Update(tableSession);
                 _unitOfWork.Repository<Table, Guid>().Update(table);
-
                 await _unitOfWork.SaveChangesAsync();
-
-
-                await _unitOfWork.SaveChangesAsync();
-
-                var respContinue = _mapper.Map<TableResponse>(table);
-                // respContinue.SessionToken = activeSession.SessionToken;
 
                 return new BaseResponseModel<TableResponse>(
                     StatusCodes.Status200OK,
                     ResponseCodeConstants.SUCCESS,
-                    respContinue,
+                    _mapper.Map<TableResponse>(table),
                     null,
                     "Tiếp tục sử dụng bàn");
             }
 
-            // ===== CASE C: Có session Active nhưng đang thuộc device KHÁC =====
-            if (activeSession != null && !string.IsNullOrEmpty(activeSession.DeviceId) && activeSession.DeviceId != deviceId)
+            // ======================================================
+            // STEP 2: Lấy session ACTIVE của thiết bị
+            // ======================================================
+            var deviceSession =
+                await _tableSessionService.GetActiveSessionForDeviceAsync(deviceId);
+
+            // ======================================================
+            // CASE 3: Thiết bị đang ở bàn khác → BLOCK + redirect
+            // ======================================================
+            if (deviceSession != null && deviceSession.TableId != tableId)
             {
-                // OLD LOGIC - COMMENTED OUT: Cho phép override khi không có bill
-                // Vấn đề: Logic này cho phép device khác chiếm bàn khi không có bill pending
-                // → Vi phạm mục đích của IsQrLocked (ngăn device khác scan vào)
-                /*
-                // Check bill pending
-                var unpaidInvoiceForThisTable = await _unitOfWork.Repository<Payment, Guid>()
-                    .GetWithSpecAsync(new BaseSpecification<Payment>(
-                        p => p.Order.TableId == table.Id &&
-                             p.PaymentStatus == PaymentStatusEnums.Pending &&
-                             p.Order.OrderItems.Any(x => x.PaymentStatus != PaymentStatusEnums.Paid)));
+                var oldTable = deviceSession.Table;
+                var oldTableName = oldTable?.Name ?? "bàn cũ";
 
-                if (unpaidInvoiceForThisTable != null)
+                var redirectUrl = _enpointService.GetFrontendUrl() + $"/{oldTable.Id}";
+                // chỉnh lại theo routing FE của bạn nếu cần
+
+                var redirectResponse = new TableRedirectResponse
                 {
-                    _logger.LogWarning(
-                        "ScanQrCode: table {TableName} đang occupied bởi device khác và còn bill pending",
-                        table.Name);
+                    Id = oldTable.Id,
+                    Name = oldTable.Name,
+                    RedirectTableId = oldTable.Id,
+                    RedirectUrl = redirectUrl
+                };
 
-                    throw new ErrorException(StatusCodes.Status403Forbidden,
-                        ResponseCodeConstants.FORBIDDEN,
-                        "Bàn đã có người sử dụng, vui lòng liên hệ nhân viên hỗ trợ.");
-                }
+                return new BaseResponseModel<TableResponse>(
+                      StatusCodes.Status403Forbidden,
+                      ResponseCodeConstants.FORBIDDEN,
+                      null,
+                      new
+                      {
+                          redirectTableId = oldTable.Id,
+                          redirectUrl = redirectUrl
+                      },
+      $"Bạn đang sử dụng {oldTableName}. Vui lòng quay lại bàn này."
+  );
+            }
 
-                // Không còn bill pending -> close session cũ + tạo session mới cho deviceId này
-                await _tableSessionService.CloseSessionAsync(
-                    activeSession,
-                    "Auto close when new device overrides table",
-                    null,
-                    deviceId);
+            // ======================================================
+            // CASE 4: Moderator mở bàn trước (session có nhưng chưa có device)
+            // ======================================================
+            if (tableSession != null && string.IsNullOrEmpty(tableSession.DeviceId))
+            {
+                tableSession.DeviceId = deviceId;
+                tableSession.LastActivityAt = now;
 
-                var newSession = await _tableSessionService.CreateSessionAsync(table, deviceId);
+                table.Status = TableEnums.Occupied;
+                table.DeviceId = deviceId;
+                table.IsQrLocked = true;
+                table.LockedAt ??= now;
+                table.LastAccessedAt = now;
 
-                _logger.LogInformation(
-                    "ScanQrCode: table {TableName} không còn bill pending, device {DeviceId} override session {OldSessionId} -> new session {NewSessionId}",
-                    table.Name, deviceId, activeSession.Id, newSession.Id);
+                _unitOfWork.Repository<TableSession, Guid>().Update(tableSession);
+                _unitOfWork.Repository<Table, Guid>().Update(table);
+
                 await _unitOfWork.SaveChangesAsync();
-                var respOverride = _mapper.Map<TableResponse>(table);
-                // respOverride.SessionToken = newSession.SessionToken;
+                await _moderatorDashboardRefresher.PushTableAsync(tableId);
 
                 return new BaseResponseModel<TableResponse>(
                     StatusCodes.Status200OK,
                     ResponseCodeConstants.SUCCESS,
-                    respOverride,
+                    _mapper.Map<TableResponse>(table),
                     null,
-                    "Đã checkin vào bàn thành công");
-                */
-
-                // NEW LOGIC: BLOCK HOÀN TOÀN device khác
-                // Bàn đã bị lock bởi device khác → chặn ngay, không quan tâm có bill hay không
-                // Chỉ cho phép device đang giữ bàn hoặc moderator (dùng endpoint thay đổi trạng thái)
-                _logger.LogWarning(
-                    "ScanQrCode: table {TableName} (IsQrLocked={IsQrLocked}) đang bị giữ bởi device {OldDeviceId}, từ chối device mới {NewDeviceId}",
-                    table.Name, table.IsQrLocked, activeSession.DeviceId, deviceId);
-
-                throw new ErrorException(
-                    StatusCodes.Status403Forbidden,
-                    ResponseCodeConstants.FORBIDDEN,
-                    $"{table.Name} đang được sử dụng. Vui lòng chọn bàn khác hoặc liên hệ nhân viên.");
+                    "Đã gán thiết bị vào bàn");
             }
 
-            // ===== CASE D: Không có session Active cho bàn này -> tạo session mới =====
-            var createdSession = await _tableSessionService.CreateSessionAsync(table, deviceId);
+            // ======================================================
+            // CASE 5: Bàn trống + thiết bị trống → CREATE SESSION
+            // ======================================================
+            var newSession = await _tableSessionService.CreateSessionAsync(table, deviceId);
 
-            _logger.LogInformation(
-                "ScanQrCode: table {TableName} chưa có session active, tạo session mới {SessionId} cho device {DeviceId}",
-                table.Name, createdSession.Id, deviceId);
+            table.Status = TableEnums.Occupied;
+            table.DeviceId = deviceId;
+            table.IsQrLocked = true;
+            table.LockedAt ??= now;
+            table.LastAccessedAt = now;
 
-            var respNew = _mapper.Map<TableResponse>(table);
-            // respNew.SessionToken = createdSession.SessionToken;
-
+            _unitOfWork.Repository<Table, Guid>().Update(table);
             await _unitOfWork.SaveChangesAsync();
-            await _moderatorDashboardRefresher.PushTableAsync(id);
+            await _moderatorDashboardRefresher.PushTableAsync(tableId);
+
             return new BaseResponseModel<TableResponse>(
                 StatusCodes.Status200OK,
                 ResponseCodeConstants.SUCCESS,
-                respNew,
+                _mapper.Map<TableResponse>(table),
                 null,
-                "Đã checkin vào bàn thành công");
+                "Đã check-in vào bàn thành công");
         }
 
         /// <summary>
@@ -1233,7 +1156,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         "MoveTable: Error occurred during rollback for table {OldTableId} to {NewTableId}",
                         oldTableId, request.NewTableId);
                 }
-                
+
                 _logger.LogError(ex,
                     "MoveTable: Error occurred while moving from table {OldTableId} to {NewTableId}",
                     oldTableId, request.NewTableId);
@@ -1244,7 +1167,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // PushTableAsync is called outside transaction to avoid "transaction has completed" error
             // The DbContext needs to be in a clean state after transaction disposal
             await _moderatorDashboardRefresher.PushTableAsync(newTable.Id);
-            
+
             // ===== STEP 7: Send SignalR notification to customers =====
             // Notify customers on the old table that they have been moved to a new table
             try
@@ -1366,7 +1289,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             try
             {
                 var random = new Random();
-                
+
                 // Step 1: Generate random deviceId
                 var randomDeviceId = Guid.NewGuid().ToString();
 
@@ -1389,7 +1312,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     // Get a random available table
                     var availableTables = (await _unitOfWork.Repository<Table, Guid>()
                         .GetListAsync(t => t.Status == TableEnums.Available && !t.DeletedTime.HasValue)).ToList();
-                    
+
                     if (availableTables == null || !availableTables.Any())
                     {
                         return new BaseResponseModel<RandomScanAndOrderResponse>(
@@ -1397,7 +1320,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                             "NO_AVAILABLE_TABLES",
                             "No available tables found");
                     }
-                    
+
                     selectedTableId = availableTables[random.Next(availableTables.Count)].Id;
                 }
 
@@ -1416,7 +1339,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 // Step 4: Get all products from database
                 var allProducts = (await _unitOfWork.Repository<Product, Guid>()
                     .GetListAsync(p => !p.DeletedTime.HasValue)).ToList();
-                
+
                 if (allProducts == null || !allProducts.Any())
                 {
                     return new BaseResponseModel<RandomScanAndOrderResponse>(
@@ -1435,14 +1358,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 {
                     var productSizes = (await _unitOfWork.Repository<ProductSize, Guid>()
                         .GetListAsync(ps => ps.ProductId == product.Id && !ps.DeletedTime.HasValue)).ToList();
-                    
+
                     if (productSizes == null || !productSizes.Any())
                     {
                         continue; // Skip products without sizes
                     }
 
                     var randomSize = productSizes[random.Next(productSizes.Count)];
-                    
+
                     orderItems.Add(new CreateOrderItemRequest
                     {
                         ProductId = product.Id,
@@ -1476,17 +1399,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     if (orderResult.Data != null && orderResult.Data.Id != Guid.Empty)
                     {
                         var orderId = orderResult.Data.Id;
-                        
+
                         // Load order with order items
                         var order = await _unitOfWork.Repository<Order, Guid>()
                             .GetByIdWithIncludeAsync(o => o.Id == orderId, true, o => o.OrderItems);
-                        
+
                         if (order != null)
                         {
                             // Set payment status to Paid for order
                             order.PaymentStatus = PaymentStatusEnums.Paid;
                             order.LastUpdatedTime = DateTime.UtcNow;
-                            
+
                             // Set payment status to Paid for all order items
                             foreach (var orderItem in order.OrderItems)
                             {
@@ -1494,7 +1417,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                                 orderItem.LastUpdatedTime = DateTime.UtcNow;
                                 _unitOfWork.Repository<OrderItem, Guid>().Update(orderItem);
                             }
-                            
+
                             // Update order
                             _unitOfWork.Repository<Order, Guid>().Update(order);
                             await _unitOfWork.SaveChangesAsync();
