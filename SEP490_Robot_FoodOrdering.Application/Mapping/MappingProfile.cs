@@ -140,7 +140,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src =>
                     src.OrderItemTopping != null && src.OrderItemTopping.Count > 0
                         ? src.OrderItemTopping.Select(oit => oit.Topping).ToList()
-                        : new List<Topping>())); // Direct Top  ping entities
+                        : new List<Topping>())) // Direct Topping entities
+                // Map các trường thời gian - tự động map vì tên giống nhau
+                .ForMember(dest => dest.ReadyTime, opt => opt.MapFrom(src => src.ReadyTime))
+                .ForMember(dest => dest.ServedTime, opt => opt.MapFrom(src => src.ServedTime))
+                .ForMember(dest => dest.CancelledTime, opt => opt.MapFrom(src => src.CancelledTime))
+                .ForMember(dest => dest.RemakedTime, opt => opt.MapFrom(src => src.RemakedTime));
 
             CreateMap<CancelledOrderItem, CancelledItemResponse>()
 
@@ -224,7 +229,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.IdTable, opt => opt.MapFrom(src => src.TableId))
                 .ForMember(dest => dest.FeedBack, opt => opt.MapFrom(src => src.Description))
                 .ForMember(dest => dest.IsPending, opt => opt.MapFrom(src => src.isPending))
-                .ForMember(dest => dest.CreateData, opt => opt.MapFrom(src => src.CreatedTime));
+                .ForMember(dest => dest.CreateData, opt => opt.MapFrom(src => src.CreatedTime))
+                .ForMember(dest => dest.QuickServeItems, opt => opt.MapFrom(src => 
+                    src.QuickServeItems != null && src.QuickServeItems.Any()
+                        ? src.QuickServeItems.ToList()
+                        : null));
+
+            CreateMap<QuickServeItem, QuickServeItemResponse>();
 
             CreateMap<OrderItem, OrderItemDTO>()
                 .ForMember(dest => dest.OrderItemId, opt => opt.MapFrom(src => src.Id))
