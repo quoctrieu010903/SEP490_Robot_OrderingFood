@@ -23,7 +23,11 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
             public bool IsUrgent { get; set; } = false;
             public decimal ? Price { get; set; }
             public decimal ? TotalPrice { get; set; } // tong tien giua size va OrderItemTopping
-
+            public DateTime? ReadyTime { get; set; } // Thời gian chuyển sang trạng thái Ready (Preparing → Ready)
+            public DateTime? ServedTime { get; set; } // Thời gian chuyển sang trạng thái Served (Ready → Served)
+            public DateTime? CancelledTime { get; set; } // Thời gian hủy món
+            public DateTime? RemakedTime { get; set; } // Thời gian làm lại món (chuyển sang Remark)
+            
 
 
 

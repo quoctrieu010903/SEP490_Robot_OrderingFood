@@ -92,6 +92,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             orderItem.Status = Domain.Enums.OrderItemStatus.Cancelled;
             orderItem.LastUpdatedTime = now;
             orderItem.TotalPrice = 0m; // để tránh bị tính lại ở chỗ khác
+            // Set CancelledTime khi hủy món
+            if (orderItem.CancelledTime == null)
+            {
+                orderItem.CancelledTime = now;
+            }
 
             // ✅ Cập nhật tổng tiền Order
             order.TotalPrice = orderTotalAfter;

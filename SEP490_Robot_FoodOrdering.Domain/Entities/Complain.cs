@@ -18,6 +18,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public DateTime? ResolvedAt { get; set; } // Thời điểm xử lý xong       
         public string? ResolutionNote { get; set; } // Ghi chú xử lý
 
+        public virtual ICollection<QuickServeItem> QuickServeItems { get; set; } = new List<QuickServeItem>();
     }
 
     public enum ComplainStatusEnum

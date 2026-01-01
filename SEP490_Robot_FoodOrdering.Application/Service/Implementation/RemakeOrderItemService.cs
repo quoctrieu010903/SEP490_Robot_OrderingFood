@@ -37,9 +37,15 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 LastUpdatedTime = DateTime.UtcNow,
                 LastUpdatedBy = remakedByUserId.ToString(),
             };
-            orderitem.Status =OrderItemStatus.Preparing;
-            orderitem.LastUpdatedTime = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+            orderitem.Status = OrderItemStatus.Preparing;
+            orderitem.LastUpdatedTime = now;
             orderitem.IsUrgent = true;
+            // Set RemakedTime khi làm lại món
+            if (orderitem.RemakedTime == null)
+            {
+                orderitem.RemakedTime = now;
+            }
             await  _unitOfWork.Repository<RemakeOrderItem, Guid>().AddAsync(remakeItem);
             await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(orderitem);
             await _unitOfWork.SaveChangesAsync();
