@@ -13,11 +13,16 @@ namespace SEP490_Robot_FoodOrdering.API.Services
     public class OrderNotificationService : INotificationService
     {
         private readonly IHubContext<OrderNotificationHub> _hubContext;
+        private readonly IHubContext<CustomerTableHub> _customerTableHubContext;
         private readonly ILogger<OrderNotificationService> _logger;
 
-        public OrderNotificationService(IHubContext<OrderNotificationHub> hubContext, ILogger<OrderNotificationService> logger)
+        public OrderNotificationService(
+            IHubContext<OrderNotificationHub> hubContext,
+            IHubContext<CustomerTableHub> customerTableHubContext,
+            ILogger<OrderNotificationService> logger)
         {
             _hubContext = hubContext;
+            _customerTableHubContext = customerTableHubContext;
             _logger = logger;
         }
 
@@ -191,6 +196,36 @@ namespace SEP490_Robot_FoodOrdering.API.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to send moderator notification");
+            }
+        }
+
+        public async Task SendTableMovedNotificationAsync(TableMovedNotification notification)
+        {
+            try
+            {
+                // Normalize Guid to lowercase string for consistent group naming
+                var oldTableIdStr = notification.OldTableId.ToString().ToLowerInvariant();
+                var newTableIdStr = notification.NewTableId.ToString().ToLowerInvariant();
+
+                // Send to OrderNotificationHub group (Table_{oldTableId})
+                // This is for customers using OrderNotificationHub
+                await _hubContext.Clients.Group($"Table_{oldTableIdStr}")
+                    .SendAsync("TableMoved", notification);
+
+                // Send to CustomerTableHub group (CustomerTable_{oldTableId})
+                // This is for customers using CustomerTableHub
+                await _customerTableHubContext.Clients.Group($"CustomerTable_{oldTableIdStr}")
+                    .SendAsync("TableMoved", notification);
+
+                _logger.LogInformation(
+                    "Table moved notification sent - From Table: {OldTableName} ({OldTableId}) to {NewTableName} ({NewTableId})",
+                    notification.OldTableName, notification.OldTableId, notification.NewTableName, notification.NewTableId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, 
+                    "Failed to send table moved notification from Table: {OldTableId} to {NewTableId}", 
+                    notification.OldTableId, notification.NewTableId);
             }
         }
 

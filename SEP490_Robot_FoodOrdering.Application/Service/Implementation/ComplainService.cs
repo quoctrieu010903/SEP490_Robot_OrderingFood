@@ -26,15 +26,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IMapper _mapper;
         private readonly IOrderStatsQuery _orderStatsService;
         private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
+        private readonly INotificationService _notificationService;
 
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public ComplainService(IUnitOfWork unitOfWork, IMapper mapper, IOrderStatsQuery orderStatsService , IModeratorDashboardRefresher moderatorDashboardRefresher , IHttpContextAccessor httpContextAccessor)
+        public ComplainService(IUnitOfWork unitOfWork, IMapper mapper, IOrderStatsQuery orderStatsService , IModeratorDashboardRefresher moderatorDashboardRefresher , IHttpContextAccessor httpContextAccessor, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _orderStatsService = orderStatsService;
             _moderatorDashboardRefresher = moderatorDashboardRefresher;
             _httpContextAccessor = httpContextAccessor;
+            _notificationService = notificationService;
 
         }
 
@@ -97,6 +99,23 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             await _unitOfWork.SaveChangesAsync();
 
           await  _moderatorDashboardRefresher.PushTableAsync(idTable);
+          
+            if (isPending && content.Contains("Yêu cầu nhanh:"))
+            {
+                try
+                {
+                    // Extract product name from content (e.g., "Yêu cầu nhanh: Cho thêm nước mắm" -> "Cho thêm nước mắm")
+                    var productName = content.Replace("Yêu cầu nhanh:", "").Trim();
+                    var notificationMessage = $"Có yêu cầu phục vụ nhanh: {productName}";
+                    await _notificationService.SendWaiterNotificationAsync(notificationMessage, "QuickServeRequest");
+                }
+                catch (Exception ex)
+                {
+                    // Log error but don't fail the request
+                    // Could add logging here if needed
+                }
+            }
+            
             // 🔹 5️⃣ Trả kết quả
             return new BaseResponseModel<List<ComplainCreate>>(
                 StatusCodes.Status200OK,

@@ -13,6 +13,9 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Table
         public bool isShared { get; set; }
         public DateTime? LockedAt { get; set; } 
         public string QRCode { get; set; }
-      
+
+        public string RedirectTableId { get; set; }
+        public string RedirectUrl { get; set; }
+
     }
 } 

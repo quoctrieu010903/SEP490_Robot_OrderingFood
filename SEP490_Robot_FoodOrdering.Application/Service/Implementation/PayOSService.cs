@@ -51,7 +51,7 @@ public class PayOSService: IPayOSService
             .Where(oi => oi.Status != OrderItemStatus.Cancelled && oi.PaymentStatus != PaymentStatusEnums.Paid)
             .ToList();
 
-        if (!unpaidItems.Any())
+            if (!unpaidItems.Any())
         {
             return new BaseResponseModel<OrderPaymentResponse>(
                 StatusCodes.Status400BadRequest,

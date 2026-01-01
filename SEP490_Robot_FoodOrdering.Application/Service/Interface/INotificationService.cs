@@ -53,5 +53,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
         /// <param name="message">The message to send</param>
         /// <param name="notificationType">The type of notification</param>
         Task SendModeratorNotificationAsync(string message, string notificationType);
+
+        /// <summary>
+        /// Sends a notification when a table is moved from one table to another
+        /// </summary>
+        /// <param name="notification">Table moved notification data</param>
+        Task SendTableMovedNotificationAsync(TableMovedNotification notification);
     }
 }

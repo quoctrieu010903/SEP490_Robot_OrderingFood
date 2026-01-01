@@ -11,5 +11,6 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
         Cancelled = 6,
         Remark= 7,
         RequestCancel = 8,
+        Abandoned = 9,
     }
 } 

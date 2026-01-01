@@ -23,10 +23,11 @@ namespace SEP490_Robot_FoodOrdering.API.Extentions
             services.AddScoped<INotificationService>(serviceProvider =>
             {
                 var hubContext = serviceProvider.GetRequiredService<IHubContext<OrderNotificationHub>>();
+                var customerTableHubContext = serviceProvider.GetRequiredService<IHubContext<CustomerTableHub>>();
                 var logger = serviceProvider.GetRequiredService<ILogger<OrderNotificationService>>();
                 
-                // Create the specialized service that works with the OrderNotificationHub
-                return new OrderNotificationService(hubContext, logger);
+                // Create the specialized service that works with both hubs
+                return new OrderNotificationService(hubContext, customerTableHubContext, logger);
             });
             services.AddScoped<IOrderStatsQuery, OrderStatsQuery>();
             services.AddScoped<IModeratorDashboardRefresher, ModeratorDashboardRefresher>();
