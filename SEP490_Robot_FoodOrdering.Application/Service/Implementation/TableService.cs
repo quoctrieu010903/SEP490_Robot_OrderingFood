@@ -846,10 +846,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 var redirectUrl = _enpointService.GetFrontendUrl() + $"/{oldTable.Id}";
                 // chỉnh lại theo routing FE của bạn nếu cần
 
-                var redirectResponse = _mapper.Map<TableResponse>(oldTable);
-                redirectResponse.RedirectUrl = redirectUrl;
-                redirectResponse.RedirectTableId = oldTable.Id.ToString();
-
+                var redirectResponse = new TableResponse() {
+                    RedirectUrl = redirectUrl,
+                    RedirectTableId = oldTable.Id.ToString()
+                };
 
 
                 return new BaseResponseModel<TableResponse>(
