@@ -806,7 +806,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 throw new ErrorException(
                     StatusCodes.Status403Forbidden,
                     ResponseCodeConstants.FORBIDDEN,
-                    $"{table.Name} đã có khách sử dụng");
+                    $"{table.Name} đã có khách sử dụng , Vui lòng quét bàn khác. ");
             }
 
             // ======================================================
@@ -846,23 +846,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 var redirectUrl = _enpointService.GetFrontendUrl() + $"/{oldTable.Id}";
                 // chỉnh lại theo routing FE của bạn nếu cần
 
-                var redirectResponse = new TableRedirectResponse
-                {
-                    Id = oldTable.Id,
-                    Name = oldTable.Name,
-                    RedirectTableId = oldTable.Id,
-                    RedirectUrl = redirectUrl
-                };
+                var redirectResponse = _mapper.Map<TableResponse>(oldTable);
+                redirectResponse.RedirectUrl = redirectUrl;
+                redirectResponse.RedirectTableId = oldTable.Id.ToString();
+
+
 
                 return new BaseResponseModel<TableResponse>(
                       StatusCodes.Status403Forbidden,
                       ResponseCodeConstants.FORBIDDEN,
+                      redirectResponse,
                       null,
-                      new
-                      {
-                          redirectTableId = oldTable.Id,
-                          redirectUrl = redirectUrl
-                      },
       $"Bạn đang sử dụng {oldTableName}. Vui lòng quay lại bàn này."
   );
             }
