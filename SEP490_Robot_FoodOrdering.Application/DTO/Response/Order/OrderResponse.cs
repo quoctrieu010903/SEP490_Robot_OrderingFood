@@ -38,6 +38,12 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Order
         public DateTime CreatedTime { get; set; }
         public bool IsUrgent { get; set; } 
         public List<ToppingResponse> Toppings { get; set; }
+        
+        // Thời gian chuyển trạng thái
+        public DateTime? ReadyTime { get; set; } // Thời gian chuyển sang trạng thái Ready (Preparing → Ready)
+        public DateTime? ServedTime { get; set; } // Thời gian chuyển sang trạng thái Served (Ready → Served)
+        public DateTime? CancelledTime { get; set; } // Thời gian hủy món
+        public DateTime? RemakedTime { get; set; } // Thời gian làm lại món (chuyển sang Remark)
       
     }
   

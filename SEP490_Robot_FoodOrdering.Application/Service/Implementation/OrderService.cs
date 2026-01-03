@@ -783,17 +783,47 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // Store old status for each item before updating (for accurate logging)
             var itemOldStatuses = targets.ToDictionary(oi => oi.Id, oi => oi.Status);
 
+            var now = DateTime.UtcNow;
             foreach (var oi in targets)
             {
                 if (request.Status == OrderItemStatus.Remark)
                 {
                     oi.RemakeNote = request.RemarkNote;
+                    // Set RemakedTime khi chuyển sang trạng thái Remark
+                    if (oi.RemakedTime == null)
+                    {
+                        oi.RemakedTime = now;
+                    }
                 }
+                
+                // Set các timestamp fields dựa trên trạng thái mới
+                switch (request.Status)
+                {
+                    case OrderItemStatus.Ready:
+                        if (oi.ReadyTime == null)
+                        {
+                            oi.ReadyTime = now;
+                        }
+                        break;
+                    case OrderItemStatus.Served:
+                        if (oi.ServedTime == null)
+                        {
+                            oi.ServedTime = now;
+                        }
+                        break;
+                    case OrderItemStatus.Cancelled:
+                        if (oi.CancelledTime == null)
+                        {
+                            oi.CancelledTime = now;
+                        }
+                        break;
+                }
+                
                 oi.Status = request.Status;
-                oi.LastUpdatedTime = DateTime.UtcNow;
+                oi.LastUpdatedTime = now;
                 if (oi.Order != null)
                 {
-                    oi.Order.LastUpdatedTime = DateTime.UtcNow;
+                    oi.Order.LastUpdatedTime = now;
                 }
                 _logger.LogInformation(
                     $"OrderItem {oi.Id} status changed from {itemOldStatuses[oi.Id]} to {oi.Status} in Order {orderId}");

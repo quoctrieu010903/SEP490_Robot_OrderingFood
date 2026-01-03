@@ -83,6 +83,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 feedback.ResolvedAt = DateTime.UtcNow;
                 feedback.HandledBy = Guid.Parse(userIdClaim);
 
+                // 🔹 Xử lý QuickServeItem cho các complain có Title = "Phục vụ nhanh"
+                if (feedback.Title.Equals("Phục vụ nhanh", StringComparison.OrdinalIgnoreCase) 
+                    && !string.IsNullOrWhiteSpace(content))
+                {
+                    await ProcessQuickServeItemsAsync(feedback.Id, content);
+                }
+
                 await _unitOfWork.Repository<Complain, Guid>().UpdateAsync(feedback);
 
                 // 🧩 Mapping ra DTO an toàn
@@ -598,11 +605,101 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
         }
 
+        /// <summary>
+        /// Parse resolutionNote và tạo QuickServeItem cho complain có Title = "Phục vụ nhanh"
+        /// Ví dụ: "Phục vụ nhanh: Cho thêm nước mắm, cho thêm nước tương" 
+        /// → Tạo 2 QuickServeItem: "Nước mắm" và "Nước tương"
+        /// </summary>
+        private async Task ProcessQuickServeItemsAsync(Guid complainId, string resolutionNote)
+        {
+            if (string.IsNullOrWhiteSpace(resolutionNote))
+                return;
 
+            // Xóa các QuickServeItem cũ của complain này (nếu có)
+            var existingItems = await _unitOfWork.Repository<QuickServeItem, Guid>()
+                .GetAllWithSpecAsync(new BaseSpecification<QuickServeItem>(q => q.ComplainId == complainId));
+            
+            if (existingItems != null && existingItems.Any())
+            {
+                foreach (var item in existingItems)
+                {
+                    await _unitOfWork.Repository<QuickServeItem, Guid>().DeleteAsync(item.Id);
+                }
+            }
 
+            // Parse resolutionNote
+            // Format: "Phục vụ nhanh: Cho thêm nước mắm, cho thêm nước tương"
+            // Hoặc: "Phục vụ nhanh: Cho thêm nước mắm, cho thêm nước tương, cho thêm đũa"
+            var items = ParseQuickServeItems(resolutionNote);
 
+            // Tạo QuickServeItem mới
+            var now = DateTime.UtcNow;
+            foreach (var itemName in items)
+            {
+                var quickServeItem = new QuickServeItem
+                {
+                    Id = Guid.NewGuid(),
+                    ComplainId = complainId,
+                    ItemName = itemName.Trim(),
+                    CreatedTime = now,
+                    LastUpdatedTime = now
+                };
 
+                await _unitOfWork.Repository<QuickServeItem, Guid>().AddAsync(quickServeItem);
+            }
+        }
 
+        /// <summary>
+        /// Parse resolutionNote để extract các item name
+        /// Ví dụ: "Phục vụ nhanh: Cho thêm nước mắm, cho thêm nước tương"
+        /// → ["Nước mắm", "Nước tương"]
+        /// </summary>
+        private List<string> ParseQuickServeItems(string resolutionNote)
+        {
+            var items = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(resolutionNote))
+                return items;
+
+            // Loại bỏ prefix "Phục vụ nhanh:" hoặc "Yêu cầu nhanh:" nếu có
+            var cleanedNote = resolutionNote;
+            var prefixes = new[] { "Phục vụ nhanh:", "Yêu cầu nhanh:", "Phục vụ nhanh", "Yêu cầu nhanh" };
+            foreach (var prefix in prefixes)
+            {
+                if (cleanedNote.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    cleanedNote = cleanedNote.Substring(prefix.Length).Trim();
+                    break;
+                }
+            }
+
+            // Tách các item bằng dấu phẩy
+            var parts = cleanedNote.Split(new[] { ',', '，' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var part in parts)
+            {
+                var trimmed = part.Trim();
+                
+                // Loại bỏ các prefix như "Cho thêm", "Thêm", "Cho" nếu có
+                var prefixesToRemove = new[] { "Cho thêm", "Thêm", "Cho", "cho thêm", "thêm", "cho" };
+                foreach (var prefix in prefixesToRemove)
+                {
+                    if (trimmed.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        trimmed = trimmed.Substring(prefix.Length).Trim();
+                        break;
+                    }
+                }
+
+                // Chỉ thêm nếu không rỗng
+                if (!string.IsNullOrWhiteSpace(trimmed))
+                {
+                    items.Add(trimmed);
+                }
+            }
+
+            return items;
+        }
 
     }
 }

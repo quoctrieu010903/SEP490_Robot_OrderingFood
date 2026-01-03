@@ -32,6 +32,8 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence
 
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<SystemSettings> SystemSettings { get; set; }
+        public DbSet<Complain> Complains { get; set; }
+        public DbSet<QuickServeItem> QuickServeItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -25,5 +25,8 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Complain
 
         public string? ResolutionNote { get; set; } // Ghi chú xử lý từ moderator (chứa "Yêu cầu nhanh:" khi được gửi phục vụ nhanh)
         public string? HandledBy { get; set; } // tên moderator xử lý
+        
+        // Danh sách QuickServeItems cho các complain có Title = "Phục vụ nhanh"
+        public List<QuickServeItemResponse>? QuickServeItems { get; set; }
     }
 }
