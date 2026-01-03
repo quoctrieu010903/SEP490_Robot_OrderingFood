@@ -88,7 +88,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 LastUpdatedBy = cancelledByUserId.ToString(),
             };
 
-            // ✅ Cập nhật OrderItem
+            //  Cập nhật OrderItem
             orderItem.Status = Domain.Enums.OrderItemStatus.Cancelled;
             orderItem.LastUpdatedTime = now;
             orderItem.TotalPrice = 0m; // để tránh bị tính lại ở chỗ khác
