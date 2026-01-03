@@ -137,6 +137,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.Product != null ? src.Product.ImageUrl : null))
 
                 .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.Note))
+                .ForMember(dest => dest.RemarkNote, opt => opt.MapFrom(src => src.RemakeNote ?? string.Empty))
                 .ForMember(dest => dest.Toppings, opt => opt.MapFrom(src =>
                     src.OrderItemTopping != null && src.OrderItemTopping.Count > 0
                         ? src.OrderItemTopping.Select(oit => oit.Topping).ToList()

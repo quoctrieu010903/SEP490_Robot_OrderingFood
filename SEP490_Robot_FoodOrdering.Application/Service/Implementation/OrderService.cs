@@ -795,6 +795,17 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         oi.RemakedTime = now;
                     }
                 }
+                // Preserve RemakeNote when transitioning from Remark to Preparing (status = 2)
+                // This happens when waiter requests a remake and immediately moves to Preparing
+                else if (request.Status == OrderItemStatus.Preparing && !string.IsNullOrWhiteSpace(request.RemarkNote))
+                {
+                    oi.RemakeNote = request.RemarkNote;
+                    // Set RemakedTime if not already set (when transitioning from Remark to Preparing)
+                    if (oi.RemakedTime == null)
+                    {
+                        oi.RemakedTime = now;
+                    }
+                }
                 
                 // Set các timestamp fields dựa trên trạng thái mới
                 switch (request.Status)
