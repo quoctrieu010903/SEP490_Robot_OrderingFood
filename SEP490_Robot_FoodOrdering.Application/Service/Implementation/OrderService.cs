@@ -1218,17 +1218,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             //     .GetAllWithSpecWithInclueAsync(new OrderWithDetailsSpecification(token), true);
 
             var listas = await _unitOfWork.Repository<Order, Guid>()
-                .GetAllWithSpecWithInclueAsync(new OrderWithDetailsSpecification(token, idTable),
+                .GetWithSpecAsync(new OrderWithDetailsSpecification(token, idTable),
                     true);
 
-            // Lấy order mới nhất theo CreatedTime
-            var latestOrder = listas
-                .OrderByDescending(o => o.CreatedTime)
-                .FirstOrDefault();
-            if (latestOrder == null)
-                return new BaseResponseModel<OrderResponse>(StatusCodes.Status404NotFound, "NOT_FOUND",
-                    "Order not found.");
-            var response = _mapper.Map<OrderResponse>(latestOrder);
+           
+            var response = _mapper.Map<OrderResponse>(listas);
             return new BaseResponseModel<OrderResponse>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
