@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.SystemSettings;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Response;
@@ -89,6 +90,19 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         public async Task<ActionResult<BaseResponseModel>> SetPaymentPolicyEffectiveDateToPast()
         {
             var result = await _settingsService.SetPaymentPolicyEffectiveDateToPastAsync();
+            return StatusCode(result.StatusCode, result);
+        }
+
+        /// <summary>
+        /// Update business settings (RestaurantName, OpeningHours, TaxRate, MaxTableCapacity, TableAccessTimeoutWithoutOrderMinutes, OrderCleanupAfterDays)
+        /// </summary>
+        /// <param name="request">Request containing settings to update (all fields are optional)</param>
+        [HttpPatch("business")]
+        [ProducesResponseType(typeof(BaseResponseModel<bool>), 200)]
+        [ProducesResponseType(typeof(BaseResponseModel<bool>), 400)]
+        public async Task<ActionResult<BaseResponseModel>> UpdateBusinessSettings([FromBody] UpdateBusinessSettingsRequest request)
+        {
+            var result = await _settingsService.UpdateBusinessSettingsAsync(request);
             return StatusCode(result.StatusCode, result);
         }
         

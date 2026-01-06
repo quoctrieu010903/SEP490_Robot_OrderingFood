@@ -1008,6 +1008,28 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
             },
             new SystemSettings
             {
+                Id = Guid.Parse("11111111-AAAA-BBBB-CCCC-111111111111"),
+                Key = SystemSettingKeys.OpeningTime,
+                DisplayName = "Giờ mở cửa",
+                Description = "Giờ mở cửa của nhà hàng (24h, HH:mm)",
+                Value = "10:00",
+                Type = SettingType.String,
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            },
+            new SystemSettings
+            {
+                Id = Guid.Parse("22222222-BBBB-CCCC-DDDD-222222222222"),
+                Key = SystemSettingKeys.ClosingTime,
+                DisplayName = "Giờ đóng cửa",
+                Description = "Giờ đóng cửa của nhà hàng (24h, HH:mm)",
+                Value = "22:00",
+                Type = SettingType.String,
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            },
+            new SystemSettings
+            {
                 Id = Guid.Parse("B2C3D4E5-F6A7-B8C9-D0E1-F2A3B4C5D6E7"),
                 Key = SystemSettingKeys.TaxRate,
                 DisplayName = "Thuế VAT",

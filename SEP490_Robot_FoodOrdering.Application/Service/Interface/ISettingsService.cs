@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.SystemSettings;
 using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
@@ -19,6 +20,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
           Task<BaseResponseModel<bool>> UpdateByIdAsync(Guid id, string value);
         Task<BaseResponseModel<bool>> ApplyPendingPaymentPolicyAsync(bool force = false);
         Task<BaseResponseModel<bool>> SetPaymentPolicyEffectiveDateToPastAsync(); // For testing only
+        Task<BaseResponseModel<bool>> UpdateBusinessSettingsAsync(UpdateBusinessSettingsRequest request);
         //Task<BaseResponseModel<SystemSettingResponse>> CreateAsync(CreateSystemSettingRequest request);
 
 
