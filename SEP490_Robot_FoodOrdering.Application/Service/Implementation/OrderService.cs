@@ -680,6 +680,15 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
+        public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdOnlyForCheckoutAsync(Guid tableId)
+        {
+            
+            var orders = await _unitOfWork.Repository<Order, Guid>()
+                .GetAllWithSpecAsync(new OrderbyModeratorCheckoutSpec(tableId), true);
+            var response = _mapper.Map<List<OrderResponse>>(orders);
+            return new BaseResponseModel<List<OrderResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
+        }
+
         public async Task<BaseResponseModel<List<OrderResponse>>> GetOrdersByTableIdWithStatusAsync(Guid tableId,
             OrderStatus status)
         {

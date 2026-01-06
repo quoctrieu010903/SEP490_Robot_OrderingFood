@@ -310,11 +310,21 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         [ProducesResponseType(typeof(BaseResponseModel<List<OrderResponse>>), 200)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 404)]
         [ProducesResponseType(typeof(BaseResponseModel<object>), 500)]
-        public async Task<ActionResult<BaseResponseModel>> GetOrdersByTableIdOnly(Guid tableId , [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        public async Task<ActionResult<BaseResponseModel>> GetOrdersByTableIdOnly(Guid tableId, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
-            var result = await _orderService.GetOrdersByTableIdOnlyAsync(tableId, startDate,endDate);
+            var result = await _orderService.GetOrdersByTableIdOnlyAsync(tableId, startDate, endDate);
             return StatusCode(result.StatusCode, result);
         }
+        [HttpGet("table/{tableId}/for_moderator_checkout")]
+        [ProducesResponseType(typeof(BaseResponseModel<List<OrderResponse>>), 200)]
+        [ProducesResponseType(typeof(BaseResponseModel<object>), 404)]
+        [ProducesResponseType(typeof(BaseResponseModel<object>), 500)]
+        public async Task<ActionResult<BaseResponseModel>> GetOrdersByTableIdOnlyForCheckOut(Guid tableId)
+        {
+            var result = await _orderService.GetOrdersByTableIdOnlyForCheckoutAsync(tableId);
+            return StatusCode(result.StatusCode, result);
+        }
+
 
         /// <summary>
         /// Get orders by table ID with specific status (for payment).

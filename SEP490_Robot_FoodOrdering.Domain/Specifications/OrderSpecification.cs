@@ -18,6 +18,9 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
         {
             AddIncludes();
         }
+
+
+ 
       
         public OrderSpecification()
         : base(o => !o.DeletedTime.HasValue &&  o.CreatedTime.Date == DateTime.UtcNow.Date)
@@ -79,15 +82,19 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
         }
 
         // Get all orders by table ID for payment (not filtered by status)
+        // Get all orders by table ID for payment (not filtered by status)
         public OrderSpecification(Guid tableId, DateTime? startDate, DateTime? endDate) : base(o => !o.DeletedTime.HasValue && o.TableId == tableId &&
-           o.TableSession != null && o.TableSession.Status == TableSessionStatus.Active &&
-        o.TableSession.CheckOut == null)
-       
+            (!startDate.HasValue || o.CreatedTime >= startDate.Value) &&
+            (!endDate.HasValue || o.CreatedTime < endDate.Value))
         {
-           
-            AddOrderByDescending(o => o.CreatedTime); // Sắp xếp theo thời gian tạo mới nhất
-            AddIncludes();
-    }
+
+
+            {
+
+                AddOrderByDescending(o => o.CreatedTime); // Sắp xếp theo thời gian tạo mới nhất
+                AddIncludes();
+            }
+        }
 
         // Get orders by table ID with Delivering status for payment
         public OrderSpecification(Guid tableId, OrderStatus status, bool onlyActiveSession)
