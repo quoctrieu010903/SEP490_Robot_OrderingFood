@@ -119,28 +119,77 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task<BaseResponseModel<PaymentPolicy>> UpdatePaymentPolicyAsync(PaymentPolicy policy)
         {
-            var settings = (await _unitOfWork.Repository<SystemSettings, Guid>().GetAllAsync())
-                .FirstOrDefault(s => s.Key == "PaymentPolicy");
-            if (settings == null)
+            // Tính toán thời điểm có hiệu lực: 0h00 ngày hôm sau (theo timezone VN)
+            var vnTz = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+            var nowInVn = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTz);
+            var tomorrowMidnightVn = nowInVn.Date.AddDays(1); // 0h00 ngày hôm sau
+            var effectiveDateUtc = TimeZoneInfo.ConvertTimeToUtc(tomorrowMidnightVn, vnTz);
+
+            // Lưu PaymentPolicyPending
+            var pendingSetting = await _unitOfWork.Repository<SystemSettings, Guid>()
+                .GetWithSpecAsync(new BaseSpecification<SystemSettings>(s => 
+                    s.Key == SystemSettingKeys.PaymentPolicyPending && !s.DeletedTime.HasValue));
+            
+            if (pendingSetting == null)
             {
-                settings = new SystemSettings 
+                pendingSetting = new SystemSettings 
                 { 
                     Id = Guid.NewGuid(), 
-                    Key = "PaymentPolicy",
+                    Key = SystemSettingKeys.PaymentPolicyPending,
                     Value = policy.ToString(),
-                    Type = SettingType.String
+                    Type = SettingType.String,
+                    DisplayName = "Chính sách thanh toán đang chờ áp dụng",
+                    Description = "Chính sách thanh toán sẽ được áp dụng vào ngày hôm sau",
+                    CreatedTime = DateTime.UtcNow,
+                    LastUpdatedTime = DateTime.UtcNow
                 };
-                await _unitOfWork.Repository<SystemSettings, Guid>().AddAsync(settings);
+                await _unitOfWork.Repository<SystemSettings, Guid>().AddAsync(pendingSetting);
             }
             else
             {
-                settings.Value = policy.ToString();
-                await _unitOfWork.Repository<SystemSettings, Guid>().UpdateAsync(settings);
+                pendingSetting.Value = policy.ToString();
+                pendingSetting.LastUpdatedTime = DateTime.UtcNow;
+                _unitOfWork.Repository<SystemSettings, Guid>().Update(pendingSetting);
+            }
+
+            // Lưu PaymentPolicyEffectiveDate
+            var effectiveDateSetting = await _unitOfWork.Repository<SystemSettings, Guid>()
+                .GetWithSpecAsync(new BaseSpecification<SystemSettings>(s => 
+                    s.Key == SystemSettingKeys.PaymentPolicyEffectiveDate && !s.DeletedTime.HasValue));
+            
+            if (effectiveDateSetting == null)
+            {
+                effectiveDateSetting = new SystemSettings 
+                { 
+                    Id = Guid.NewGuid(), 
+                    Key = SystemSettingKeys.PaymentPolicyEffectiveDate,
+                    Value = effectiveDateUtc.ToString("O"), // ISO 8601 format
+                    Type = SettingType.DateTime,
+                    DisplayName = "Ngày giờ áp dụng chính sách thanh toán",
+                    Description = "Thời điểm mà PaymentPolicyPending sẽ được áp dụng",
+                    CreatedTime = DateTime.UtcNow,
+                    LastUpdatedTime = DateTime.UtcNow
+                };
+                await _unitOfWork.Repository<SystemSettings, Guid>().AddAsync(effectiveDateSetting);
+            }
+            else
+            {
+                effectiveDateSetting.Value = effectiveDateUtc.ToString("O");
+                effectiveDateSetting.LastUpdatedTime = DateTime.UtcNow;
+                _unitOfWork.Repository<SystemSettings, Guid>().Update(effectiveDateSetting);
             }
 
             await _unitOfWork.SaveChangesAsync();
-            _logger.LogInformation("Payment policy updated to {Policy}", policy);
-            return new BaseResponseModel<PaymentPolicy>(StatusCodes.Status200OK, "UPDATED", policy);
+            _logger.LogInformation(
+                "Payment policy scheduled to update to {Policy} at {EffectiveDate} (VN time: {EffectiveDateVn})", 
+                policy, effectiveDateUtc, tomorrowMidnightVn);
+            
+            return new BaseResponseModel<PaymentPolicy>(
+                StatusCodes.Status200OK, 
+                "SCHEDULED", 
+                policy,
+                null,
+                $"Chính sách thanh toán sẽ được áp dụng vào {tomorrowMidnightVn:dd/MM/yyyy HH:mm}");
         }
 
         public async Task<BaseResponseModel<bool>> UpdateValueAsync(string key, string value)
