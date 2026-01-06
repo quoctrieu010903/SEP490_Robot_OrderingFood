@@ -983,6 +983,50 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                  Value = "1",
                  CreatedTime = DateTime.UtcNow,
                  LastUpdatedTime = DateTime.UtcNow
+            },
+            new SystemSettings
+            {
+                Id = Guid.Parse("F1A2B3C4-D5E6-F7A8-B9C0-D1E2F3A4B5C6"),
+                Key = SystemSettingKeys.RestaurantName,
+                DisplayName = "Tên Nhà Hàng",
+                Description = "Tên của nhà hàng",
+                Value = "Sweet & Salt Factory - Steakhouse",
+                Type = SettingType.String,
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            },
+            new SystemSettings
+            {
+                Id = Guid.Parse("A1B2C3D4-E5F6-A7B8-C9D0-E1F2A3B4C5D6"),
+                Key = SystemSettingKeys.OpeningHours,
+                DisplayName = "Giờ hoạt động",
+                Description = "Thời gian hoạt động của nhà hàng",
+                Value = "10:00 AM - 10:00 PM",
+                Type = SettingType.String,
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            },
+            new SystemSettings
+            {
+                Id = Guid.Parse("B2C3D4E5-F6A7-B8C9-D0E1-F2A3B4C5D6E7"),
+                Key = SystemSettingKeys.TaxRate,
+                DisplayName = "Thuế VAT",
+                Description = "Tỷ lệ thuế giá trị gia tăng (VAT)",
+                Value = "8%",
+                Type = SettingType.String,
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            },
+            new SystemSettings
+            {
+                Id = Guid.Parse("C3D4E5F6-A7B8-C9D0-E1F2-A3B4C5D6E7F8"),
+                Key = SystemSettingKeys.MaxTableCapacity,
+                DisplayName = "Số bàn tối đa",
+                Description = "Số lượng bàn tối đa mà nhà hàng có thể phục vụ",
+                Value = "20",
+                Type = SettingType.Int,
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
             }
 
 
