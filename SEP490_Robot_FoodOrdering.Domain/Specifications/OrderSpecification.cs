@@ -78,11 +78,12 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
             AddIncludes();
         }
 
-    // Get all orders by table ID for payment (not filtered by status)
-    public OrderSpecification( Guid tableId, DateTime? startDate , DateTime? endDate ) : base(o => !o.DeletedTime.HasValue && o.TableId == tableId &&
-        (!startDate.HasValue || o.CreatedTime >= startDate.Value) &&
-        (!endDate.HasValue || o.CreatedTime < endDate.Value))
-    {
+        // Get all orders by table ID for payment (not filtered by status)
+        public OrderSpecification(Guid tableId, DateTime? startDate, DateTime? endDate) : base(o => !o.DeletedTime.HasValue && o.TableId == tableId &&
+           o.TableSession != null && o.TableSession.Status == TableSessionStatus.Active &&
+        o.TableSession.CheckOut == null)
+       
+        {
            
             AddOrderByDescending(o => o.CreatedTime); // Sắp xếp theo thời gian tạo mới nhất
             AddIncludes();
