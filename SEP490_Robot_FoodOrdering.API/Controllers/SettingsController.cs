@@ -68,6 +68,29 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             var result = await _settingsService.UpdateByIdAsync(id, value);
             return StatusCode(result.StatusCode, result);
         }
+
+        /// <summary>
+        /// Manually apply pending payment policy (for testing purposes)
+        /// </summary>
+        /// <param name="force">If true, apply immediately even if effective date hasn't arrived</param>
+        [HttpPost("payment-policy/apply-pending")]
+        [ProducesResponseType(typeof(BaseResponseModel<bool>), 200)]
+        public async Task<ActionResult<BaseResponseModel>> ApplyPendingPaymentPolicy([FromQuery] bool force = false)
+        {
+            var result = await _settingsService.ApplyPendingPaymentPolicyAsync(force);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        /// <summary>
+        /// Set PaymentPolicyEffectiveDate to past for testing (for testing purposes only)
+        /// </summary>
+        [HttpPost("payment-policy/set-effective-date-to-past")]
+        [ProducesResponseType(typeof(BaseResponseModel<bool>), 200)]
+        public async Task<ActionResult<BaseResponseModel>> SetPaymentPolicyEffectiveDateToPast()
+        {
+            var result = await _settingsService.SetPaymentPolicyEffectiveDateToPastAsync();
+            return StatusCode(result.StatusCode, result);
+        }
         
     }
 }
