@@ -17,6 +17,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
         Task<BaseResponseModel<SystemSettingResponse>> GetByIdAsync(Guid id);
         Task<BaseResponseModel<bool>> UpdateValueAsync(string key, string value);
           Task<BaseResponseModel<bool>> UpdateByIdAsync(Guid id, string value);
+        Task<BaseResponseModel<bool>> ApplyPendingPaymentPolicyAsync(bool force = false);
+        Task<BaseResponseModel<bool>> SetPaymentPolicyEffectiveDateToPastAsync(); // For testing only
         //Task<BaseResponseModel<SystemSettingResponse>> CreateAsync(CreateSystemSettingRequest request);
 
 

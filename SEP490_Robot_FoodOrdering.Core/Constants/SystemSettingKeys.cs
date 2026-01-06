@@ -16,6 +16,12 @@ namespace SEP490_Robot_FoodOrdering.Core.Constants
         public const string PaymentPolicy = "PaymentPolicy";
         public const string TableAccessTimeoutWithoutOrderMinutes = "TableAccessTimeoutWithoutOrderMinutes";
         public const string OrderCleanupAfterDays = "OrderCleanupAfterDays";
+        public const string RestaurantName = "RestaurantName";
+        public const string OpeningHours = "OpeningHours";
+        public const string TaxRate = "TaxRate";
+        public const string MaxTableCapacity = "MaxTableCapacity";
+        public const string PaymentPolicyPending = "PaymentPolicyPending";
+        public const string PaymentPolicyEffectiveDate = "PaymentPolicyEffectiveDate";
 
     }
 }

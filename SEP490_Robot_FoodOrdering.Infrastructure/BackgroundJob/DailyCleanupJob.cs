@@ -70,6 +70,8 @@ public class DailyCleanupJob : IJob
             //5) Giải phóng bàn không còn order/ complain active
              await AutoReleaseTables(thresholdUtc,ct);
             
+            //6) Áp dụng PaymentPolicyPending nếu đã đến thời điểm
+            await ApplyPendingPaymentPolicy(ct);
 
             await _unitOfWork.SaveChangesAsync(ct);
 
@@ -274,6 +276,99 @@ public class DailyCleanupJob : IJob
 
         }
       }
+
+        private async Task ApplyPendingPaymentPolicy(CancellationToken ct)
+        {
+            try
+            {
+                var pendingSetting = await _unitOfWork.Repository<SystemSettings, Guid>()
+                    .GetWithSpecAsync(new BaseSpecification<SystemSettings>(s => 
+                        s.Key == SystemSettingKeys.PaymentPolicyPending && !s.DeletedTime.HasValue));
+
+                if (pendingSetting == null)
+                {
+                    _logger.LogDebug("No pending payment policy to apply");
+                    return;
+                }
+
+                var effectiveDateSetting = await _unitOfWork.Repository<SystemSettings, Guid>()
+                    .GetWithSpecAsync(new BaseSpecification<SystemSettings>(s => 
+                        s.Key == SystemSettingKeys.PaymentPolicyEffectiveDate && !s.DeletedTime.HasValue));
+
+                if (effectiveDateSetting == null)
+                {
+                    _logger.LogWarning("PaymentPolicyPending exists but PaymentPolicyEffectiveDate is missing");
+                    return;
+                }
+
+                // Parse effective date
+                if (!DateTime.TryParse(effectiveDateSetting.Value, out var effectiveDateUtc))
+                {
+                    _logger.LogWarning("Invalid PaymentPolicyEffectiveDate format: {Value}", effectiveDateSetting.Value);
+                    return;
+                }
+
+                // Kiểm tra xem đã đến thời điểm áp dụng chưa
+                var nowUtc = DateTime.UtcNow;
+                if (nowUtc < effectiveDateUtc)
+                {
+                    var vnTz = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+                    var effectiveDateVn = TimeZoneInfo.ConvertTimeFromUtc(effectiveDateUtc, vnTz);
+                    _logger.LogDebug(
+                        "PaymentPolicyPending not yet effective. Will apply at {EffectiveDateVn} (VN time). Current: {NowVn}",
+                        effectiveDateVn, TimeZoneInfo.ConvertTimeFromUtc(nowUtc, vnTz));
+                    return;
+                }
+
+                // Áp dụng PaymentPolicyPending vào PaymentPolicy
+                var currentPolicySetting = await _unitOfWork.Repository<SystemSettings, Guid>()
+                    .GetWithSpecAsync(new BaseSpecification<SystemSettings>(s => 
+                        s.Key == SystemSettingKeys.PaymentPolicy && !s.DeletedTime.HasValue));
+
+                if (currentPolicySetting == null)
+                {
+                    // Tạo mới nếu chưa có
+                    currentPolicySetting = new SystemSettings
+                    {
+                        Id = Guid.NewGuid(),
+                        Key = SystemSettingKeys.PaymentPolicy,
+                        Value = pendingSetting.Value,
+                        Type = SettingType.String,
+                        DisplayName = "Chính sách thanh toán",
+                        Description = "Prepay = thanh toán trước, Postpay = thanh toán sau",
+                        CreatedTime = DateTime.UtcNow,
+                        LastUpdatedTime = DateTime.UtcNow
+                    };
+                    await _unitOfWork.Repository<SystemSettings, Guid>().AddAsync(currentPolicySetting);
+                }
+                else
+                {
+                    var oldValue = currentPolicySetting.Value;
+                    currentPolicySetting.Value = pendingSetting.Value;
+                    currentPolicySetting.LastUpdatedTime = DateTime.UtcNow;
+                    _unitOfWork.Repository<SystemSettings, Guid>().Update(currentPolicySetting);
+                    
+                    _logger.LogInformation(
+                        "Payment policy updated from {OldPolicy} to {NewPolicy}",
+                        oldValue, pendingSetting.Value);
+                }
+
+                // Xóa PaymentPolicyPending và PaymentPolicyEffectiveDate sau khi đã áp dụng
+                pendingSetting.DeletedTime = DateTime.UtcNow;
+                effectiveDateSetting.DeletedTime = DateTime.UtcNow;
+                _unitOfWork.Repository<SystemSettings, Guid>().Update(pendingSetting);
+                _unitOfWork.Repository<SystemSettings, Guid>().Update(effectiveDateSetting);
+
+                _logger.LogInformation(
+                    "Successfully applied pending payment policy: {Policy}",
+                    pendingSetting.Value);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error applying pending payment policy");
+                // Không throw để không làm gián đoạn các job khác
+            }
+        }
 
    
 
