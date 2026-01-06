@@ -473,16 +473,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             // 3️⃣ Build spec complain (customer mới bị giới hạn theo session)
             var spec = new BaseSpecification<Complain>(c =>
-                c.TableId == idTable &&
-                (
-                    !forCustomer ||
-                    (
-                        c.CreatedTime >= activeSession.CheckIn &&
-                        (!activeSession.CheckOut.HasValue ||
-                         c.CreatedTime <= activeSession.CheckOut.Value)
-                    )
-                )
-            );
+                     c.TableId == idTable &&
+                     c.CreatedTime >= activeSession.CheckIn &&
+                     !activeSession.CheckOut.HasValue
+                 );
+
 
             var complains = await _unitOfWork.Repository<Complain, Guid>()
                 .GetAllWithSpecWithInclueAsync(spec, true, c => c.Handler);
