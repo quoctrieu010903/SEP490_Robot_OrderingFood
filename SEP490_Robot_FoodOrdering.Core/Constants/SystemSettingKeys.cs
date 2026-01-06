@@ -22,6 +22,8 @@ namespace SEP490_Robot_FoodOrdering.Core.Constants
         public const string MaxTableCapacity = "MaxTableCapacity";
         public const string PaymentPolicyPending = "PaymentPolicyPending";
         public const string PaymentPolicyEffectiveDate = "PaymentPolicyEffectiveDate";
+        public const string OpeningTime = "OpeningTime";
+        public const string ClosingTime = "ClosingTime";
 
     }
 }
