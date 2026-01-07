@@ -22,6 +22,7 @@ public class InvoiceResponse
     public string InvoiceCode { get; set; }
     public DateTime CreatedTime { get; set; }
     public string PaymentMethod { get; set; }
+    public string PaymentStatus { get; set; }
     public decimal TotalAmount { get; set; }
     public decimal Discount { get; set; }
     public decimal FinalAmount { get; set; }

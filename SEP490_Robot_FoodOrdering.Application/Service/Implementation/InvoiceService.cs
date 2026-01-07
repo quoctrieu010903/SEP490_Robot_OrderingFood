@@ -41,9 +41,7 @@ public class InvoiceService : IInvoiceService
         if (existedOrder == null)
             throw new ErrorException(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
 
-        if (existedOrder.PaymentStatus != PaymentStatusEnums.Paid)
-            throw new ErrorException(StatusCodes.Status400BadRequest, "ORDER_NOT_PAID", "Order is not paid yet");
-
+       
         // (Khuyến nghị) chống tạo trùng theo OrderId
         var existedInvoice = await _unitOfWork.Repository<Invoice, Guid>()
             .GetWithSpecAsync(new BaseSpecification<Invoice>(x => x.OrderId == existedOrder.Id));
@@ -103,6 +101,7 @@ public class InvoiceService : IInvoiceService
             InvoiceCode = invoice.InvoiceCode,
             CreatedTime = DateTime.UtcNow, // hoặc truyền createdTime vào nếu muốn đúng tuyệt đối
             PaymentMethod = existedOrder.paymentMethod.ToString(),
+            PaymentStatus = existedOrder.PaymentStatus.ToString(),
             TotalAmount = existedOrder.TotalPrice,
             Discount = 0,
             FinalAmount = existedOrder.TotalPrice,
