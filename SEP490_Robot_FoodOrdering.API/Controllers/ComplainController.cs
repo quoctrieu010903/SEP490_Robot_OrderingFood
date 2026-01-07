@@ -44,4 +44,30 @@ public class ComplainController
     [HttpGet]
     public Task<BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>> GetAllFeedbackIsPeeding()
         => FeedbackService.GetAllComplainIsPending();
+
+    // ================== QUICK SERVE ENDPOINTS (cho waiter) ==================
+
+    /// <summary>
+    /// Lấy tất cả QuickServeItems pending cho waiter (gồm Id, TableId, TableName, ItemName, IsServed...)
+    /// </summary>
+    [HttpGet("QuickServe/pending")]
+    //[Authorize(Roles = "Waiter,Moderator,Admin")]
+    public Task<BaseResponseModel<List<QuickServeItemResponse>>> GetPendingQuickServeItems()
+        => FeedbackService.GetPendingQuickServeItemsAsync();
+
+    /// <summary>
+    /// Lấy tất cả QuickServeItems đã phục vụ để hiển thị ở tab "Đã phục vụ".
+    /// </summary>
+    [HttpGet("QuickServe/served")]
+    //[Authorize(Roles = "Waiter,Moderator,Admin")]
+    public Task<BaseResponseModel<List<QuickServeItemResponse>>> GetServedQuickServeItems()
+        => FeedbackService.GetServedQuickServeItemsAsync();
+
+    /// <summary>
+    /// Đánh dấu một QuickServeItem đã được phục vụ.
+    /// </summary>
+    [HttpPost("QuickServe/serve/{quickServeItemId:guid}")]
+    //[Authorize(Roles = "Waiter,Moderator,Admin")]
+    public Task<BaseResponseModel<bool>> ServeQuickServeItem(Guid quickServeItemId)
+        => FeedbackService.ServeQuickServeItemAsync(quickServeItemId);
 }

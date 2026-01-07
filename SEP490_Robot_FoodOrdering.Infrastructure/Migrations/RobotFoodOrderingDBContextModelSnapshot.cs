@@ -723,6 +723,9 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsServed")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("ItemName")
                         .IsRequired()
                         .HasColumnType("text");

@@ -73,6 +73,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     ComplainId = table.Column<Guid>(type: "uuid", nullable: false),
                     ItemName = table.Column<string>(type: "text", nullable: false),
+                    IsServed = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: true),
                     LastUpdatedBy = table.Column<string>(type: "text", nullable: true),
                     DeletedBy = table.Column<string>(type: "text", nullable: true),

@@ -10,4 +10,9 @@ public interface IComplainService
     Task<BaseResponseModel<List<ComplainResponse>>> GetComplainByTable(Guid idTable, bool forCustomer = false);
     Task<BaseResponseModel<Dictionary<string, ComplainPeedingInfo>>> GetAllComplainIsPending();
     Task<BaseResponseModel<List<ComplainCreate>>> ComfirmComplain(Guid idTable, List<Guid>? IDFeedback, bool isPeeding,string content);
+
+    // Quick serve APIs
+    Task<BaseResponseModel<List<QuickServeItemResponse>>> GetPendingQuickServeItemsAsync();
+    Task<BaseResponseModel<List<QuickServeItemResponse>>> GetServedQuickServeItemsAsync();
+    Task<BaseResponseModel<bool>> ServeQuickServeItemAsync(Guid quickServeItemId);
 }
