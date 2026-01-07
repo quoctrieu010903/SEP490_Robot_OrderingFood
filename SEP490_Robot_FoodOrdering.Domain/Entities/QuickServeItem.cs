@@ -8,6 +8,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Entities
         public virtual Complain Complain { get; set; }
 
         public string ItemName { get; set; } = string.Empty; // Ví dụ: "Nước mắm", "Nước tương"
+        public bool IsServed { get; set; } = false;
     }
 }
 

@@ -83,8 +83,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 feedback.ResolvedAt = DateTime.UtcNow;
                 feedback.HandledBy = Guid.Parse(userIdClaim);
 
+                // 🔹 Nhận diện request "Gửi nhanh" từ moderator dựa trên ResolutionNote
+                var isQuickServeRequest = !string.IsNullOrWhiteSpace(content) &&
+                                          content.StartsWith("Yêu cầu nhanh:", StringComparison.OrdinalIgnoreCase);
+
+                // Nếu là yêu cầu phục vụ nhanh thì chuẩn hóa Title về "Phục vụ nhanh"
+                if (isQuickServeRequest)
+                {
+                    feedback.Title = "Phục vụ nhanh";
+                }
+
                 // 🔹 Xử lý QuickServeItem cho các complain có Title = "Phục vụ nhanh"
-                if (feedback.Title.Equals("Phục vụ nhanh", StringComparison.OrdinalIgnoreCase) 
+                if (!string.IsNullOrWhiteSpace(feedback.Title) &&
+                    feedback.Title.Equals("Phục vụ nhanh", StringComparison.OrdinalIgnoreCase) 
                     && !string.IsNullOrWhiteSpace(content))
                 {
                     await ProcessQuickServeItemsAsync(feedback.Id, content);
@@ -133,6 +144,96 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
 
+
+        /// <summary>
+        /// Lấy tất cả QuickServeItems chưa được phục vụ (IsServed = false) cho các bàn đang active
+        /// </summary>
+        public async Task<BaseResponseModel<List<QuickServeItemResponse>>> GetPendingQuickServeItemsAsync()
+        {
+            // Lấy tất cả complain đang pending có Title = "Phục vụ nhanh"
+            var pendingQuickComplains = await _unitOfWork.Repository<Complain, Guid>()
+                .GetAllWithSpecAsync(new BaseSpecification<Complain>(c =>
+                    c.isPending && c.Title == "Phục vụ nhanh"));
+
+            if (pendingQuickComplains == null || !pendingQuickComplains.Any())
+            {
+                return new BaseResponseModel<List<QuickServeItemResponse>>(
+                    StatusCodes.Status200OK,
+                    ResponseCodeConstants.SUCCESS,
+                    new List<QuickServeItemResponse>()
+                );
+            }
+
+            var complainIds = pendingQuickComplains.Select(c => c.Id).ToHashSet();
+
+            var items = await _unitOfWork.Repository<QuickServeItem, Guid>()
+                .GetAllWithSpecAsync(new BaseSpecification<QuickServeItem>(q =>
+                    complainIds.Contains(q.ComplainId) && !q.IsServed));
+
+            var response = items
+                .Select(i => new QuickServeItemResponse
+                {
+                    Id = i.Id,
+                    ComplainId = i.ComplainId,
+                    ItemName = i.ItemName,
+                    IsServed = i.IsServed,
+                    CreatedTime = i.CreatedTime,
+                    LastUpdatedTime = i.LastUpdatedTime
+                })
+                .ToList();
+
+            return new BaseResponseModel<List<QuickServeItemResponse>>(
+                StatusCodes.Status200OK,
+                ResponseCodeConstants.SUCCESS,
+                response
+            );
+        }
+
+        /// <summary>
+        /// Đánh dấu 1 quick-serve item đã được phục vụ.
+        /// Nếu tất cả item của complain đã IsServed = true thì set complain.isPending = false.
+        /// </summary>
+        public async Task<BaseResponseModel<bool>> ServeQuickServeItemAsync(Guid quickServeItemId)
+        {
+            var itemRepo = _unitOfWork.Repository<QuickServeItem, Guid>();
+            var complainRepo = _unitOfWork.Repository<Complain, Guid>();
+
+            var item = await itemRepo.GetByIdAsync(quickServeItemId);
+            if (item == null)
+            {
+                throw new ErrorException(404, "Không tìm thấy yêu cầu phục vụ nhanh.");
+            }
+
+            if (!item.IsServed)
+            {
+                item.IsServed = true;
+                item.LastUpdatedTime = DateTime.UtcNow;
+                await itemRepo.UpdateAsync(item);
+            }
+
+            // Kiểm tra các item khác của cùng complain
+            var otherItems = await itemRepo.GetAllWithSpecAsync(
+                new BaseSpecification<QuickServeItem>(q => q.ComplainId == item.ComplainId));
+
+            if (otherItems.All(i => i.IsServed))
+            {
+                var complain = await complainRepo.GetByIdAsync(item.ComplainId);
+                if (complain != null && complain.isPending)
+                {
+                    complain.isPending = false;
+                    complain.ResolvedAt = DateTime.UtcNow;
+                    await complainRepo.UpdateAsync(complain);
+                }
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return new BaseResponseModel<bool>(
+                StatusCodes.Status200OK,
+                ResponseCodeConstants.SUCCESS,
+                true
+            );
+        }
 
 
 
@@ -636,6 +737,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     Id = Guid.NewGuid(),
                     ComplainId = complainId,
                     ItemName = itemName.Trim(),
+                    IsServed = false,
                     CreatedTime = now,
                     LastUpdatedTime = now
                 };
@@ -689,7 +791,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 // Chỉ thêm nếu không rỗng
                 if (!string.IsNullOrWhiteSpace(trimmed))
                 {
-                    items.Add(trimmed);
+                    // Viết hoa chữ cái đầu, giữ nguyên phần còn lại
+                    var normalized =
+                        char.ToUpper(trimmed[0]) + (trimmed.Length > 1 ? trimmed.Substring(1) : string.Empty);
+                    items.Add(normalized);
                 }
             }
 

@@ -12,8 +12,8 @@ using SEP490_Robot_FoodOrdering.Infrastructure.Data.Persistence;
 namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
 {
     [DbContext(typeof(RobotFoodOrderingDBContext))]
-    [Migration("20260101144317_UpdateOrderItemAndCreadQuickServeItem_010126")]
-    partial class UpdateOrderItemAndCreadQuickServeItem_010126
+    [Migration("20260107073541_UpdateIsServedQuickServeItems")]
+    partial class UpdateIsServedQuickServeItems
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -727,9 +727,7 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsServed")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
+                        .HasColumnType("boolean");
 
                     b.Property<string>("ItemName")
                         .IsRequired()
