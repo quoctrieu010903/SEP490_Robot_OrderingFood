@@ -42,8 +42,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly ILogger<TableService> _logger;
         private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
         private readonly IOrderService _orderService;
+        private readonly ISettingsService _settingsService;
 
-        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService, ITableActivityService tableActivityService, IInvoiceService invoiceService, ICustomerPointService customerPointService, IModeratorDashboardRefresher moderatorDashboardRefresher, IOrderService orderService)
+        public TableService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IUtilsService utils, IServerEndpointService endpointService, ILogger<TableService> logger, ITableSessionService tableSessionService, ITableActivityService tableActivityService, IInvoiceService invoiceService, ICustomerPointService customerPointService, IModeratorDashboardRefresher moderatorDashboardRefresher, IOrderService orderService, ISettingsService settingsService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -58,6 +59,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _customerPointService = customerPointService;
             _moderatorDashboardRefresher = moderatorDashboardRefresher;
             _orderService = orderService;
+            _settingsService = settingsService;
         }
         public async Task<BaseResponseModel> Create(CreateTableRequest request)
         {
@@ -220,7 +222,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             return _mapper.Map<TableResponse>(table);
         }
-
+            
         public async Task<BaseResponseModel<TableResponse>> ScanQrCode(Guid id, string deviceId)
         {
             // 0. Lấy thông tin bàn
@@ -367,6 +369,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         // ===== HELPER METHODS =====
         private async Task HandleOccupiedToAvailable(TableSession tableSession, Table table, List<OrderItem> allItems, List<Order> orders, string reason, string updatedBy)
         {
+
             // 🧩 1️⃣ Xử lý từng OrderItem
             foreach (var item in allItems)
             {
@@ -398,15 +401,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     // TODO: Gửi thông báo real-time nếu cần (ví dụ tới bếp / waiter)
                 }
             }
+            var paymentPolicyResponse = await _settingsService.GetPaymentPolicyAsync();
 
-            // 🧩 2️⃣ Xử lý từng Order
+            var paymentPolicy = paymentPolicyResponse.Data; // ✅ enum
             foreach (var order in orders)
             {
                 var relatedItems = allItems.Where(i => i.OrderId == order.Id).ToList();
                 if (!relatedItems.Any()) continue;
 
                 // Tính lại trạng thái order và payment
-                var (newOrderStatus, newPaymentStatus) = CalculateOrderAndPaymentStatus(relatedItems, order);
+                var (newOrderStatus, newPaymentStatus) = CalculateOrderAndPaymentStatus(relatedItems, order, paymentPolicy);
 
                 var changed = false;
 
@@ -440,15 +444,52 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     order.LastUpdatedBy = updatedBy;
                     _unitOfWork.Repository<Order, Guid>().Update(order);
                 }
-
-                // Đánh dấu order đã đóng lại (vì bàn đã được giải phóng)
                 order.LastUpdatedBy = "";
                 order.LastUpdatedTime = DateTime.UtcNow;
-                order.PaymentStatus = PaymentStatusEnums.None;
                 _unitOfWork.Repository<Order, Guid>().Update(order);
+               
             }
 
             await _unitOfWork.SaveChangesAsync();
+            foreach (var order in orders
+           .Where(o => o.TableSession.Status == TableSessionStatus.Active))
+            {
+                var existedInvoice = await _unitOfWork
+                    .Repository<Invoice, Guid>()
+                    .AnyAsync(i => i.OrderId == order.Id);
+
+                if (existedInvoice)
+                    continue;
+
+                // ✅ Create invoice và NHẬN LẠI invoice
+                var invoice = await _invoiceService.CreateInvoice(
+                    new InvoiceCreatRequest(table.Id, order.Id)
+                );
+
+                // ✅ Log activity GẮN VỚI INVOICE VỪA TẠO
+                await _tableActivityService.LogAsync(
+                    tableSession,
+                    table.DeviceId,
+                    TableActivityType.CreateInvoice,
+                    new
+                    {
+                        invoiceId = invoice.Id.ToString(),
+                        invoiceCode = invoice.InvoiceCode,
+
+                        orderId = order.Id.ToString(),
+                        orderCode = order.OrderCode,
+                        totalAmount = invoice.TotalAmount,
+                        paymentMethod = invoice.PaymentMethod,
+                        paymentStatus = invoice.PaymentStatus,
+                        createdAtUtc = invoice.CreatedTime,
+                        tableSessionId = tableSession.Id.ToString(),
+                        tableId = table.Id.ToString(),
+                        tableName = table.Name
+                    }
+                );
+            }
+
+
 
 
             await _tableSessionService.CloseSessionAsync(
@@ -536,75 +577,48 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             //await _notificationService.SendKitchenNotificationAsync(notification);
         }
 
-        private (OrderStatus orderStatus, PaymentStatusEnums paymentStatus) CalculateOrderAndPaymentStatus(
-        List<OrderItem> allItems, Order currentOrder)
+        private (OrderStatus orderStatus, PaymentStatusEnums paymentStatus)
+ CalculateOrderAndPaymentStatus(
+     List<OrderItem> items,
+     Order currentOrder,
+     PaymentPolicy paymentPolicys)
         {
-            var totalItems = allItems.Count;
-            var servedItems = allItems.Count(x => x.Status == OrderItemStatus.Served ||
-                                                 x.Status == OrderItemStatus.Completed);
-            var cancelledItems = allItems.Count(x => x.Status == OrderItemStatus.Cancelled);
-            var requestCancelItems = allItems.Count(x => x.Status == OrderItemStatus.RequestCancel);
+            // 1️⃣ Có món đã phục vụ hay chưa
+            var hasChargeableItem = items.Any(i =>
+                i.Status == OrderItemStatus.Served ||
+                i.Status == OrderItemStatus.Completed);
 
-            // Xác định Order Status
-            OrderStatus newOrderStatus;
-            if (requestCancelItems > 0)
+            // 2️⃣ ORDER STATUS
+            var orderStatus = hasChargeableItem
+                ? OrderStatus.Completed
+                : OrderStatus.Cancelled;
+
+            // 3️⃣ PAYMENT STATUS (PHỤ THUỘC SYSTEM SETTING)
+            PaymentStatusEnums paymentStatus;
+
+            if (!hasChargeableItem)
             {
-                // Có món đang chờ xác nhận hủy
-                newOrderStatus = OrderStatus.Cancelled;
-            }
-            else if (servedItems == totalItems)
-            {
-                // Tất cả món đã được phục vụ
-                newOrderStatus = OrderStatus.Completed;
-            }
-            else if (cancelledItems == totalItems)
-            {
-                // Tất cả món đều bị hủy
-                newOrderStatus = OrderStatus.Cancelled;
-            }
-            else if (servedItems > 0 && cancelledItems > 0)
-            {
-                // Hỗn hợp: một phần đã phục vụ, một phần bị hủy
-                newOrderStatus = OrderStatus.Completed;
+                // ❌ Chưa phục vụ món nào
+                if (paymentPolicys == PaymentPolicy.Prepay)
+                {
+                    // PREPAY: giữ tiền, refund là flow riêng
+                    paymentStatus = PaymentStatusEnums.Paid;
+                }
+                else
+                {
+                    // POSTPAY: chưa ăn gì → không thu tiền
+                    paymentStatus = PaymentStatusEnums.None;
+                }
             }
             else
             {
-                // Trường hợp khác (fallback)
-                newOrderStatus = OrderStatus.Cancelled;
-            }
-
-            // Xác định Payment Status
-            PaymentStatusEnums newPaymentStatus;
-            if (requestCancelItems > 0)
-            {
-                // Có món chờ xác nhận hủy → chờ xử lý
-                newPaymentStatus = PaymentStatusEnums.Pending;
-            }
-            else if (cancelledItems == totalItems)
-            {
-                // Tất cả món bị hủy → hoàn tiền (nếu đã thanh toán)
-                newPaymentStatus = currentOrder.PaymentStatus == PaymentStatusEnums.Paid
-                    ? PaymentStatusEnums.Refunded
+                // ✅ Có món đã phục vụ
+                paymentStatus = currentOrder.PaymentStatus == PaymentStatusEnums.Paid
+                    ? PaymentStatusEnums.Paid
                     : PaymentStatusEnums.Pending;
             }
-            else if (servedItems == totalItems)
-            {
-                // Tất cả món đã phục vụ → giữ nguyên hoặc chờ thanh toán
-                newPaymentStatus = currentOrder.PaymentStatus;
-            }
-            else if (servedItems > 0 && cancelledItems > 0)
-            {
-                // Trường hợp hỗn hợp → cần xử lý hoàn tiền một phần
-                // Tạm thời set Pending để xử lý manual
-                newPaymentStatus = PaymentStatusEnums.Pending;
-            }
-            else
-            {
-                // Trường hợp khác
-                newPaymentStatus = PaymentStatusEnums.Pending;
-            }
 
-            return (newOrderStatus, newPaymentStatus);
+            return (orderStatus, paymentStatus);
         }
 
         public async Task<BaseResponseModel<QrShareResponse>> ShareTableAsync(Guid tableId, string CurrentDevideId)
