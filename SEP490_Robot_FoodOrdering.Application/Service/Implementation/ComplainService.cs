@@ -146,14 +146,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
         /// <summary>
-        /// Lấy tất cả QuickServeItems chưa được phục vụ (IsServed = false) cho các bàn đang active
+        /// Lấy tất cả QuickServeItems chưa được phục vụ (IsServed = false) cho các complain "Phục vụ nhanh"
         /// </summary>
         public async Task<BaseResponseModel<List<QuickServeItemResponse>>> GetPendingQuickServeItemsAsync()
         {
-            // Lấy tất cả complain đang pending có Title = "Phục vụ nhanh"
+            // Lấy complain pending có Title = "Phục vụ nhanh" + include Table để có TableId, TableName
             var pendingQuickComplains = await _unitOfWork.Repository<Complain, Guid>()
-                .GetAllWithSpecAsync(new BaseSpecification<Complain>(c =>
-                    c.isPending && c.Title == "Phục vụ nhanh"));
+                .GetAllWithSpecWithInclueAsync(
+                    new BaseSpecification<Complain>(c =>
+                        c.isPending && c.Title == "Phục vụ nhanh"),
+                    true,
+                    c => c.Table
+                );
 
             if (pendingQuickComplains == null || !pendingQuickComplains.Any())
             {
@@ -164,23 +168,81 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 );
             }
 
-            var complainIds = pendingQuickComplains.Select(c => c.Id).ToHashSet();
+            var complainLookup = pendingQuickComplains.ToDictionary(c => c.Id, c => c);
+            var complainIds = complainLookup.Keys.ToHashSet();
 
             var items = await _unitOfWork.Repository<QuickServeItem, Guid>()
                 .GetAllWithSpecAsync(new BaseSpecification<QuickServeItem>(q =>
                     complainIds.Contains(q.ComplainId) && !q.IsServed));
 
             var response = items
-                .Select(i => new QuickServeItemResponse
+                .Select(i =>
+                {
+                    var complain = complainLookup[i.ComplainId];
+                    return new QuickServeItemResponse
+                    {
+                        Id = i.Id,
+                        ComplainId = i.ComplainId,
+                        TableId = complain.TableId,
+                        TableName = complain.Table?.Name ?? string.Empty,
+                        ItemName = i.ItemName,
+                        IsServed = i.IsServed,
+                        CreatedTime = i.CreatedTime,
+                        LastUpdatedTime = i.LastUpdatedTime
+                    };
+                })
+                .ToList();
+
+            return new BaseResponseModel<List<QuickServeItemResponse>>(
+                StatusCodes.Status200OK,
+                ResponseCodeConstants.SUCCESS,
+                response
+            );
+        }
+
+        /// <summary>
+        /// Lấy tất cả QuickServeItems đã được phục vụ (IsServed = true) để show ở tab Đã phục vụ.
+        /// </summary>
+        public async Task<BaseResponseModel<List<QuickServeItemResponse>>> GetServedQuickServeItemsAsync()
+        {
+            // Lấy toàn bộ quick-serve items đã phục vụ
+            var servedItems = await _unitOfWork.Repository<QuickServeItem, Guid>()
+                .GetAllWithSpecAsync(new BaseSpecification<QuickServeItem>(q => q.IsServed));
+
+            if (servedItems == null || !servedItems.Any())
+            {
+                return new BaseResponseModel<List<QuickServeItemResponse>>(
+                    StatusCodes.Status200OK,
+                    ResponseCodeConstants.SUCCESS,
+                    new List<QuickServeItemResponse>()
+                );
+            }
+
+            // Lấy complain + table info để map TableId/TableName
+            var complainIds = servedItems.Select(i => i.ComplainId).Distinct().ToHashSet();
+            var relatedComplains = await _unitOfWork.Repository<Complain, Guid>()
+                .GetAllWithSpecWithInclueAsync(
+                    new BaseSpecification<Complain>(c => complainIds.Contains(c.Id)),
+                    true,
+                    c => c.Table
+                );
+            var complainLookup = relatedComplains.ToDictionary(c => c.Id, c => c);
+
+            var response = servedItems.Select(i =>
+            {
+                complainLookup.TryGetValue(i.ComplainId, out var complain);
+                return new QuickServeItemResponse
                 {
                     Id = i.Id,
                     ComplainId = i.ComplainId,
+                    TableId = complain?.TableId ?? Guid.Empty,
+                    TableName = complain?.Table?.Name ?? string.Empty,
                     ItemName = i.ItemName,
                     IsServed = i.IsServed,
                     CreatedTime = i.CreatedTime,
                     LastUpdatedTime = i.LastUpdatedTime
-                })
-                .ToList();
+                };
+            }).ToList();
 
             return new BaseResponseModel<List<QuickServeItemResponse>>(
                 StatusCodes.Status200OK,
@@ -209,13 +271,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 item.IsServed = true;
                 item.LastUpdatedTime = DateTime.UtcNow;
                 await itemRepo.UpdateAsync(item);
+                // Flush ngay lập tức để các request song song nhìn thấy trạng thái mới nhất
+                await _unitOfWork.SaveChangesAsync();
             }
 
-            // Kiểm tra các item khác của cùng complain
-            var otherItems = await itemRepo.GetAllWithSpecAsync(
-                new BaseSpecification<QuickServeItem>(q => q.ComplainId == item.ComplainId));
+            // Kiểm tra sau khi đã flush DB để tránh race-condition khi phục vụ nhiều món cùng lúc
+            var hasUnservedItems = await itemRepo.AnyAsync(
+                new BaseSpecification<QuickServeItem>(q =>
+                    q.ComplainId == item.ComplainId && !q.IsServed));
 
-            if (otherItems.All(i => i.IsServed))
+            if (!hasUnservedItems)
             {
                 var complain = await complainRepo.GetByIdAsync(item.ComplainId);
                 if (complain != null && complain.isPending)
@@ -223,10 +288,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     complain.isPending = false;
                     complain.ResolvedAt = DateTime.UtcNow;
                     await complainRepo.UpdateAsync(complain);
+                    await _unitOfWork.SaveChangesAsync();
                 }
             }
-
-            await _unitOfWork.SaveChangesAsync();
 
             return new BaseResponseModel<bool>(
                 StatusCodes.Status200OK,
