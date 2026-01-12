@@ -85,7 +85,7 @@ namespace SEP490_Robot_FoodOrdering.API.Middleware
             catch (ErrorException ex)
             {
                 _logger.LogError(ex, ex.ErrorDetail.ErrorMessage.ToString());
-                context.Response.StatusCode = ex.StatusCode;
+                    context.Response.StatusCode = ex.StatusCode;
                 var result = JsonSerializer.Serialize(new
                 {
                     statusCode = ex.StatusCode,

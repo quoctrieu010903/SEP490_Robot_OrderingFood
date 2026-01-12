@@ -25,6 +25,8 @@ using Microsoft.Extensions.Logging;
 using System.Net.WebSockets;
 using ZXing;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request.User;
+using CloudinaryDotNet.Core;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -675,7 +677,113 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
         }
 
-        public async Task<BaseResponseModel<TableResponse>> CheckoutTable(Guid id)
+        //public async Task<BaseResponseModel<TableResponse>> CheckoutTable(Guid id , CheckoutTableRequest req)
+        //{
+        //    var now = DateTime.UtcNow;
+
+        //    var existedTable = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(id);
+        //    if (existedTable == null)
+        //        throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Table không tìm thấy");
+
+        //    if (existedTable.Status != TableEnums.Occupied)
+        //        throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.VALIDATION_ERROR,
+        //            "Bàn không ở trạng thái đang sử dụng, không thể checkout");
+
+        //    // ✅ Lấy order đang mở (chưa Completed/Cancelled)
+        //    var order = await _unitOfWork.Repository<Order, Guid>()
+        //        .GetWithSpecAsync(new BaseSpecification<Order>(o =>
+        //            o.TableId == id &&
+        //            o.Status != OrderStatus.Completed &&
+        //            o.Status != OrderStatus.Cancelled
+        //        ));
+
+        //    if (order == null)
+        //        throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND,
+        //            "Không tìm thấy order đang hoạt động của bàn");
+
+        //    if (order.PaymentStatus != PaymentStatusEnums.Paid)
+        //        throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.INVALID_OPERATION,
+        //            "Không thể checkout khi order vẫn đang mở hoặc chưa thanh toán");
+
+        //    // ✅ Lấy session Active mới nhất (vì AddOrderByDescending thường return void)
+        //    var sessionSpec = new BaseSpecification<TableSession>(s =>
+        //        s.TableId == id && s.Status == TableSessionStatus.Active
+        //    );
+        //    sessionSpec.AddOrderByDescending(s => s.CheckIn);
+
+        //    var tableSession = await _unitOfWork.Repository<TableSession, Guid>()
+        //        .GetWithSpecAsync(sessionSpec);
+
+        //    if (tableSession == null)
+        //        throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND,
+        //            "Bàn hiện không có phiên hoạt động (Active session).");
+
+        //    // ✅ Đóng order
+        //    order.Status = OrderStatus.Completed;
+        //    order.LastUpdatedTime = now;
+        //    _unitOfWork.Repository<Order, Guid>().Update(order);
+
+        //    // ✅ Tạo invoice theo kiểu idempotent + graph (Invoice + InvoiceDetails)
+        //    var requestInvoice = new InvoiceCreatRequest(existedTable.Id, order.Id);
+
+        //    var invoice = await _invoiceService.CreateInvoice(requestInvoice); // ❗ KHÔNG SaveChanges trong service
+
+        //    // ✅ Award point (cũng không SaveChanges trong service)
+        //    await _customerPointService.AwardPointsForInvoiceAsync(invoice.Id);
+
+        //    // ✅ Log activity (dùng invoice vừa tạo, không dùng order.Invoices)
+        //    await _tableActivityService.LogAsync(
+        //        tableSession,
+        //        existedTable.DeviceId,
+        //        TableActivityType.CreateInvoice,
+        //        new
+        //        {
+        //            invoiceId = invoice.Id.ToString(),
+        //            invoiceCode = invoice.InvoiceCode,
+
+        //            orderId = order.Id.ToString(),
+        //            orderCode = order.OrderCode,
+
+        //            totalAmount = invoice.TotalAmount,
+        //            paymentMethod = invoice.PaymentMethod,   // int/enum/string đều được, nhưng phải thống nhất
+        //            paymentStatus = order.PaymentStatus,     // idem
+
+        //            createdAtUtc = DateTime.UtcNow,          // rất nên có
+        //            tableSessionId = tableSession.Id.ToString(),
+        //            tableId = existedTable.Id.ToString(),
+        //            tableName = existedTable.Name
+        //        });
+
+        //    // ✅ Close session (không SaveChanges bên trong)
+        //    await _tableSessionService.CloseSessionAsync(
+        //        tableSession,
+        //        "Checkout table",
+        //        invoice.Id,
+        //        invoice.InvoiceCode,
+        //        existedTable.DeviceId
+        //    );
+
+        //    // ✅ CHỈ COMMIT 1 LẦN Ở CUỐI
+        //    await _unitOfWork.SaveChangesAsync();
+
+        //    await _moderatorDashboardRefresher.PushTableAsync(existedTable.Id);
+        //    var resp = new BaseResponseModel<TableResponse>(
+        //        StatusCodes.Status200OK,
+        //        ResponseCodeConstants.SUCCESS,
+        //        _mapper.Map<TableResponse>(existedTable),
+        //        "Checkout thành công"
+        //    );
+
+        //    return resp;
+        //    // return new BaseResponseModel<TableResponse>(
+        //    //     StatusCodes.Status200OK,
+        //    //     ResponseCodeConstants.SUCCESS,
+        //    //     _mapper.Map<TableResponse>(existedTable),
+        //    //     "Checkout thành công"
+        //    // );
+        //}
+
+        public async Task<BaseResponseModel<TableResponse>> CheckoutTable(Guid id, CheckoutTableRequest req)
         {
             var now = DateTime.UtcNow;
 
@@ -687,7 +795,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.VALIDATION_ERROR,
                     "Bàn không ở trạng thái đang sử dụng, không thể checkout");
 
-            // ✅ Lấy order đang mở (chưa Completed/Cancelled)
             var order = await _unitOfWork.Repository<Order, Guid>()
                 .GetWithSpecAsync(new BaseSpecification<Order>(o =>
                     o.TableId == id &&
@@ -703,7 +810,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.INVALID_OPERATION,
                     "Không thể checkout khi order vẫn đang mở hoặc chưa thanh toán");
 
-            // ✅ Lấy session Active mới nhất (vì AddOrderByDescending thường return void)
             var sessionSpec = new BaseSpecification<TableSession>(s =>
                 s.TableId == id && s.Status == TableSessionStatus.Active
             );
@@ -716,20 +822,83 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND,
                     "Bàn hiện không có phiên hoạt động (Active session).");
 
+            // =========================
+            // ✅ OPTIONAL: Nhập tên/SĐT để gán Customer cho Invoice/Order
+            // =========================
+            Customer? customer = null;
+            string? normalizedPhone = null;
+            var rawPhone = req?.CustomerPhone;
+
+            if (!string.IsNullOrWhiteSpace(rawPhone))
+            {
+                normalizedPhone = NormalizeVnPhone(rawPhone);
+
+                // Sau normalize mà rỗng => coi như không nhập
+                if (string.IsNullOrWhiteSpace(normalizedPhone))
+                {
+                    normalizedPhone = null;
+                }
+                // Nếu không đúng format => coi như không nhập (KHÔNG throw)
+                else if (normalizedPhone.Length < 9 || normalizedPhone.Length > 11)
+                {
+                    normalizedPhone = null;
+                }
+                else
+                {
+                    var customerRepo = _unitOfWork.Repository<Customer, Guid>();
+
+                    customer = await customerRepo.GetWithSpecAsync(
+                        new BaseSpecification<Customer>(c => c.PhoneNumber == normalizedPhone)
+                    );
+
+                    if (customer == null)
+                    {
+                        customer = new Customer
+                        {
+                            Id = Guid.NewGuid(),
+                            PhoneNumber = normalizedPhone,
+                            Name = string.IsNullOrWhiteSpace(req?.CustomerName) ? "Khách lẻ" : req.CustomerName.Trim(),
+                            CreatedTime = now,
+                            LastUpdatedTime = now
+                        };
+                        await customerRepo.AddAsync(customer);
+                    }
+                    else
+                    {
+                        if (!string.IsNullOrWhiteSpace(req?.CustomerName) &&
+                            (string.IsNullOrWhiteSpace(customer.Name) || customer.Name == "Khách lẻ"))
+                        {
+                            customer.Name = req.CustomerName.Trim();
+                            customer.LastUpdatedTime = now;
+                            customerRepo.Update(customer);
+                        }
+                    }
+
+                    if (!order.CustomerId.HasValue || order.CustomerId.Value == Guid.Empty)
+                        order.CustomerId = customer.Id;
+                }
+            }
+
             // ✅ Đóng order
             order.Status = OrderStatus.Completed;
             order.LastUpdatedTime = now;
             _unitOfWork.Repository<Order, Guid>().Update(order);
 
-            // ✅ Tạo invoice theo kiểu idempotent + graph (Invoice + InvoiceDetails)
-            var requestInvoice = new InvoiceCreatRequest(existedTable.Id, order.Id);
+            // ✅ Tạo invoice
+            var requestInvoice = new InvoiceCreatRequest(existedTable.Id, order.Id)
+            {
+                CustomerId = customer?.Id ?? order.CustomerId, // có customer thì ưu tiên, không có thì lấy từ order (nếu có)
+                CustomerPhone = customer?.PhoneNumber ?? normalizedPhone,
+                CustomerName = customer?.Name
+          ?? (string.IsNullOrWhiteSpace(req.CustomerName) ? null : req.CustomerName.Trim())
+            };
 
-            var invoice = await _invoiceService.CreateInvoice(requestInvoice); // ❗ KHÔNG SaveChanges trong service
+            var invoice = await _invoiceService.CreateInvoice(requestInvoice);
+          
 
-            // ✅ Award point (cũng không SaveChanges trong service)
+            // ✅ Award point (nếu invoice/customer có thì tự cộng, không có thì return như bạn đang làm)
             await _customerPointService.AwardPointsForInvoiceAsync(invoice.Id);
 
-            // ✅ Log activity (dùng invoice vừa tạo, không dùng order.Invoices)
             await _tableActivityService.LogAsync(
                 tableSession,
                 existedTable.DeviceId,
@@ -738,21 +907,19 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 {
                     invoiceId = invoice.Id.ToString(),
                     invoiceCode = invoice.InvoiceCode,
-
                     orderId = order.Id.ToString(),
                     orderCode = order.OrderCode,
-
                     totalAmount = invoice.TotalAmount,
-                    paymentMethod = invoice.PaymentMethod,   // int/enum/string đều được, nhưng phải thống nhất
-                    paymentStatus = order.PaymentStatus,     // idem
-
-                    createdAtUtc = DateTime.UtcNow,          // rất nên có
+                    paymentMethod = invoice.PaymentMethod,
+                    paymentStatus = order.PaymentStatus,
+                    createdAtUtc = now,
                     tableSessionId = tableSession.Id.ToString(),
                     tableId = existedTable.Id.ToString(),
-                    tableName = existedTable.Name
+                    tableName = existedTable.Name,
+                    customerPhone = normalizedPhone,      // log cho dễ trace
+                    customerName = req?.CustomerName
                 });
 
-            // ✅ Close session (không SaveChanges bên trong)
             await _tableSessionService.CloseSessionAsync(
                 tableSession,
                 "Checkout table",
@@ -761,24 +928,29 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 existedTable.DeviceId
             );
 
-            // ✅ CHỈ COMMIT 1 LẦN Ở CUỐI
             await _unitOfWork.SaveChangesAsync();
 
             await _moderatorDashboardRefresher.PushTableAsync(existedTable.Id);
-            var resp = new BaseResponseModel<TableResponse>(
+
+            return new BaseResponseModel<TableResponse>(
                 StatusCodes.Status200OK,
                 ResponseCodeConstants.SUCCESS,
                 _mapper.Map<TableResponse>(existedTable),
                 "Checkout thành công"
             );
+        }
 
-            return resp;
-            // return new BaseResponseModel<TableResponse>(
-            //     StatusCodes.Status200OK,
-            //     ResponseCodeConstants.SUCCESS,
-            //     _mapper.Map<TableResponse>(existedTable),
-            //     "Checkout thành công"
-            // );
+        private static string NormalizeVnPhone(string raw)
+        {
+            var p = raw.Trim()
+                .Replace(" ", "")
+                .Replace("-", "")
+                .Replace(".", "");
+
+            if (p.StartsWith("+84")) p = "0" + p.Substring(3);
+            if (p.StartsWith("84") && p.Length >= 10) p = "0" + p.Substring(2);
+
+            return p;
         }
 
 

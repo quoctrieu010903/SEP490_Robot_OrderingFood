@@ -13,5 +13,7 @@ public interface IInvoiceService
     Task<PaginatedList<InvoiceResponse>> getAllInvoice(PagingRequestModel pagingRequest);
     Task<BaseResponseModel<InvoiceResponse>> getInvoiceById(Guid id);
     Task<BaseResponseModel<InvoiceResponse>> getInvoiceByTableId(Guid OrderId);
+    Task<BaseResponseModel<LatestInvoiceByPhoneResponse>> GetLatestInvoiceByPhoneAsync(string phone);
+
 
 }

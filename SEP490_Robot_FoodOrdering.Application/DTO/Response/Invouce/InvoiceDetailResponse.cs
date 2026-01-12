@@ -30,3 +30,11 @@ public class InvoiceResponse
 
     public List<InvoiceDetailResponse> Details { get; set; }    
 }
+
+
+public class LatestInvoiceByPhoneResponse
+{
+    public Guid CustomerId { get; set; }
+    public string PhoneNumber { get; set; } = default!;
+    public InvoiceResponse Invoice { get; set; } = default!;
+}

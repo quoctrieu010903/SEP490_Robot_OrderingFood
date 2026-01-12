@@ -41,51 +41,50 @@ public class InvoiceService : IInvoiceService
         if (existedOrder == null)
             throw new ErrorException(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
 
-       
-        // (Khuyến nghị) chống tạo trùng theo OrderId
         var existedInvoice = await _unitOfWork.Repository<Invoice, Guid>()
             .GetWithSpecAsync(new BaseSpecification<Invoice>(x => x.OrderId == existedOrder.Id));
 
         if (existedInvoice != null)
             return BuildInvoiceResponse(existedInvoice, existedOrder);
 
-        // ✅ Tạo ID trước để detail dùng FK chuẩn
-        //var invoiceId = Guid.NewGuid();
+        // ✅ Tạo ID trước để FK detail luôn đúng
+        var invoiceId = Guid.NewGuid();
 
         var invoice = new Invoice
         {
-            //Id = invoiceId, // ✅ QUAN TRỌNG
+            Id = invoiceId, // ✅ QUAN TRỌNG
             OrderId = existedOrder.Id,
             TableId = existedOrder.TableId ?? request.TableId,
+            CustomerId = request.CustomerId,
             InvoiceCode = _utilsService.GenerateCode("HD", 6),
             CreatedTime = DateTime.UtcNow,
             TotalMoney = existedOrder.TotalPrice,
             PaymentMethod = existedOrder.paymentMethod,
             Status = existedOrder.PaymentStatus,
-            Details = new List<InvoiceDetail>() // ✅ tránh null
+            Details = new List<InvoiceDetail>()
         };
 
         var orderStatus = existedOrder.Status;
+
         if (existedOrder.OrderItems != null)
         {
             foreach (var oi in existedOrder.OrderItems)
             {
-                var detail = new InvoiceDetail
+                invoice.Details.Add(new InvoiceDetail
                 {
-                    //Id = Guid.NewGuid(),
-                    //InvoiceId = invoiceId, // ✅ FK đúng
-                    Invoices = invoice,    // ✅ navigation đúng (theo entity của bạn)
+                    Id = Guid.NewGuid(),
+                    InvoiceId = invoiceId,      // ✅ QUAN TRỌNG: set FK trực tiếp
+                                                // Invoice = invoice,        // nếu entity nav của bạn là Invoice (singular) thì dùng dòng này
+                                                // Invoices = invoice,       // nếu bạn đặt tên nav là Invoices thì giữ như vậy, nhưng vẫn nên set InvoiceId
                     OrderItemId = oi.Id,
                     TotalMoney = oi.TotalPrice ?? 0,
-                    Status = orderStatus  // ✅
-                };
-
-                invoice.Details.Add(detail);
+                    Status = orderStatus
+                });
             }
         }
 
         await _unitOfWork.Repository<Invoice, Guid>().AddAsync(invoice);
-        // ❌ KHÔNG SaveChanges ở đây (CheckoutTable sẽ SaveChanges ở cuối)
+        // ❌ Không SaveChanges ở đây
 
         return BuildInvoiceResponse(invoice, existedOrder);
     }
@@ -151,5 +150,88 @@ public class InvoiceService : IInvoiceService
 
 
         return new BaseResponseModel<InvoiceResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, response, "Invoice retrived successfully");
+    }
+
+    public async Task<BaseResponseModel<LatestInvoiceByPhoneResponse>> GetLatestInvoiceByPhoneAsync(string phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone))
+            throw new ErrorException(StatusCodes.Status400BadRequest,
+                ResponseCodeConstants.VALIDATION_ERROR,
+                "Vui lòng nhập số điện thoại");
+
+        var normalizedPhone = NormalizeVnPhone(phone);
+
+        if (string.IsNullOrWhiteSpace(normalizedPhone) || normalizedPhone.Length < 9 || normalizedPhone.Length > 11)
+            throw new ErrorException(StatusCodes.Status400BadRequest,
+                ResponseCodeConstants.VALIDATION_ERROR,
+                "SĐT không hợp lệ");
+
+        // 1) Find customer by phone
+        var customer = await _unitOfWork.Repository<Customer, Guid>()
+            .GetWithSpecAsync(new BaseSpecification<Customer>(c => c.PhoneNumber == normalizedPhone));
+
+        if (customer == null)
+            throw new ErrorException(StatusCodes.Status404NotFound,
+                ResponseCodeConstants.NOT_FOUND,
+                "Không tìm thấy khách hàng theo SĐT");
+
+        // 2) Get latest invoice by customerId
+        var invoiceSpec = new BaseSpecification<Invoice>(i =>
+            i.CustomerId == customer.Id
+        // ✅ Nếu chỉ cho xuất hoá đơn đỏ khi đã thanh toán:
+        // && i.Status == PaymentStatusEnums.Paid
+        );
+
+        invoiceSpec.AddOrderByDescending(i => i.CreatedTime);
+        invoiceSpec.ApplyPaging(0, 1); // lấy 1 record mới nhất
+
+        var invoices = await _unitOfWork.Repository<Invoice, Guid>()
+            .GetAllWithSpecAsync(invoiceSpec);
+
+        var latestInvoice = invoices.FirstOrDefault();
+
+        if (latestInvoice == null)
+            throw new ErrorException(StatusCodes.Status404NotFound,
+                ResponseCodeConstants.NOT_FOUND,
+                "Khách hàng chưa có hoá đơn");
+
+        // 3) Load order full để build response (items/topping/table...)
+        var existedOrder = await _unitOfWork.Repository<Order, Guid>()
+            .GetWithSpecAsync(new OrderSpecification(latestInvoice.OrderId, true));
+
+        if (existedOrder == null)
+            throw new ErrorException(StatusCodes.Status404NotFound,
+                ResponseCodeConstants.NOT_FOUND,
+                "Order của hoá đơn không tồn tại");
+
+     
+        var invoiceResponse = BuildInvoiceResponse(latestInvoice, existedOrder);
+
+        var data = new LatestInvoiceByPhoneResponse
+        {
+            CustomerId = customer.Id,
+            PhoneNumber = normalizedPhone,
+            Invoice = invoiceResponse
+        };
+
+        return new BaseResponseModel<LatestInvoiceByPhoneResponse>(
+            StatusCodes.Status200OK,
+            ResponseCodeConstants.SUCCESS,
+            data,
+            "Lấy hoá đơn mới nhất theo SĐT thành công"
+        );
+    }
+
+    private static string NormalizeVnPhone(string raw)
+    {
+        var p = raw.Trim()
+            .Replace(" ", "")
+            .Replace("-", "")
+            .Replace(".", "");
+
+        if (p.StartsWith("+84")) p = "0" + p.Substring(3);
+        if (p.StartsWith("84") && p.Length >= 10) p = "0" + p.Substring(2);
+
+        return p;
     }
 }
