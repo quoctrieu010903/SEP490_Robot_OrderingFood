@@ -25,12 +25,14 @@ public class InvoiceService : IInvoiceService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly IUtilsService _utilsService;
+    private readonly ISettingsService _settingsService;
 
-    public InvoiceService(IUnitOfWork unitOfWork, IMapper mapper, IUtilsService utilsService)
+    public InvoiceService(IUnitOfWork unitOfWork, IMapper mapper, IUtilsService utilsService, ISettingsService settingsService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
         _utilsService = utilsService;
+        _settingsService = settingsService;
     }
 
     public async Task<InvoiceResponse> CreateInvoice(InvoiceCreatRequest request)
@@ -154,6 +156,7 @@ public class InvoiceService : IInvoiceService
 
     public async Task<BaseResponseModel<LatestInvoiceByPhoneResponse>> GetLatestInvoiceByPhoneAsync(string phone)
     {
+        var restaurantName = await _settingsService.GetByKeyAsync(SystemSettingKeys.RestaurantName);
         if (string.IsNullOrWhiteSpace(phone))
             throw new ErrorException(StatusCodes.Status400BadRequest,
                 ResponseCodeConstants.VALIDATION_ERROR,
@@ -182,8 +185,8 @@ public class InvoiceService : IInvoiceService
         // && i.Status == PaymentStatusEnums.Paid
         );
 
-        invoiceSpec.AddOrderByDescending(i => i.CreatedTime);
-        invoiceSpec.ApplyPaging(0, 1); // lấy 1 record mới nhất
+        //invoiceSpec.AddOrderByDescending(i => i.CreatedTime);
+        //invoiceSpec.ApplyPaging(0, 1); // lấy 1 record mới nhất
 
         var invoices = await _unitOfWork.Repository<Invoice, Guid>()
             .GetAllWithSpecAsync(invoiceSpec);
@@ -210,7 +213,10 @@ public class InvoiceService : IInvoiceService
         var data = new LatestInvoiceByPhoneResponse
         {
             CustomerId = customer.Id,
+            CustomerName = customer.Name,
+            RestaurantName = restaurantName.Data.Value,
             PhoneNumber = normalizedPhone,
+            TotalPoins = customer.TotalPoints,
             Invoice = invoiceResponse
         };
 
