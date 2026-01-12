@@ -468,6 +468,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     new InvoiceCreatRequest(table.Id, order.Id)
                 );
 
+                await _unitOfWork.SaveChangesAsync();
                 // ✅ Log activity GẮN VỚI INVOICE VỪA TẠO
                 await _tableActivityService.LogAsync(
                     tableSession,
@@ -895,6 +896,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             var invoice = await _invoiceService.CreateInvoice(requestInvoice);
           
+            await _unitOfWork.SaveChangesAsync();
 
             // ✅ Award point (nếu invoice/customer có thì tự cộng, không có thì return như bạn đang làm)
             await _customerPointService.AwardPointsForInvoiceAsync(invoice.Id);
