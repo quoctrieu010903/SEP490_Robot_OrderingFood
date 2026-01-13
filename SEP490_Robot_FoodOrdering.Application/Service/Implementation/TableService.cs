@@ -880,6 +880,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 }
             }
 
+            // ✅ Gán Customer vào Session (để lưu lịch sử ai đã ngồi bàn này)
+            if (customer != null)
+            {
+                tableSession.CustomerId = customer.Id;
+                _unitOfWork.Repository<TableSession, Guid>().Update(tableSession);
+            }
+
             // ✅ Đóng order
             order.Status = OrderStatus.Completed;
             order.LastUpdatedTime = now;
