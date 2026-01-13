@@ -26,8 +26,9 @@ public class InvoiceResponse
     public decimal TotalAmount { get; set; }
     public decimal Discount { get; set; }
     public decimal FinalAmount { get; set; }
-    public string CashierName { get; set; }
-
+    public string RestaurantName { get; set; }
+    public string RestaurantAddress { get; set; }
+    public string RestaurantPhone { get; set; }
     public List<InvoiceDetailResponse> Details { get; set; }    
 }
 
@@ -36,6 +37,8 @@ public class LatestInvoiceByPhoneResponse
 {
     public Guid CustomerId { get; set; }
     public string RestaurantName { get; set; }
+    public string RestaurantAddress { get; set; }
+    public string RestaurantPhone { get; set; }
     public string? CustomerName { get; set; }
     public string PhoneNumber { get; set; } = default!;
     public int TotalPoins { get; set; }

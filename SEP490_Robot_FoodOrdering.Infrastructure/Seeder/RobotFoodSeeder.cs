@@ -997,6 +997,28 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
             },
             new SystemSettings
             {
+                Id = Guid.Parse("12345678-90AB-CDEF-1234-567890ABCDEF"),
+                Key = SystemSettingKeys.RestaurantAddress,
+                DisplayName = "Địa chỉ Nhà Hàng",
+                Description = "Địa chỉ của nhà hàng",
+                Value = "449c Trần Hưng Đạo, Cầu Kho, Quận 1, Thành phố Hồ Chí Minh 700000",
+                Type = SettingType.String,
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            },
+            new SystemSettings
+            {
+                Id = Guid.Parse("9F8E7D6C-5B4A-3C2D-1E0F-9A8B7C6D5E4F"),
+                Key = SystemSettingKeys.RestaurantPhone,
+                DisplayName = "Số điện thoại Nhà Hàng",
+                Description = "Số điện thoại liên hệ của nhà hàng",
+                Value = "0937 142 618",
+                Type = SettingType.String,
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
+            },
+            new SystemSettings
+            {
                 Id = Guid.Parse("A1B2C3D4-E5F6-A7B8-C9D0-E1F2A3B4C5D6"),
                 Key = SystemSettingKeys.OpeningHours,
                 DisplayName = "Giờ hoạt động",

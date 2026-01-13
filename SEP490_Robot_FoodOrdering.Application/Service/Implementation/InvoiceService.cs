@@ -47,7 +47,10 @@ public class InvoiceService : IInvoiceService
             .GetWithSpecAsync(new BaseSpecification<Invoice>(x => x.OrderId == existedOrder.Id));
 
         if (existedInvoice != null)
-            return BuildInvoiceResponse(existedInvoice, existedOrder);
+        {
+             var rName = (await _settingsService.GetByKeyAsync(SystemSettingKeys.RestaurantName))?.Data?.Value ?? "Unknown Restaurant";
+             return BuildInvoiceResponse(existedInvoice, existedOrder, rName);
+        }
 
         // ✅ Tạo ID trước để FK detail luôn đúng
         var invoiceId = Guid.NewGuid();
@@ -88,10 +91,11 @@ public class InvoiceService : IInvoiceService
         await _unitOfWork.Repository<Invoice, Guid>().AddAsync(invoice);
         // ❌ Không SaveChanges ở đây
 
-        return BuildInvoiceResponse(invoice, existedOrder);
+        var restaurantName = (await _settingsService.GetByKeyAsync(SystemSettingKeys.RestaurantName))?.Data?.Value ?? "Unknown Restaurant";
+        return BuildInvoiceResponse(invoice, existedOrder, restaurantName);
     }
 
-    private InvoiceResponse BuildInvoiceResponse(Invoice invoice, Order existedOrder)
+    private InvoiceResponse BuildInvoiceResponse(Invoice invoice, Order existedOrder, string restaurantName)
     {
         return new InvoiceResponse
         {
@@ -106,7 +110,7 @@ public class InvoiceService : IInvoiceService
             TotalAmount = existedOrder.TotalPrice,
             Discount = 0,
             FinalAmount = existedOrder.TotalPrice,
-            CashierName = "Moderator Manager",
+            RestaurantName = restaurantName,
             Details = existedOrder.OrderItems?.Select(oi => new InvoiceDetailResponse
             {
                 OrderItemId = oi.Id,
@@ -132,6 +136,7 @@ public class InvoiceService : IInvoiceService
 
     public async Task<BaseResponseModel<InvoiceResponse>> getInvoiceById(Guid id)
     {
+
         var invoice = await _unitOfWork.Repository<Invoice, Guid>()
        .GetWithSpecAsync(new InvoiceSpecification(id));
 
@@ -139,7 +144,13 @@ public class InvoiceService : IInvoiceService
             throw new ErrorException(StatusCodes.Status404NotFound,
                 ResponseCodeConstants.NOT_FOUND,
                 "Không tìm thấy hóa đơn.");
+        var restaurantName = (await _settingsService.GetByKeyAsync(SystemSettingKeys.RestaurantName))?.Data?.Value ?? "Unknown Restaurant";
+        var restaurantAddress = await _settingsService.GetByKeyAsync(SystemSettingKeys.RestaurantAddress);
+        var restaurantPhoneNumber = await _settingsService.GetByKeyAsync(SystemSettingKeys.RestaurantPhone);
         var response = _mapper.Map<InvoiceResponse>(invoice);
+        response.RestaurantName = restaurantName;
+        response.RestaurantPhone = restaurantPhoneNumber.Data.Value;
+        response.RestaurantAddress = restaurantAddress.Data.Value;
         return new BaseResponseModel<InvoiceResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, response, "Invoice retrived successfully  ");
 
     }
@@ -148,7 +159,9 @@ public class InvoiceService : IInvoiceService
     {
         var specification = new InvoiceSpecification(OrderId, true);
         var invoices = await _unitOfWork.Repository<Invoice, Guid>().GetWithSpecAsync(specification);
+        var restaurantName = (await _settingsService.GetByKeyAsync(SystemSettingKeys.RestaurantName))?.Data?.Value ?? "Unknown Restaurant";
         var response = _mapper.Map<InvoiceResponse>(invoices);
+        response.RestaurantName = restaurantName;
 
 
         return new BaseResponseModel<InvoiceResponse>(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, response, "Invoice retrived successfully");
@@ -157,6 +170,8 @@ public class InvoiceService : IInvoiceService
     public async Task<BaseResponseModel<LatestInvoiceByPhoneResponse>> GetLatestInvoiceByPhoneAsync(string phone)
     {
         var restaurantName = await _settingsService.GetByKeyAsync(SystemSettingKeys.RestaurantName);
+        var restaurantAddress = await _settingsService.GetByKeyAsync(SystemSettingKeys.RestaurantAddress);
+        var restaurantPhoneNumber = await _settingsService.GetByKeyAsync(SystemSettingKeys.RestaurantPhone);
         if (string.IsNullOrWhiteSpace(phone))
             throw new ErrorException(StatusCodes.Status400BadRequest,
                 ResponseCodeConstants.VALIDATION_ERROR,
@@ -208,13 +223,15 @@ public class InvoiceService : IInvoiceService
                 "Order của hoá đơn không tồn tại");
 
      
-        var invoiceResponse = BuildInvoiceResponse(latestInvoice, existedOrder);
+        var invoiceResponse = BuildInvoiceResponse(latestInvoice, existedOrder, restaurantName.Data.Value);
 
         var data = new LatestInvoiceByPhoneResponse
         {
             CustomerId = customer.Id,
             CustomerName = customer.Name,
             RestaurantName = restaurantName.Data.Value,
+            RestaurantAddress = restaurantAddress.Data.Value,
+            RestaurantPhone =restaurantPhoneNumber.Data.Value,
             PhoneNumber = normalizedPhone,
             TotalPoins = customer.TotalPoints,
             Invoice = invoiceResponse

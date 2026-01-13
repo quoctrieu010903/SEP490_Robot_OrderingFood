@@ -112,18 +112,62 @@ namespace SEP490_Robot_FoodOrdering.Application.Utils
             return $"{p}-{random}";
         }
 
-        //public string GetEmailTemplate(string templateName, string folder)
-        //{
-        //    var templatePath = Path.Combine(_environment.WebRootPath, $"{folder}/{templateName}");
+       
+                /// <summary>
+        /// Parse resolutionNote để extract các item name
+        /// Ví dụ: "Phục vụ nhanh: Cho thêm nước mắm, cho thêm nước tương"
+        /// → ["Nước mắm", "Nước tương"]
+        /// </summary>
+        public List<string> ParseQuickServeItems(string resolutionNote)
+        {
+            var items = new List<string>();
 
-        //    if (File.Exists(templatePath))
-        //    {
-        //        return File.ReadAllText(templatePath);
-        //    }
-        //    else
-        //    {
-        //        throw new FileNotFoundException($"Template file '{templateName}' not found in '{folder}'");
-        //    }
-        //}
+            if (string.IsNullOrWhiteSpace(resolutionNote))
+                return items;
+
+            // Loại bỏ prefix "Phục vụ nhanh:" hoặc "Yêu cầu nhanh:" nếu có
+            var cleanedNote = resolutionNote;
+            var prefixes = new[] { "Phục vụ nhanh:", "Yêu cầu nhanh:", "Phục vụ nhanh", "Yêu cầu nhanh" };
+            foreach (var prefix in prefixes)
+            {
+                if (cleanedNote.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    cleanedNote = cleanedNote.Substring(prefix.Length).Trim();
+                    break;
+                }
+            }
+
+            // Tách các item bằng dấu phẩy
+            var parts = cleanedNote.Split(new[] { ',', '，' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var part in parts)
+            {
+                var trimmed = part.Trim();
+                
+                // Loại bỏ các prefix như "Cho thêm", "Thêm", "Cho" nếu có
+                var prefixesToRemove = new[] { "Cho thêm", "Thêm", "Cho", "cho thêm", "thêm", "cho" };
+                foreach (var prefix in prefixesToRemove)
+                {
+                    if (trimmed.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        trimmed = trimmed.Substring(prefix.Length).Trim();
+                        break;
+                    }
+                }
+
+                // Chỉ thêm nếu không rỗng
+                if (!string.IsNullOrWhiteSpace(trimmed))
+                {
+                    // Viết hoa chữ cái đầu, giữ nguyên phần còn lại
+                    var normalized =
+                        char.ToUpper(trimmed[0]) + (trimmed.Length > 1 ? trimmed.Substring(1) : string.Empty);
+                    items.Add(normalized);
+                }
+            }
+
+            return items;
+        }
+
+
     }
 }

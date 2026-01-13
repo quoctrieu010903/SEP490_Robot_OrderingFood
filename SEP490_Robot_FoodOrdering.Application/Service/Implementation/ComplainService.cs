@@ -17,6 +17,7 @@ using SEP490_Robot_FoodOrdering.Domain.Interface;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 using SEP490_Robot_FoodOrdering.Domain.Specifications;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -29,7 +30,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly INotificationService _notificationService;
 
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public ComplainService(IUnitOfWork unitOfWork, IMapper mapper, IOrderStatsQuery orderStatsService , IModeratorDashboardRefresher moderatorDashboardRefresher , IHttpContextAccessor httpContextAccessor, INotificationService notificationService)
+        private readonly IUtilsService _utilsService;
+        public ComplainService(IUnitOfWork unitOfWork, IMapper mapper, IOrderStatsQuery orderStatsService , IModeratorDashboardRefresher moderatorDashboardRefresher , IHttpContextAccessor httpContextAccessor, INotificationService notificationService, IUtilsService utilsService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -37,6 +39,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             _moderatorDashboardRefresher = moderatorDashboardRefresher;
             _httpContextAccessor = httpContextAccessor;
             _notificationService = notificationService;
+            _utilsService = utilsService;
 
         }
 
@@ -145,9 +148,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
 
 
-        /// <summary>
-        /// Lấy tất cả QuickServeItems chưa được phục vụ (IsServed = false) cho các complain "Phục vụ nhanh"
-        /// </summary>
         public async Task<BaseResponseModel<List<QuickServeItemResponse>>> GetPendingQuickServeItemsAsync()
         {
             // Lấy complain pending có Title = "Phục vụ nhanh" + include Table để có TableId, TableName
@@ -429,7 +429,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     LastOrderUpdatedTime: null,
                     PendingItems: 0,
                     IsWaitingDish: false,
-                    WaitingDurationInMinutes: null
+                    WaitingDurationInMinutes: null,
+                    ListComplain: null
                 )).ToDictionary(x => x.Id.ToString(), x => x);
 
                 await _moderatorDashboardRefresher.PushSnapshotAsync();
@@ -475,19 +476,21 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     c.isPending && activeTableIds.Contains(c.TableId)
                 ));
 
-            // 7) lọc belong session hiện tại theo sessionStart
-            var pendingComplains = pendingComplainsRaw
-                .Where(c =>
-                    sessionStartByTable.TryGetValue(c.TableId, out var start)
-                    && start.HasValue
-                    && c.CreatedTime >= start.Value
-                )
-                .ToList();
-
-            // 8) count theo tableId
-            var pendingCountByTable = pendingComplains
+            // 8) Group pending complains by tableId
+            var complaintsByTable = pendingComplainsRaw
                 .GroupBy(c => c.TableId)
-                .ToDictionary(g => g.Key, g => g.Count());
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(c => new ComplainItemInfo(
+                        c.Id,
+                        c.Description,
+                        c.Title,
+                        c.CreatedTime,
+                        _utilsService.ParseQuickServeItems(c.Description ?? "")
+                    )).ToList()
+                );
+
+            var pendingCountByTable = complaintsByTable.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Count);
 
             // 9) order stats (bạn có thể lấy cho ALL tables hoặc chỉ activeTables)
             // Nếu muốn UI full table vẫn có stats đúng -> dùng ALL tables
@@ -506,11 +509,26 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 if (activeSession != null && pendingCountByTable.TryGetValue(table.Id, out var cnt))
                     pendingCount = cnt;
 
-                // lastOrderUpdatedTime tối ưu O(k)
-                DateTime? lastOrderUpdatedTime =
-                    table.Orders != null && table.Orders.Any()
-                        ? table.Orders.Max(o => o.LastUpdatedTime)
-                        : (DateTime?)null;
+                // lastOrderUpdatedTime: chỉ lấy từ active order của session hiện tại
+                // (đã query ở ordersInActiveSessions)
+                DateTime? lastOrderUpdatedTime = null;
+
+                if (activeSession != null)
+                {
+                    // Tìm order thuộc về activeSession này
+                    var activeOrder = ordersInActiveSessions.FirstOrDefault(o => o.TableSessionId == activeSession.Id);
+                    if (activeOrder != null)
+                    {
+                        lastOrderUpdatedTime = activeOrder.LastUpdatedTime;
+                    }
+                    else
+                    {
+                        // Hoặc fallback về thời điểm checkin nếu chưa có order? 
+                        // Hoặc vẫn để null nếu muốn "chưa có order update"
+                        // Tùy nhu cầu, ở đây để null hoặc checkin
+                        // lastOrderUpdatedTime = activeSession.CheckIn; 
+                    }
+                }
 
                 var stats = new OrderStaticsResponse
                 {
@@ -537,6 +555,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         (int)Math.Floor((now - lastOrderUpdatedTime.Value).TotalMinutes);
                 }
 
+                complaintsByTable.TryGetValue(table.Id, out var listComplain);
+
+                // Nếu bàn trống (Available) -> reset hết info hiển thị
+                if (table.Status == TableEnums.Available)
+                {
+                    lastOrderUpdatedTime = null;
+                    waitingDurationInMinutes = null;
+                    pendingItems = 0;
+                    stats = new OrderStaticsResponse(); // reset stats visual
+                    listComplain = null;
+                }
+
                 return new ComplainPeedingInfo(
                     Id: table.Id,
                     SessionId: sessionId,
@@ -551,7 +581,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     LastOrderUpdatedTime: lastOrderUpdatedTime,
                     PendingItems: pendingItems,
                     IsWaitingDish: isWaitingDish,
-                    WaitingDurationInMinutes: waitingDurationInMinutes
+                    WaitingDurationInMinutes: waitingDurationInMinutes,
+                    ListComplain: listComplain
                 );
             }).ToDictionary(x => x.Id.ToString(), x => x);
 
@@ -790,7 +821,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // Parse resolutionNote
             // Format: "Phục vụ nhanh: Cho thêm nước mắm, cho thêm nước tương"
             // Hoặc: "Phục vụ nhanh: Cho thêm nước mắm, cho thêm nước tương, cho thêm đũa"
-            var items = ParseQuickServeItems(resolutionNote);
+            var items = _utilsService.ParseQuickServeItems(resolutionNote);
 
             // Tạo QuickServeItem mới
             var now = DateTime.UtcNow;
@@ -808,61 +839,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
                 await _unitOfWork.Repository<QuickServeItem, Guid>().AddAsync(quickServeItem);
             }
-        }
-
-        /// <summary>
-        /// Parse resolutionNote để extract các item name
-        /// Ví dụ: "Phục vụ nhanh: Cho thêm nước mắm, cho thêm nước tương"
-        /// → ["Nước mắm", "Nước tương"]
-        /// </summary>
-        private List<string> ParseQuickServeItems(string resolutionNote)
-        {
-            var items = new List<string>();
-
-            if (string.IsNullOrWhiteSpace(resolutionNote))
-                return items;
-
-            // Loại bỏ prefix "Phục vụ nhanh:" hoặc "Yêu cầu nhanh:" nếu có
-            var cleanedNote = resolutionNote;
-            var prefixes = new[] { "Phục vụ nhanh:", "Yêu cầu nhanh:", "Phục vụ nhanh", "Yêu cầu nhanh" };
-            foreach (var prefix in prefixes)
-            {
-                if (cleanedNote.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                {
-                    cleanedNote = cleanedNote.Substring(prefix.Length).Trim();
-                    break;
-                }
-            }
-
-            // Tách các item bằng dấu phẩy
-            var parts = cleanedNote.Split(new[] { ',', '，' }, StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (var part in parts)
-            {
-                var trimmed = part.Trim();
-                
-                // Loại bỏ các prefix như "Cho thêm", "Thêm", "Cho" nếu có
-                var prefixesToRemove = new[] { "Cho thêm", "Thêm", "Cho", "cho thêm", "thêm", "cho" };
-                foreach (var prefix in prefixesToRemove)
-                {
-                    if (trimmed.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                    {
-                        trimmed = trimmed.Substring(prefix.Length).Trim();
-                        break;
-                    }
-                }
-
-                // Chỉ thêm nếu không rỗng
-                if (!string.IsNullOrWhiteSpace(trimmed))
-                {
-                    // Viết hoa chữ cái đầu, giữ nguyên phần còn lại
-                    var normalized =
-                        char.ToUpper(trimmed[0]) + (trimmed.Length > 1 ? trimmed.Substring(1) : string.Empty);
-                    items.Add(normalized);
-                }
-            }
-
-            return items;
         }
 
     }

@@ -48,5 +48,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Abstractions.Utils
         /// length là độ dài phần RANDOM (không tính prefix và dấu '-')
         /// </summary>
         string GenerateCode(string prefix, int length);
+        List<string> ParseQuickServeItems(string note);
     }
 }

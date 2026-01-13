@@ -24,6 +24,8 @@ namespace SEP490_Robot_FoodOrdering.Core.Constants
         public const string PaymentPolicyEffectiveDate = "PaymentPolicyEffectiveDate";
         public const string OpeningTime = "OpeningTime";
         public const string ClosingTime = "ClosingTime";
+        public const string RestaurantAddress = "RestaurantAddress";
+        public const string RestaurantPhone = "RestaurantPhone";
 
     }
 }
