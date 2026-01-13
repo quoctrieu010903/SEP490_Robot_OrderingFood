@@ -44,6 +44,8 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Order
         public DateTime? ServedTime { get; set; } // Thời gian chuyển sang trạng thái Served (Ready → Served)
         public DateTime? CancelledTime { get; set; } // Thời gian hủy món
         public DateTime? RemakedTime { get; set; } // Thời gian làm lại món (chuyển sang Remark)
+        
+        public int DurationTime { get; set; } // Thời gian nấu của sản phẩm (tính bằng phút, từ Product entity)
       
     }
   

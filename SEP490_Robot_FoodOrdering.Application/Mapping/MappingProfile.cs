@@ -146,7 +146,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Mapping
                 .ForMember(dest => dest.ReadyTime, opt => opt.MapFrom(src => src.ReadyTime))
                 .ForMember(dest => dest.ServedTime, opt => opt.MapFrom(src => src.ServedTime))
                 .ForMember(dest => dest.CancelledTime, opt => opt.MapFrom(src => src.CancelledTime))
-                .ForMember(dest => dest.RemakedTime, opt => opt.MapFrom(src => src.RemakedTime));
+                .ForMember(dest => dest.RemakedTime, opt => opt.MapFrom(src => src.RemakedTime))
+                .ForMember(dest => dest.DurationTime, opt => opt.MapFrom(src => src.Product != null ? src.Product.DurationTime : 0));
 
             CreateMap<CancelledOrderItem, CancelledItemResponse>()
 
