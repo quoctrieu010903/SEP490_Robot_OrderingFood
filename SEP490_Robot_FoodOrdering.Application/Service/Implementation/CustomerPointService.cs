@@ -24,6 +24,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
         public async Task AwardPointsForInvoiceAsync(Guid invoiceId)
         {
+            const decimal VndPerPoint = 1000m; // 1 điểm / 1.000đ
             var now = DateTime.UtcNow;
 
             var invoiceRepo = _unitOfWork.Repository<Invoice, Guid>();
@@ -34,14 +35,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (invoice == null)
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Invoice không tồn tại");
 
-           
+            // ✅ (Khuyến nghị) chống cộng điểm trùng nếu API bị gọi lại
+            // Nếu model chưa có field này thì bạn nên thêm: invoice.AwardedPoints / invoice.PointAwardedAt
+            // if (invoice.PointAwardedAt.HasValue) return;
 
-          
             Guid? customerId = invoice.CustomerId;
 
             if (!customerId.HasValue)
             {
-                // Invoice tạo từ 1 order -> lấy order để lấy CustomerId
                 var order = await orderRepo.GetByIdAsync(invoice.OrderId);
                 if (order == null)
                     throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Order của invoice không tồn tại");
@@ -50,35 +51,33 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
 
             if (!customerId.HasValue || customerId.Value == Guid.Empty)
-            {
-                // throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.VALIDATION_ERROR,
-                //     "Không có thông tin khách để tích điểm (Invoice/Order chưa có CustomerId)");
-                //TODO: fix this based on Business RULE. 
-                return; // allow checkout even customer has no value. 
-            }
+                return; // cho phép checkout dù không có khách
 
             var customer = await customerRepo.GetByIdAsync(customerId.Value);
             if (customer == null)
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Customer không tồn tại");
 
-            // Tính điểm
-            // Tổng tiền tùy model bạn: invoice.TotalMoney / invoice.TotalAmount ...
-            var total = invoice.TotalMoney;
-            var points = (int)Math.Floor((total * 0.01m) / 1000m);
+          
+            decimal totalVnd = invoice.TotalMoney;
 
+            
+
+            
+            var points = (int)Math.Floor(totalVnd / VndPerPoint);
             if (points < 0) points = 0;
 
-            // Update customer
             customer.TotalPoints += points;
             customer.LifetimePoints += points;
             customer.LastUpdatedTime = now;
             customerRepo.Update(customer);
 
-           
-            invoice.LastUpdatedTime = now;
-            //invoiceRepo.Update(invoice);
 
-            //await _unitOfWork.SaveChangesAsync();
+            invoice.LastUpdatedTime = now;
+            invoiceRepo.Update(invoice);
+
+            // KHÔNG SaveChanges ở đây (đúng theo flow của bạn)
         }
+
+
     }
 }

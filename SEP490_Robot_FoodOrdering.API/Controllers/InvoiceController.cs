@@ -37,4 +37,12 @@ public class InvoiceController
         var result = await _invoiceService.getInvoiceById(InvoiceId);
         return result;
     }
+
+    // GET: /api/invoices/latest-by-phone?phone=0909123456
+    [HttpGet("latest-by-phone")]
+    public async Task<ActionResult<BaseResponseModel<LatestInvoiceByPhoneResponse>>> GetLatestByPhone([FromQuery] string phone)
+    {
+        var result = await _invoiceService.GetLatestInvoiceByPhoneAsync(phone);
+        return result;
+    }
 }

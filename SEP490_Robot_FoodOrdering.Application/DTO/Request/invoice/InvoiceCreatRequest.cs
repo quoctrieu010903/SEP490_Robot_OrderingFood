@@ -6,6 +6,9 @@ public class InvoiceCreatRequest
 {
     public Guid TableId { get; set; }
     public Guid OrderId { get; set; }
+    public Guid? CustomerId { get; set; }
+    public string? CustomerPhone { get; set; }
+    public string? CustomerName { get; set; }
 
     public InvoiceCreatRequest(Guid tableId, Guid orderId)
     {

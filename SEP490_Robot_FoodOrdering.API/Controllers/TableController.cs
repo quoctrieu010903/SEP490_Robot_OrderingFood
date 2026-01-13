@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Table;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request.User;
 
 namespace SEP490_Robot_FoodOrdering.API.Controllers
 {
@@ -114,9 +115,9 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
             return Ok(result);
         }
         [HttpPatch("{id}/Checkout")]
-        public async Task<IActionResult> CheckoutTable(Guid id)
+        public async Task<IActionResult> CheckoutTable(Guid id, [FromBody] CheckoutTableRequest req)
         {
-            var result = await _service.CheckoutTable(id);
+            var result = await _service.CheckoutTable(id,req);
             return Ok(result);
         }
         /// <summary>
