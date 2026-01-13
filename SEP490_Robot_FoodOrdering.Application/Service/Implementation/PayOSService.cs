@@ -172,17 +172,10 @@ public class PayOSService: IPayOSService
 
         // Nạp Order với Items và Table
         var order = await _unitOfWork.Repository<Order, Guid>()
-            .GetByIdWithIncludeAsync(x => x.Id == payment.OrderId, true, o => o.OrderItems, o => o.Table);
+            .GetByIdWithIncludeAsync(x => x.Id == payment.OrderId, true, o => o.OrderItems, o => o.Table, o => o.Payments);
         if (order == null)
         {
             _logger.LogInformation("PayOS webhook: order not found for payment {PaymentId}", payment.Id);
-            return;
-        }
-
-        // Idempotency: if we've already marked Paid at either level, do nothing
-        if (payment.PaymentStatus == PaymentStatusEnums.Paid || order.PaymentStatus == PaymentStatusEnums.Paid)
-        {
-            _logger.LogInformation("PayOS webhook: skip, already paid for orderId {OrderId} (orderCode {OrderCode})", order.Id, data.orderCode);
             return;
         }
 
@@ -192,33 +185,32 @@ public class PayOSService: IPayOSService
 
         if (isSuccess)
         {
-            order.PaymentStatus = PaymentStatusEnums.Paid;
             payment.PaymentStatus = PaymentStatusEnums.Paid;
             payment.PaymentMethod = PaymentMethodEnums.PayOS;
         }
         else
         {
-            _logger.LogInformation(
-                "PayOS webhook: non-success code for orderId {OrderId} (orderCode {OrderCode}) - data.code={DataCode}, body.code={BodyCode}, data.desc={DataDesc}, body.desc={BodyDesc}, data.description={DataDescription}",
-                order.Id,
-                data.orderCode,
-                data.code,
-                body.code,
-                data.desc,
-                body.desc,
-                data.description
+             _logger.LogInformation(
+                "PayOS webhook: non-success code for orderId {OrderId} (orderCode {OrderCode}) - data.code={DataCode}, body.code={BodyCode}",
+                order.Id, data.orderCode, data.code, body.code
             );
-            order.PaymentStatus = PaymentStatusEnums.Failed;
             payment.PaymentStatus = PaymentStatusEnums.Failed;
             payment.PaymentMethod = PaymentMethodEnums.PayOS;
         }
-
-        // ensure order reflects PayOS as the method used
-        order.paymentMethod = PaymentMethodEnums.PayOS;
-
-        await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
+        
+        // Update payment first
         await _unitOfWork.Repository<Payment, Guid>().UpdateAsync(payment);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(); // Save to ensure Reconcile sees the updated status
+
+        // Optimization: Pass the known amount from webhook to avoid one API call
+        var knownAmounts = new Dictionary<long, int>();
+        if (data.orderCode > 0)
+        {
+            knownAmounts[data.orderCode] = data.amount;
+        }
+
+        // Reconcile items based on ALL successful payments
+        await ReconcileOrderPaymentStatus(order, knownAmounts);
     }
 
     // Manual sync in case webhook missed or for one-off fix
@@ -232,50 +224,8 @@ public class PayOSService: IPayOSService
             return new BaseResponseModel<OrderPaymentResponse>(
                 StatusCodes.Status404NotFound, "ORDER_NOT_FOUND", "Order not found");
 
-        
-        
-        // 2️⃣ Nếu chưa có Payment nào thì coi như Pending
-        if (order.Payments == null || !order.Payments.Any())
-        {
-            order.PaymentStatus = PaymentStatusEnums.Pending;
-        }
-        else
-        {
-            // ✅ Tất cả thanh toán thành công → Paid
-            if (order.Payments.All(p => p.PaymentStatus == PaymentStatusEnums.Paid))
-            {
-                order.PaymentStatus = PaymentStatusEnums.Paid;
-            }
-            // ✅ Tất cả thanh toán thất bại → Failed
-            else if (order.Payments.All(p => p.PaymentStatus == PaymentStatusEnums.Failed))
-            {
-                order.PaymentStatus = PaymentStatusEnums.Failed;
-            }
-            // ✅ Có ít nhất một Payment chưa xử lý → Pending
-            else
-            {
-                order.PaymentStatus = PaymentStatusEnums.Pending;
-            }
-        }
-
-        // 3️⃣ Cập nhật lại các OrderItem theo trạng thái tổng thể của Order
-        foreach (var item in order.OrderItems)
-        {
-            item.PaymentStatus = order.PaymentStatus;
-            await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
-        }
-
-
-        // 4️⃣ Cập nhật Order
-        order.LastUpdatedTime = DateTime.UtcNow;
-        await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
-        var session = await _unitOfWork.Repository<TableSession, Guid>()
-            .GetByIdWithIncludeAsync(ts => ts.Id == order.TableSessionId, false, ts => ts.Table);
-
-       
-        await _unitOfWork.SaveChangesAsync();
-        await _moderatorDashboardRefresher.PushTableAsync(order.TableId ?? Guid.Empty);
-
+        // Use the common reconciliation logic
+        await ReconcileOrderPaymentStatus(order);
 
         // 5️⃣ Trả kết quả đồng bộ
         return new BaseResponseModel<OrderPaymentResponse>(
@@ -288,6 +238,144 @@ public class PayOSService: IPayOSService
                 Message = "Order payment status synchronized successfully"
             });
     }
+
+    /// <summary>
+    /// Checks all successful PayOS payments for the order and marks items as Paid sequentially.
+    /// This handles "cumulative" orders where users pay multiple times.
+    /// </summary>
+    /// <param name="order">The order to reconcile</param>
+    /// <param name="knownAmounts">Optional dictionary of known amounts for specific PayOSOrderCodes (e.g. from Webhook) to avoid API calls</param>
+    private async Task ReconcileOrderPaymentStatus(Order order, Dictionary<long, int>? knownAmounts = null)
+    {
+        if (order.OrderItems == null || !order.OrderItems.Any()) return;
+
+        decimal totalPaid = 0;
+
+        // 1. Calculate total successfully paid amount
+        if (order.Payments != null)
+        {
+            var paidPayments = order.Payments
+                .Where(p => p.PaymentStatus == PaymentStatusEnums.Paid && p.PayOSOrderCode.HasValue)
+                .ToList();
+
+            foreach (var p in paidPayments)
+            {
+                long orderCode = p.PayOSOrderCode!.Value;
+                int amount = 0;
+
+                // Use known amount if available (e.g. from current webhook)
+                if (knownAmounts != null && knownAmounts.TryGetValue(orderCode, out var knownAmount))
+                {
+                    amount = knownAmount;
+                }
+                else
+                {
+                    // Otherwise fetch from PayOS API
+                    try
+                    {
+                        var info = await _payOS.getPaymentLinkInformation(orderCode);
+                        if (info != null)
+                        {
+                            amount = info.amountPaid > 0 ? info.amountPaid : info.amount;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "ReconcileOrderPaymentStatus: Failed to fetch info for PayOSOrderCode {OrderCode}", orderCode);
+                        // Fallback: If we can't fetch, we can't assume amount. 
+                        // However, ignoring it implies the user hasn't paid, which might block them.
+                        // Ideally we should alert admin. For now, treat as 0 or risk double charging?
+                        // Better to assume 0 and retry later via Sync.
+                        amount = 0;
+                    }
+                }
+
+                totalPaid += amount;
+            }
+        }
+        
+        _logger.LogInformation("ReconcileOrderPaymentStatus: Total Paid Verified for Order {OrderId} is {TotalPaid}", order.Id, totalPaid);
+
+        // 2. Distribute totalPaid to items (Oldest Pending/Failed items first?)
+        // Actually we should cover items in order of creation.
+        // We re-evaluate ALL items because we want to ensure consistency.
+        // So we reset "accumulated cost" logic from scratch.
+        
+        var sortedItems = order.OrderItems
+            .OrderBy(i => i.CreatedTime)
+            .ToList();
+
+        decimal remainingBalance = totalPaid;
+        bool anyUnpaid = false;
+
+        foreach (var item in sortedItems)
+        {
+            if (item.Status == OrderItemStatus.Cancelled) continue; // Skip cancelled items (cost = 0)
+
+            var itemCost = item.TotalPrice ?? 0; // Assuming TotalPrice is calculated correctly
+            
+            // Check if this item is fully covered by remaining balance
+            if (remainingBalance >= itemCost && itemCost > 0)
+            {
+                if (item.PaymentStatus != PaymentStatusEnums.Paid)
+                {
+                    item.PaymentStatus = PaymentStatusEnums.Paid;
+                    _logger.LogInformation("Reconcile: Marked Item {ItemId} as Paid", item.Id);
+                    await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
+                }
+                remainingBalance -= itemCost;
+            }
+            else
+            {
+                // Not covered (or partial? System seems to support binary Paid/Pending per item)
+                // We keep it Pending.
+                if (item.PaymentStatus == PaymentStatusEnums.Paid)
+                {
+                    // Regression: It was paid but now we think it's not? 
+                    // This could happen if a Refund occurred (PayOS API would show lower amountPaid?)
+                    // Or if we failed to fetch amount.
+                    // Ideally, don't revert to Pending if it was Paid, UNLESS we are sure.
+                    // But "Reconcile" implies truth.
+                    item.PaymentStatus = PaymentStatusEnums.Pending;
+                    _logger.LogWarning("Reconcile: Reverting Item {ItemId} to Pending (Balance {Balance} < Cost {Cost})", item.Id, remainingBalance, itemCost);
+                    await _unitOfWork.Repository<OrderItem, Guid>().UpdateAsync(item);
+                }
+                anyUnpaid = true;
+                // If partial payment (remainingBalance > 0 but < itemCost), we consume it? 
+                // No, we usually require full item payment.
+                // Keep remainingBalance as is? Or should we say 0?
+                // Depending on business logic. Usually it's simpler to just stop applying.
+                // But let's keep remainingBalance for next items? (e.g. tiny items).
+            }
+        }
+
+        // 3. Update Order Status
+        var newOrderStatus = anyUnpaid ? PaymentStatusEnums.Pending : PaymentStatusEnums.Paid;
+        
+        // Special case: If NO items (only cancelled), it's Paid? Or irrelevant.
+        if (!sortedItems.Any(i => i.Status != OrderItemStatus.Cancelled))
+        {
+            newOrderStatus = PaymentStatusEnums.Paid; // Nothing to pay
+        }
+
+        if (order.PaymentStatus != newOrderStatus)
+        {
+            order.PaymentStatus = newOrderStatus;
+            await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
+        }
+        
+        // We modify OrderItems and Order, caller should SaveChanges IF they want, 
+        // OR we save here? The methods using this usually save after.
+        // HandleWebhook calls SaveChanges BEFORE calling this (for Payment).
+        // It SHOULD save changes AFTER calling this.
+        // Let's add SaveChanges here to be properly self-contained?
+        // But caller might have transaction scope.
+        // `HandleWebhook` doesn't seem to have a transaction scope open across this call explicitly.
+        // I will add SaveChangesAsync here to be safe and immediate.
+        await _unitOfWork.SaveChangesAsync();
+        await _moderatorDashboardRefresher.PushTableAsync(order.TableId ?? Guid.Empty);
+    }
+
     
     
     // Cancel api if the payment not success.

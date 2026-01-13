@@ -1,4 +1,5 @@
 ﻿using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Complain;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
@@ -15,11 +16,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IOrderStatsQuery _orderStatsQuery;
+        private readonly IUtilsService _utilsService;
 
-        public ModeratorDashboardQuery(IUnitOfWork unitOfWork, IOrderStatsQuery orderStatsQuery)
+        public ModeratorDashboardQuery(IUnitOfWork unitOfWork, IOrderStatsQuery orderStatsQuery, IUtilsService utilsService)
         {
             _unitOfWork = unitOfWork;
             _orderStatsQuery = orderStatsQuery;
+            _utilsService = utilsService;
         }
 
         public async Task<Dictionary<string, ComplainPeedingInfo>> BuildSnapshotAsync()
@@ -33,16 +36,26 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var complains = await _unitOfWork.Repository<Complain, Guid>()
                 .GetAllWithSpecAsync(new BaseSpecification<Complain>(x => x.isPending));
 
-            var pendingCountByTable = complains
+            var complaintsByTable = complains
                 .GroupBy(c => c.TableId)
-                .ToDictionary(g => g.Key, g => g.Count());
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(c => new ComplainItemInfo(
+                        c.Id,
+                        c.Description,
+                        c.Title,
+                        c.CreatedTime,
+                        _utilsService.ParseQuickServeItems(c.Description ?? "")
+                    )).ToList()
+                );
 
             var statsDict = await _orderStatsQuery.GetOrderStatsByTableIdsAsync(tables.Select(t => t.Id));
 
             var result = tables.Select(table =>
             {
-                pendingCountByTable.TryGetValue(table.Id, out var pendingCount);
-                return BuildInfo(table, pendingCount, statsDict);
+                complaintsByTable.TryGetValue(table.Id, out var listComplain);
+                int pendingCount = listComplain?.Count ?? 0;
+                return BuildInfo(table, pendingCount, statsDict, listComplain);
             }).ToDictionary(x => x.Id.ToString(), x => x);
 
             return result;
@@ -60,11 +73,20 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var pendingComplains = await _unitOfWork.Repository<Complain, Guid>()
                 .GetAllWithSpecAsync(new BaseSpecification<Complain>(x => x.isPending && x.TableId == tableId));
 
-            var pendingCount = pendingComplains.Count();
+            var listComplain = pendingComplains
+                .Select(c => new ComplainItemInfo(
+                    c.Id,
+                    c.Description,
+                    c.Title,
+                    c.CreatedTime,
+                    _utilsService.ParseQuickServeItems(c.Description ?? "")
+                )).ToList();
+
+            var pendingCount = listComplain.Count;
 
             var statsDict = await _orderStatsQuery.GetOrderStatsByTableIdsAsync(new[] { tableId });
 
-            return BuildInfo(table, pendingCount, statsDict);
+            return BuildInfo(table, pendingCount, statsDict, listComplain);
         }
 
         private static OrderStaticsResponse DefaultStats() => new()
@@ -76,10 +98,11 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             TotalOrderItems = 0
         };
 
-        private static ComplainPeedingInfo BuildInfo(
+        private ComplainPeedingInfo BuildInfo(
             Table table,
             int pendingCount,
-            Dictionary<Guid, OrderStaticsResponse> statsDict)
+            Dictionary<Guid, OrderStaticsResponse> statsDict,
+            List<ComplainItemInfo>? listComplain = null)
         {
             var activeSession = table.Sessions
                 .Where(s => s.Status == TableSessionStatus.Active)
@@ -131,7 +154,8 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 LastOrderUpdatedTime: lastOrderUpdatedTime,
                 PendingItems: pendingItems,
                 IsWaitingDish: isWaitingDish,
-                WaitingDurationInMinutes: waitingDurationInMinutes
+                WaitingDurationInMinutes: waitingDurationInMinutes,
+                ListComplain: listComplain
             );
         }
     }

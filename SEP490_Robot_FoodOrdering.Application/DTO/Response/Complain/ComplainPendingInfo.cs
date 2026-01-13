@@ -16,6 +16,14 @@ public record ComplainPeedingInfo(
     DateTime? LastOrderUpdatedTime,
     int PendingItems,
     bool IsWaitingDish,
-    int? WaitingDurationInMinutes
+    int? WaitingDurationInMinutes,
+    List<ComplainItemInfo>? ListComplain
+);
 
-    );
+public record ComplainItemInfo(
+    Guid ComplainId,
+    string? Description,
+    string? Title,
+    DateTime CreatedTime,
+    List<string> QuickServeItems
+);
