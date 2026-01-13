@@ -509,11 +509,26 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 if (activeSession != null && pendingCountByTable.TryGetValue(table.Id, out var cnt))
                     pendingCount = cnt;
 
-                // lastOrderUpdatedTime tối ưu O(k)
-                DateTime? lastOrderUpdatedTime =
-                    table.Orders != null && table.Orders.Any()
-                        ? table.Orders.Max(o => o.LastUpdatedTime)
-                        : (DateTime?)null;
+                // lastOrderUpdatedTime: chỉ lấy từ active order của session hiện tại
+                // (đã query ở ordersInActiveSessions)
+                DateTime? lastOrderUpdatedTime = null;
+
+                if (activeSession != null)
+                {
+                    // Tìm order thuộc về activeSession này
+                    var activeOrder = ordersInActiveSessions.FirstOrDefault(o => o.TableSessionId == activeSession.Id);
+                    if (activeOrder != null)
+                    {
+                        lastOrderUpdatedTime = activeOrder.LastUpdatedTime;
+                    }
+                    else
+                    {
+                        // Hoặc fallback về thời điểm checkin nếu chưa có order? 
+                        // Hoặc vẫn để null nếu muốn "chưa có order update"
+                        // Tùy nhu cầu, ở đây để null hoặc checkin
+                        // lastOrderUpdatedTime = activeSession.CheckIn; 
+                    }
+                }
 
                 var stats = new OrderStaticsResponse
                 {
@@ -541,6 +556,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 }
 
                 complaintsByTable.TryGetValue(table.Id, out var listComplain);
+
+                // Nếu bàn trống (Available) -> reset hết info hiển thị
+                if (table.Status == TableEnums.Available)
+                {
+                    lastOrderUpdatedTime = null;
+                    waitingDurationInMinutes = null;
+                    pendingItems = 0;
+                    stats = new OrderStaticsResponse(); // reset stats visual
+                    listComplain = null;
+                }
 
                 return new ComplainPeedingInfo(
                     Id: table.Id,

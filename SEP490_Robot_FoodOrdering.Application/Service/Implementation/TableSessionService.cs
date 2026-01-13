@@ -122,7 +122,28 @@ public class TableSessionService : ITableSessionService
         session.Table.LockedAt = null;
         session.Table.isShared = false;
         session.Table.ShareToken = null;
-        session.Table.LastAccessedAt = now;
+        session.Table.LastAccessedAt = null;
+
+        // Auto-resolve all pending complaints for this table
+        var pendingComplains = await _unitOfWork.Repository<Complain, Guid>()
+            .GetAllWithSpecAsync(new BaseSpecification<Complain>(c => c.TableId == session.TableId && c.isPending));
+        
+        foreach (var comp in pendingComplains)
+        {
+            comp.isPending = false;
+            comp.ResolvedAt = now;
+            
+            if (string.IsNullOrEmpty(comp.ResolutionNote))
+            {
+                comp.ResolutionNote = "System: Session Closed";
+            }
+            else
+            {
+                 comp.ResolutionNote += " (System: Session Closed)";
+            }
+            
+            _unitOfWork.Repository<Complain, Guid>().Update(comp);
+        }
 
         var actorType = string.IsNullOrWhiteSpace(actorDeviceId) ? "System" : "Customer";
 
@@ -133,8 +154,7 @@ public class TableSessionService : ITableSessionService
             actorDeviceId: actorDeviceId,
             reasonCode: "CHECKOUT",
             reasonText: reason,
-            snapshot: new { tablename
-            = session.Table.Name, invoiceId , invoiceCode}
+            snapshot: new { tablename = session.Table.Name, invoiceId , invoiceCode}
         );
 
         await _activityService.LogAsync(
