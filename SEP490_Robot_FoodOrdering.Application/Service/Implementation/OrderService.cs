@@ -765,9 +765,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             }
 
             var oldStatus = item.Status;
+            var shouldLogCancelOrRemake = false;
+            TableActivityType? logActivityType = null;
+            
             if (request.Status == OrderItemStatus.Cancelled)
             {
                 await _cancelledItemService.CreateCancelledItemAsync(orderItemId, request.RemarkNote ?? string.Empty, userId);
+                shouldLogCancelOrRemake = true;
+                logActivityType = TableActivityType.CancelOrderItem;
             }
             var isRemakeFromServed = oldStatus == OrderItemStatus.Served;
             if (isRemakeFromServed)
@@ -775,6 +780,63 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 request.Status = OrderItemStatus.Preparing;
                 item.IsUrgent = true;
                 await _remakeItemService.CreateRemakeItemAsync(orderItemId, request.RemarkNote ?? string.Empty, userId);
+                shouldLogCancelOrRemake = true;
+                logActivityType = TableActivityType.RemakeOrderItem;
+            }
+            
+            // Log Cancel/Remake activity immediately
+            if (shouldLogCancelOrRemake && logActivityType.HasValue)
+            {
+                try
+                {
+                    TableSession? activitySession = null;
+                    if (order.TableSessionId.HasValue)
+                    {
+                        activitySession = await _unitOfWork.Repository<TableSession, Guid>()
+                            .GetByIdAsync(order.TableSessionId.Value);
+                    }
+                    else if (order.TableId.HasValue)
+                    {
+                        activitySession = await _unitOfWork.Repository<TableSession, Guid>()
+                            .GetWithSpecAsync(new BaseSpecification<TableSession>(
+                                s => s.TableId == order.TableId && s.Status == TableSessionStatus.Active));
+                    }
+                    
+                    if (activitySession != null)
+                    {
+                        await _tableActivityService.LogAsync(
+                            activitySession,
+                            order.Table?.DeviceId ?? order.LastUpdatedBy,
+                            logActivityType.Value,
+                            new
+                            {
+                                orderId = order.Id,
+                                tableId = order.TableId,
+                                tableName = order.Table?.Name,
+                                orderCode = order.OrderCode,
+                                orderItemId = item.Id,
+                                productId = item.ProductId,
+                                productName = item.Product?.Name,
+                                sizeId = item.ProductSizeId,
+                                sizeName = item.ProductSize?.SizeName.ToString(),
+                                previousStatus = oldStatus,
+                                newStatus = request.Status,
+                                remarkNote = request.RemarkNote,
+                                cancelledOrRemakedBy = userId
+                            });
+                        
+                        await _unitOfWork.SaveChangesAsync();
+                        
+                        _logger.LogInformation(
+                            "Logged {ActivityType} activity for OrderItem {OrderItemId} in Order {OrderId}, Session {SessionId}",
+                            logActivityType.Value, item.Id, order.Id, activitySession.Id);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to log {ActivityType} activity for OrderItem {OrderItemId}", 
+                        logActivityType.Value, item.Id);
+                }
             }
             // Determine which items to update.
             // For Cancelled or Remake, update ONLY the selected item.

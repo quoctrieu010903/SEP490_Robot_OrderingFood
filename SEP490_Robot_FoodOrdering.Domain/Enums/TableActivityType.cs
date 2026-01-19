@@ -15,8 +15,9 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
         CreateOrder = 10,
         AddOrderItems = 11,
         UpdateOrderItemStatus = 12,
-
-
+        
+        CancelOrderItem = 20,
+        RemakeOrderItem = 21,
 
         MoveTable = 30,
 
