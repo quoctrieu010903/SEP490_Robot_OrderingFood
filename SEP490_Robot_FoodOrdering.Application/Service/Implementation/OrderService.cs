@@ -1077,7 +1077,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         Id = Guid.NewGuid(),
                         OrderId = orderId,
                         TableId = order.TableId ?? Guid.Empty,
-                        InvoiceCode = $"INV{DateTime.UtcNow:yyyyMMddHHmmss}{orderId.ToString()[..4].ToUpper()}",
+                        InvoiceCode = _utilService.GenerateCode("HD", 6),
                         TotalMoney = order.TotalPrice,
                         Status = PaymentStatusEnums.Paid,
                         PaymentMethod = PaymentMethodEnums.COD,

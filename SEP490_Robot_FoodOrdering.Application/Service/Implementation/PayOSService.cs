@@ -9,6 +9,7 @@ using Net.payOS;
 using Net.payOS.Types;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.ServerEndPoint;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Response;
@@ -27,8 +28,9 @@ public class PayOSService: IPayOSService
     private readonly ILogger<PayOSService> _logger;
     private readonly IServerEndpointService _serverEndpointService;
     private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
+    private readonly IUtilsService _utilsService;
 
-    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger, IServerEndpointService serverEndpointService  , IModeratorDashboardRefresher moderatorDashboardRefresher)
+    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger, IServerEndpointService serverEndpointService, IModeratorDashboardRefresher moderatorDashboardRefresher, IUtilsService utilsService)
     {
         _unitOfWork = unitOfWork;
         _payOS = payOS;
@@ -36,6 +38,7 @@ public class PayOSService: IPayOSService
         _logger = logger;
         _serverEndpointService = serverEndpointService;
         _moderatorDashboardRefresher = moderatorDashboardRefresher;
+        _utilsService = utilsService;
     }
 
     public async Task<BaseResponseModel<OrderPaymentResponse>> CreatePaymentLink(Guid orderId, bool isCustomer)
@@ -483,7 +486,7 @@ public class PayOSService: IPayOSService
                Id = Guid.NewGuid(),
                OrderId = orderId,
                TableId = order.TableId ?? Guid.Empty,
-               InvoiceCode = $"INV{now:yyyyMMddHHmmss}{orderId.ToString()[..4].ToUpper()}",
+               InvoiceCode = _utilsService.GenerateCode("HD", 6),
                TotalMoney = order.TotalPrice,
                Status = PaymentStatusEnums.Paid,
                PaymentMethod = PaymentMethodEnums.PayOS,
