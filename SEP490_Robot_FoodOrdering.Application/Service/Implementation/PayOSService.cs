@@ -9,12 +9,14 @@ using Net.payOS;
 using Net.payOS.Types;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.Hubs;
 using SEP490_Robot_FoodOrdering.Application.Abstractions.ServerEndPoint;
+using SEP490_Robot_FoodOrdering.Application.Abstractions.Utils;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Order;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Core.Response;
 using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
+using SEP490_Robot_FoodOrdering.Domain;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation;
 
@@ -26,8 +28,9 @@ public class PayOSService: IPayOSService
     private readonly ILogger<PayOSService> _logger;
     private readonly IServerEndpointService _serverEndpointService;
     private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
+    private readonly IUtilsService _utilsService;
 
-    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger, IServerEndpointService serverEndpointService  , IModeratorDashboardRefresher moderatorDashboardRefresher)
+    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, IConfiguration config, ILogger<PayOSService> logger, IServerEndpointService serverEndpointService, IModeratorDashboardRefresher moderatorDashboardRefresher, IUtilsService utilsService)
     {
         _unitOfWork = unitOfWork;
         _payOS = payOS;
@@ -35,6 +38,7 @@ public class PayOSService: IPayOSService
         _logger = logger;
         _serverEndpointService = serverEndpointService;
         _moderatorDashboardRefresher = moderatorDashboardRefresher;
+        _utilsService = utilsService;
     }
 
     public async Task<BaseResponseModel<OrderPaymentResponse>> CreatePaymentLink(Guid orderId, bool isCustomer)
@@ -457,6 +461,51 @@ public class PayOSService: IPayOSService
        var tableId = order.TableId;
        await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
        await _unitOfWork.SaveChangesAsync();
+
+       // Tạo hoặc cập nhật Invoice
+       var now = DateTime.UtcNow;
+       var existingInvoice = await _unitOfWork.Repository<Invoice, Guid>()
+           .GetWithSpecAsync(new BaseSpecification<Invoice>(i => i.OrderId == orderId));
+
+       Invoice invoice;
+       if (existingInvoice != null)
+       {
+           // Cập nhật invoice hiện có
+           existingInvoice.TotalMoney = order.TotalPrice;
+           existingInvoice.Status = PaymentStatusEnums.Paid;
+           existingInvoice.PaymentMethod = PaymentMethodEnums.PayOS;
+           existingInvoice.LastUpdatedTime = now;
+           invoice = existingInvoice;
+           _unitOfWork.Repository<Invoice, Guid>().Update(invoice);
+       }
+       else
+       {
+           // Tạo invoice mới
+           invoice = new Invoice
+           {
+               Id = Guid.NewGuid(),
+               OrderId = orderId,
+               TableId = order.TableId ?? Guid.Empty,
+               InvoiceCode = _utilsService.GenerateCode("HD", 6),
+               TotalMoney = order.TotalPrice,
+               Status = PaymentStatusEnums.Paid,
+               PaymentMethod = PaymentMethodEnums.PayOS,
+               CreatedTime = now,
+               LastUpdatedTime = now,
+               Details = order.OrderItems.Select(item => new InvoiceDetail
+               {
+                   Id = Guid.NewGuid(),
+                   OrderItemId = item.Id,
+                   TotalMoney = item.TotalPrice ?? 0,
+                   Status = OrderStatus.Completed,
+                   CreatedTime = now,
+                   LastUpdatedTime = now
+               }).ToList()
+           };
+           await _unitOfWork.Repository<Invoice, Guid>().AddAsync(invoice);
+       }
+       await _unitOfWork.SaveChangesAsync();
+       _logger.LogInformation($"Invoice created/updated for PayOS payment: OrderId={orderId}, InvoiceId={invoice.Id}");
        
        
        var returnUrl = isCustomer

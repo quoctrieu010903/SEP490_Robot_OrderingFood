@@ -1015,100 +1015,181 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             return new BaseResponseModel<List<OrderItemResponse>>(StatusCodes.Status200OK, "SUCCESS", response);
         }
 
-        //public async Task<BaseResponseModel<OrderPaymentResponse>> InitiatePaymentAsync(Guid orderId,
-        //    OrderPaymentRequest request)
-        //{
-        //    var order = await _unitOfWork.Repository<Order, Guid>()
-        //        .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payment, o => o.Table, o => o.OrderItems);
-        //    if (order == null)
-        //        return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND",
-        //            "Order not found.");
-        //    _logger.LogInformation($"Initiating payment for Order {orderId} with method {request.PaymentMethod}");
-        //    // Simulate payment logic
-        //    if (request.PaymentMethod == PaymentMethodEnums.COD)
-        //    {
-        //        order.PaymentStatus = PaymentStatusEnums.Paid;
-        //        order.Status = OrderStatus.Completed; // Update order status to Completed
-        //        order.LastUpdatedTime = DateTime.UtcNow;
-        //        if (order.Payment != null)
-        //        {
-        //            order.Payment.PaymentStatus = PaymentStatusEnums.Paid;
+        public async Task<BaseResponseModel<OrderPaymentResponse>> InitiatePaymentAsync(Guid orderId,
+            OrderPaymentRequest request)
+        {
+            var order = await _unitOfWork.Repository<Order, Guid>()
+                .GetByIdWithIncludeAsync(x => x.Id == orderId, true, o => o.Payments, o => o.Table, o => o.OrderItems);
+            if (order == null)
+                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status404NotFound, "ORDER_NOT_FOUND",
+                    "Order not found.");
+            
+            _logger.LogInformation($"Initiating payment for Order {orderId} with method {request.PaymentMethod}");
+            
+            if (request.PaymentMethod == PaymentMethodEnums.COD)
+            {
+                var now = DateTime.UtcNow;
+                
+                // 1. Cập nhật trạng thái thanh toán của Order
+                order.PaymentStatus = PaymentStatusEnums.Paid;
+                order.LastUpdatedTime = now;
 
+                // 2. Cập nhật tất cả Payment entities
+                if (order.Payments != null && order.Payments.Any())
+                {
+                    foreach (var payment in order.Payments)
+                    {
+                        payment.PaymentStatus = PaymentStatusEnums.Paid;
+                        payment.LastUpdatedTime = now;
+                    }
+                }
 
-        //        }
+                // 3. Đánh dấu tất cả items' PaymentStatus là Paid
+                foreach (var item in order.OrderItems)
+                {
+                    item.PaymentStatus = PaymentStatusEnums.Paid;
+                    item.LastUpdatedTime = now;
+                }
 
-        //        foreach (OrderItem item in order.OrderItems)
-        //        {
-        //            item.Status = OrderItemStatus.Completed; // Mark all items as completed
-        //            item.LastUpdatedTime = DateTime.UtcNow;
-        //        }
+                await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
+                await _unitOfWork.SaveChangesAsync();
 
-        //        // Update table status to Available when payment is completed
-        //        if (order.Table != null)
-        //        {
-        //            order.Table.Status = TableEnums.Available;
-        //            await _unitOfWork.Repository<Table, Guid>().UpdateAsync(order.Table);
-        //        }
+                // 4. Tạo hoặc cập nhật hóa đơn (Invoice) - kiểm tra duplicate
+                var existingInvoice = await _unitOfWork.Repository<Invoice, Guid>()
+                    .GetWithSpecAsync(new BaseSpecification<Invoice>(i => i.OrderId == orderId));
 
-        //        await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
-        //        await _unitOfWork.SaveChangesAsync();
+                Invoice invoice;
+                if (existingInvoice != null)
+                {
+                    // Cập nhật invoice hiện có
+                    existingInvoice.TotalMoney = order.TotalPrice;
+                    existingInvoice.Status = PaymentStatusEnums.Paid;
+                    existingInvoice.PaymentMethod = PaymentMethodEnums.COD;
+                    existingInvoice.LastUpdatedTime = now;
+                    invoice = existingInvoice;
+                    _unitOfWork.Repository<Invoice, Guid>().Update(invoice);
+                }
+                else
+                {
+                    // Tạo invoice mới
+                    invoice = new Invoice
+                    {
+                        Id = Guid.NewGuid(),
+                        OrderId = orderId,
+                        TableId = order.TableId ?? Guid.Empty,
+                        InvoiceCode = _utilService.GenerateCode("HD", 6),
+                        TotalMoney = order.TotalPrice,
+                        Status = PaymentStatusEnums.Paid,
+                        PaymentMethod = PaymentMethodEnums.COD,
+                        CreatedTime = now,
+                        LastUpdatedTime = now,
+                        Details = order.OrderItems.Select(item => new InvoiceDetail
+                        {
+                            Id = Guid.NewGuid(),
+                            OrderItemId = item.Id,
+                            TotalMoney = (item.ProductSize?.Price ?? 0) + 
+                                         (item.OrderItemTopping?.Sum(t => t.Topping?.Price ?? 0) ?? 0),
+                            Status = OrderStatus.Completed,
+                            CreatedTime = now,
+                            LastUpdatedTime = now
+                        }).ToList()
+                    };
+                    await _unitOfWork.Repository<Invoice, Guid>().AddAsync(invoice);
+                }
+                await _unitOfWork.SaveChangesAsync();
 
-        //        // Send payment status notification
-        //        if (_notificationService != null)
-        //        {
-        //            try
-        //            {
-        //                var paymentNotification = new PaymentStatusNotification
-        //                {
-        //                    OrderId = orderId,
-        //                    TableId = order.TableId ?? Guid.Empty,
-        //                    TableName = order.Table?.Name ?? "Unknown",
-        //                    OldStatus = PaymentStatusEnums.Pending,
-        //                    NewStatus = PaymentStatusEnums.Paid,
-        //                    PaymentMethod = request.PaymentMethod,
-        //                    TotalAmount = order.TotalPrice,
-        //                    UpdatedAt = DateTime.UtcNow
-        //                };
+                // 5. Ghi log TableActivity (nếu có session)
+                try
+                {
+                    TableSession? activitySession = null;
 
-        //                await _notificationService.SendPaymentStatusNotificationAsync(paymentNotification);
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                _logger.LogError(ex, "Failed to send payment status notification");
-        //            }
-        //        }
+                    if (order.TableSessionId.HasValue)
+                    {
+                        activitySession = await _unitOfWork.Repository<TableSession, Guid>()
+                            .GetByIdAsync(order.TableSessionId.Value);
+                    }
+                    else if (order.TableId.HasValue)
+                    {
+                        activitySession = await _unitOfWork.Repository<TableSession, Guid>()
+                            .GetWithSpecAsync(new BaseSpecification<TableSession>(
+                                s => s.TableId == order.TableId && s.Status == TableSessionStatus.Active));
+                    }
 
-        //        return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAID",
-        //            new OrderPaymentResponse
-        //            {
-        //                OrderId = orderId,
-        //                PaymentStatus = PaymentStatusEnums.Paid,
-        //                Message = "Payment successful (COD)"
-        //            });
-        //    }
-        //    else if (request.PaymentMethod == PaymentMethodEnums.VNPay)
-        //    {
-        //        // Simulate VNPay payment URL
-        //        string paymentUrl = $"https://sandbox.vnpayment.vn/payment/{orderId}";
-        //        order.PaymentStatus = PaymentStatusEnums.Pending;
-        //        order.LastUpdatedTime = DateTime.UtcNow;
-        //        await _unitOfWork.Repository<Order, Guid>().UpdateAsync(order);
-        //        await _unitOfWork.SaveChangesAsync();
-        //        return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAYMENT_INITIATED",
-        //            new OrderPaymentResponse
-        //            {
-        //                OrderId = orderId,
-        //                PaymentStatus = PaymentStatusEnums.Pending,
-        //                PaymentUrl = paymentUrl,
-        //                Message = "Redirect to VNPay for payment."
-        //            });
-        //    }
-        //    else
-        //    {
-        //        return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status400BadRequest,
-        //            "UNSUPPORTED_PAYMENT", "Unsupported payment method.");
-        //    }
-        //}
+                    if (activitySession != null)
+                    {
+                        await _tableActivityService.LogAsync(
+                            activitySession,
+                            order.Table?.DeviceId ?? order.LastUpdatedBy,
+                            TableActivityType.CreateInvoice,
+                            new
+                            {
+                                orderId = order.Id,
+                                tableId = order.TableId,
+                                tableName = order.Table?.Name,
+                                invoiceId = invoice.Id,
+                                invoiceCode = invoice.InvoiceCode,
+                                totalMoney = invoice.TotalMoney,
+                                paymentMethod = "COD",
+                                itemCount = order.OrderItems.Count
+                            });
+
+                        await _unitOfWork.SaveChangesAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to log payment activity for order {OrderId}", orderId);
+                    // Không fail request chính, chỉ log lỗi
+                }
+
+                // 6. Gửi thông báo thanh toán (nếu có NotificationService)
+                if (_notificationService != null)
+                {
+                    try
+                    {
+                        var paymentNotification = new PaymentStatusNotification
+                        {
+                            OrderId = orderId,
+                            TableId = order.TableId ?? Guid.Empty,
+                            TableName = order.Table?.Name ?? "Unknown",
+                            OldStatus = PaymentStatusEnums.Pending,
+                            NewStatus = PaymentStatusEnums.Paid,
+                            PaymentMethod = request.PaymentMethod,
+                            TotalAmount = order.TotalPrice,
+                            UpdatedAt = now
+                        };
+
+                        await _notificationService.SendPaymentStatusNotificationAsync(paymentNotification);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send payment status notification");
+                    }
+                }
+
+                await _moderatorDashboardRefresher.PushTableAsync(order.TableId ?? Guid.Empty);
+                await _adminDashboardRefresher.PushDashboardAsync();
+
+                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status200OK, "PAID",
+                    new OrderPaymentResponse
+                    {
+                        OrderId = orderId,
+                        PaymentStatus = PaymentStatusEnums.Paid,
+                        Message = "Payment successful (COD)"
+                    });
+            }
+            else if (request.PaymentMethod == PaymentMethodEnums.VNPay)
+            {
+                // VNPay được xử lý bởi PayOSController
+                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status400BadRequest,
+                    "USE_PAYOS_CONTROLLER", "Please use PayOSController for VNPay/PayOS payments.");
+            }
+            else
+            {
+                return new BaseResponseModel<OrderPaymentResponse>(StatusCodes.Status400BadRequest,
+                    "UNSUPPORTED_PAYMENT", "Unsupported payment method.");
+            }
+        }
 
 
         public async Task<BaseResponseModel<InforBill>> CreateBill(Guid idOrder)

@@ -398,9 +398,8 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
         public async Task<ActionResult<BaseResponseModel>> InitiatePayment(Guid orderId,
             [FromBody] OrderPaymentRequest request)
         {
-            //var result = await _orderService.InitiatePaymentAsync(orderId, request);
-            //return StatusCode(result.StatusCode, result);
-            throw new Exception("This method is deprecated. Please use the PayOSController for payment processing.");
+            var result = await _orderService.InitiatePaymentAsync(orderId, request);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet("get-table-token/{idTable}/{token}")]
