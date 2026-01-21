@@ -37,7 +37,8 @@ namespace SEP490_Robot_FoodOrdering.API.Controllers
 
         [HttpPost("import-excel-table")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> ImportExcelTable(IFormFile file)
+        [RequestSizeLimit(50_000_000)]
+        public async Task<IActionResult> ImportExcelTable( IFormFile file)
         {
             var result = await _adminService.ImportExcelTable(file);
             return StatusCode(result.StatusCode, result);

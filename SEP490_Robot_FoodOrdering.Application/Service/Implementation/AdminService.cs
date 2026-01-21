@@ -10,6 +10,8 @@ using SEP490_Robot_FoodOrdering.Domain.Entities;
 using SEP490_Robot_FoodOrdering.Domain.Interface;
 using OfficeOpenXml;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
+using System.Linq;
+using SEP490_Robot_FoodOrdering.Domain;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 {
@@ -18,12 +20,14 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IUnitOfWork _unitOfWork;
         private readonly IToppingRepository _toppingRepository;
         private readonly ICloudinaryService _cloudinaryService;
+        private readonly ISettingsService _settingsService;
 
-        public AdminService(IUnitOfWork unitOfWork, IToppingRepository toppingRepository, ICloudinaryService cloudinaryService)
+        public AdminService(IUnitOfWork unitOfWork, IToppingRepository toppingRepository, ICloudinaryService cloudinaryService, ISettingsService settingsService)
         {
             _unitOfWork = unitOfWork;
             _toppingRepository = toppingRepository;
             _cloudinaryService = cloudinaryService;
+            _settingsService = settingsService;
         }
 
         public async Task<BaseResponseModel<bool>> ImportExcel(IFormFile file)
@@ -31,15 +35,23 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (file == null || file.Length == 0)
                 return new BaseResponseModel<bool>(500, "ERROR", "File is empty");
 
-
-
-            var categories = await _unitOfWork.Repository<Category,Category>()
+            // ===== Load categories =====
+            var categories = await _unitOfWork.Repository<Category, Category>()
                 .GetAllAsync();
 
             var categoryDict = categories.ToDictionary(
                 c => c.Name.Trim().ToLower(),
                 c => c.Id
             );
+
+            // ===== Load existing product names (để check trùng DB) =====
+            var existingProductNames = (await _unitOfWork.Repository<Product, Product>()
+                    .GetAllAsync())
+                .Select(p => p.Name.Trim().ToLower())
+                .ToHashSet();
+
+            // ===== Track product names trong file Excel =====
+            var importedProductNames = new HashSet<string>();
 
             List<Product> productEntities = new();
 
@@ -56,26 +68,48 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         if (string.IsNullOrWhiteSpace(ws.Cells[row, 1].Text))
                             continue;
 
-                        string name = ws.Cells[row, 1].Text;
+                        string name = ws.Cells[row, 1].Text.Trim();
+                        string normalizedName = name.ToLower();
+
+                        // ===== Skip nếu trùng ProductName =====
+                        if (existingProductNames.Contains(normalizedName))
+                            continue;
+
+                        if (!importedProductNames.Add(normalizedName))
+                            continue;
+
                         string sizeM = ws.Cells[row, 2].Text;
                         string sizeS = ws.Cells[row, 3].Text;
                         string sizeL = ws.Cells[row, 4].Text;
                         string image = ws.Cells[row, 5].Text;
                         string categoryName = ws.Cells[row, 6].Text.Trim().ToLower();
+                        string durationText = ws.Cells[row, 7].Text;
 
+                        // ===== DurationTime (phút) =====
+                        int durationTime = 5; // default 5 phút
+                        if (!string.IsNullOrWhiteSpace(durationText) &&
+                            int.TryParse(durationText, out var parsedDuration) &&
+                            parsedDuration > 0)
+                        {
+                            durationTime = parsedDuration;
+                        }
+
+                        // ===== Check category =====
                         if (!categoryDict.TryGetValue(categoryName, out Guid categoryId))
                         {
                             return new BaseResponseModel<bool>(
-                                400, "ERROR",
+                                400,
+                                "ERROR",
                                 $"Category không tồn tại: {categoryName}"
                             );
                         }
 
+                        // ===== Create Product =====
                         var product = new Product
                         {
                             Name = name,
                             Description = "",
-                            DurationTime = 0,
+                            DurationTime = durationTime, // phút
                             ImageUrl = image,
                             Sizes = new List<ProductSize>(),
                             ProductCategories = new List<ProductCategory>()
@@ -110,10 +144,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 }
             }
 
-            await _unitOfWork.Repository<Product, bool>().AddRangeAsync(productEntities);
-            await _unitOfWork.SaveChangesAsync();
+            if (productEntities.Any())
+            {
+                await _unitOfWork.Repository<Product, bool>()
+                    .AddRangeAsync(productEntities);
+                await _unitOfWork.SaveChangesAsync();
+            }
 
-            return new BaseResponseModel<bool>(200, ResponseCodeConstants.SUCCESS, "Import thành công");
+            return new BaseResponseModel<bool>(
+                200,
+                ResponseCodeConstants.SUCCESS,
+                $"Import thành công ({productEntities.Count} sản phẩm)"
+            );
         }
 
 
@@ -288,10 +330,46 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         public async Task<BaseResponseModel<bool>> ImportExcelTable(IFormFile file)
         {
             if (file == null || file.Length == 0)
-                return new BaseResponseModel<bool>(500, "ERROR", "File is empty");
+                throw new ErrorException(
+                                    StatusCodes.Status400BadRequest,
+                                    ErrorCode.BadRequest , "File is empty");
 
+            // ===== 1️⃣ Lấy MaxTableCapacity từ Admin Config =====
+            var maxTableConfig = await _settingsService.GetByKeyAsync(SystemSettingKeys.MaxTableCapacity);
+            if (maxTableConfig == null ||
+                !int.TryParse(maxTableConfig.Data.Value, out int maxTableCapacity))
+            {
+               throw new ErrorException(
+                                    StatusCodes.Status400BadRequest,
+                                    ErrorCode.BadRequest,
+                    "Chưa cấu hình số bàn tối đa (MaxTableCapacity)"
+                );
+            }
 
-            List<Table> tables = new List<Table>();
+            // ===== 2️⃣ Lấy danh sách bàn hiện tại =====
+            var existingTables = await _unitOfWork
+                .Repository<Table, Table>()
+                .GetAllAsync();
+
+            int currentTableCount = existingTables.Count();
+
+            // ❌ Nếu đã full capacity → KHÔNG cho add
+            if (currentTableCount >= maxTableCapacity)
+            {
+                return new BaseResponseModel<bool>(
+                    400,
+                    "ERROR",
+                    $"Không thể import. Số bàn hiện tại ({currentTableCount}) đã đạt giới hạn ({maxTableCapacity}). Vui lòng điều chỉnh cấu hình."
+                );
+            }
+
+            var existingTableNames = existingTables
+                .Select(t => t.Name.Trim().ToLower())
+                .ToHashSet();
+
+            // ===== 3️⃣ Parse Excel + lọc trùng =====
+            var importedNames = new HashSet<string>();
+            var tablesToInsert = new List<Table>();
 
             using (var stream = new MemoryStream())
             {
@@ -299,7 +377,6 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 using (var package = new ExcelPackage(stream))
                 {
                     var ws = package.Workbook.Worksheets[0];
-
                     int rows = ws.Dimension.Rows;
                     int cols = ws.Dimension.Columns;
 
@@ -309,22 +386,62 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                         {
                             string cellValue = ws.Cells[r, c].Text?.Trim();
 
-                            if (!string.IsNullOrWhiteSpace(cellValue) &&
-                                cellValue.StartsWith("Ban", StringComparison.OrdinalIgnoreCase))
+                            if (string.IsNullOrWhiteSpace(cellValue))
+                                continue;
+
+                            if (!cellValue.StartsWith("Ban", StringComparison.OrdinalIgnoreCase))
+                                continue;
+
+                            string normalizedName = cellValue.ToLower();
+
+                            // ❌ Trùng DB → skip
+                            if (existingTableNames.Contains(normalizedName))
+                                continue;
+
+                            // ❌ Trùng trong file Excel → skip
+                            if (!importedNames.Add(normalizedName))
+                                continue;
+
+                            tablesToInsert.Add(new Table
                             {
-                                tables.Add(new Table
-                                {
-                                    Name = cellValue
-                                });
+                                Name = cellValue
+                            });
+
+                            // ❌ Check capacity ngay khi add
+                            if (currentTableCount + tablesToInsert.Count > maxTableCapacity)
+                            {
+                                throw new ErrorException(
+                                    StatusCodes.Status400BadRequest,
+                                    ErrorCode.BadRequest,
+                                    $"Không thể import. Tổng số bàn vượt quá giới hạn ({maxTableCapacity})."
+                                );
                             }
                         }
                     }
                 }
             }
 
-            await _unitOfWork.Repository<Table, bool>().AddRangeAsync(tables);
+            // ===== 4️⃣ Không có bàn hợp lệ =====
+            if (!tablesToInsert.Any())
+            {
+                return new BaseResponseModel<bool>(
+                    200,
+                    "SUCCESS",
+                    "Không có bàn mới hợp lệ để import"
+                );
+            }
+
+            // ===== 5️⃣ Save =====
+            await _unitOfWork.Repository<Table, bool>()
+                .AddRangeAsync(tablesToInsert);
+
             await _unitOfWork.SaveChangesAsync();
-            return new BaseResponseModel<bool>(200, "SUCCESS", "Import thành công");
+
+            return new BaseResponseModel<bool>(
+                200,
+                "SUCCESS",
+                $"Import thành công {tablesToInsert.Count} bàn"
+            );
         }
     }
 }
