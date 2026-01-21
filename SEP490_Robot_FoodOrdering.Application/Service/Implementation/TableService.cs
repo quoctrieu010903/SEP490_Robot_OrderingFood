@@ -577,7 +577,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 NotificationType = "TableStatusChanged"
             };
 
-            //await _notificationService.SendKitchenNotificationAsync(notification);
+            // Send notification to customers via SignalR
+            // This is especially important when Occupied -> Available so customer can redirect to /end
+            await _notificationService.SendTableStatusChangedNotificationAsync(notification);
         }
 
         private (OrderStatus orderStatus, PaymentStatusEnums paymentStatus)

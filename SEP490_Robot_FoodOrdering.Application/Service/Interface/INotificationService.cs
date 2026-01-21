@@ -1,3 +1,4 @@
+using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Notification;
 
 namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
@@ -59,5 +60,12 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Interface
         /// </summary>
         /// <param name="notification">Table moved notification data</param>
         Task SendTableMovedNotificationAsync(TableMovedNotification notification);
+
+        /// <summary>
+        /// Sends a notification when table status changes (e.g., Occupied -> Available)
+        /// Used to notify customers when moderator marks table as empty
+        /// </summary>
+        /// <param name="notification">Table status change notification data</param>
+        Task SendTableStatusChangedNotificationAsync(TableStatusChangeNotification notification);
     }
 }
