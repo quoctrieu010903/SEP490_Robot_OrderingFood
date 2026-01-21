@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using SEP490_Robot_FoodOrdering.API.Hubs;
+using SEP490_Robot_FoodOrdering.Application.DTO.Request;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.Notification;
 using SEP490_Robot_FoodOrdering.Application.Service.Interface;
 using SEP490_Robot_FoodOrdering.Domain.Enums;
@@ -226,6 +227,34 @@ namespace SEP490_Robot_FoodOrdering.API.Services
                 _logger.LogError(ex, 
                     "Failed to send table moved notification from Table: {OldTableId} to {NewTableId}", 
                     notification.OldTableId, notification.NewTableId);
+            }
+        }
+
+        public async Task SendTableStatusChangedNotificationAsync(TableStatusChangeNotification notification)
+        {
+            try
+            {
+                // Normalize Guid to lowercase string for consistent group naming
+                var tableIdStr = notification.TableId.ToString().ToLowerInvariant();
+
+                // Send to CustomerTableHub group (CustomerTable_{tableId})
+                // This notifies customers on the table when moderator changes table status
+                await _customerTableHubContext.Clients.Group($"CustomerTable_{tableIdStr}")
+                    .SendAsync("TableStatusChanged", notification);
+
+                // Also send to OrderNotificationHub for compatibility
+                await _hubContext.Clients.Group($"Table_{tableIdStr}")
+                    .SendAsync("TableStatusChanged", notification);
+
+                _logger.LogInformation(
+                    "Table status changed notification sent - Table: {TableName} ({TableId}), Status: {OldStatus} -> {NewStatus}",
+                    notification.TableName, notification.TableId, notification.OldStatus, notification.NewStatus);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, 
+                    "Failed to send table status changed notification for Table: {TableId}", 
+                    notification.TableId);
             }
         }
 
