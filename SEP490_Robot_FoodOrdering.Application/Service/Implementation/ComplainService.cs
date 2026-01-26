@@ -27,16 +27,18 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         private readonly IMapper _mapper;
         private readonly IOrderStatsQuery _orderStatsService;
         private readonly IModeratorDashboardRefresher _moderatorDashboardRefresher;
+        private readonly IAdminDashboardRefresher _adminDashboardRefresher;
         private readonly INotificationService _notificationService;
 
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IUtilsService _utilsService;
-        public ComplainService(IUnitOfWork unitOfWork, IMapper mapper, IOrderStatsQuery orderStatsService , IModeratorDashboardRefresher moderatorDashboardRefresher , IHttpContextAccessor httpContextAccessor, INotificationService notificationService, IUtilsService utilsService)
+        public ComplainService(IUnitOfWork unitOfWork, IMapper mapper, IOrderStatsQuery orderStatsService , IModeratorDashboardRefresher moderatorDashboardRefresher, IAdminDashboardRefresher adminDashboardRefresher, IHttpContextAccessor httpContextAccessor, INotificationService notificationService, IUtilsService utilsService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _orderStatsService = orderStatsService;
             _moderatorDashboardRefresher = moderatorDashboardRefresher;
+            _adminDashboardRefresher = adminDashboardRefresher;
             _httpContextAccessor = httpContextAccessor;
             _notificationService = notificationService;
             _utilsService = utilsService;
@@ -120,6 +122,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             await _unitOfWork.SaveChangesAsync();
 
           await  _moderatorDashboardRefresher.PushTableAsync(idTable);
+          
+          // 🔹 Cập nhật Admin Dashboard (thống kê khiếu nại)
+          await _adminDashboardRefresher.PushDashboardAsync();
           
             if (isPending && content.Contains("Yêu cầu nhanh:"))
             {
@@ -289,6 +294,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     complain.ResolvedAt = DateTime.UtcNow;
                     await complainRepo.UpdateAsync(complain);
                     await _unitOfWork.SaveChangesAsync();
+                    
+                    // 🔹 Cập nhật Admin Dashboard (khiếu nại đã được xử lý hoàn tất)
+                    await _adminDashboardRefresher.PushDashboardAsync();
                 }
             }
 
@@ -332,6 +340,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             // Gửi thông báo cập nhật dashboard cho moderator
             await _moderatorDashboardRefresher.PushTableAsync(request.TableId);
+            
+            // 🔹 Cập nhật Admin Dashboard (thống kê khiếu nại mới)
+            await _adminDashboardRefresher.PushDashboardAsync();
 
             // ✅ 5. Trả kết quả
             var response = new ComplainCreate(DateTime.UtcNow, true, "Tạo complain thành công");
