@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -32,7 +32,8 @@ namespace SEP490_Robot_FoodOrdering.Domain.Enums
         AutoRelease = 60,
         AttachDeviceFromModerator = 70,
         AutoReleaseAfterMidnight = 80,
-        AutoReleaseNoOrderTimeout = 90 , 
+        AutoReleaseNoOrderTimeout = 90,
+        AutoCheckoutOvertimeNoNewOrder = 100,
     }
 
 }
