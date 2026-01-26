@@ -412,7 +412,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
         {
             // 1) Load ALL tables (giữ nguyên để grid hiện đủ)
             var tables = await _unitOfWork.Repository<Table, Guid>()
-                .GetAllWithIncludeAsync(true, t => t.Orders, t => t.Sessions);
+                .GetAllWithSpecWithInclueAsync(new BaseSpecification<Table>(x=>!x.DeletedTime.HasValue),true, t => t.Orders, t => t.Sessions);
 
             if (tables == null || !tables.Any())
                 throw new ErrorException(404, "No tables found");

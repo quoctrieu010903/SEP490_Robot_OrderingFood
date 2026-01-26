@@ -68,7 +68,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             existedEntity.LastUpdatedTime = DateTime.UtcNow;
             existedEntity.DeletedBy = "";
             existedEntity.DeletedTime = DateTime.UtcNow;
-            _unitOfWork.Repository<Topping, bool>().Update(existedEntity);
+            _unitOfWork.Repository<Topping, Guid>().Update(existedEntity);
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS,
                 "Delete Topping successfully");

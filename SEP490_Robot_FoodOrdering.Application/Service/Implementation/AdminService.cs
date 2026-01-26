@@ -146,7 +146,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             if (productEntities.Any())
             {
-                await _unitOfWork.Repository<Product, bool>()
+                await _unitOfWork.Repository<Product, Product>()
                     .AddRangeAsync(productEntities);
                 await _unitOfWork.SaveChangesAsync();
             }

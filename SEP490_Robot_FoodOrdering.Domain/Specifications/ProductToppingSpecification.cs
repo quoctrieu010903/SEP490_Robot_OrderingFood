@@ -29,7 +29,7 @@ namespace SEP490_Robot_FoodOrdering.Domain.Specifications
             );
         }
         public ProductToppingSpecification(Guid productId, bool productwithtopping)
-                : base(x => !x.DeletedTime.HasValue && x.ProductId == productId)
+                : base(x => !x.DeletedTime.HasValue && x.ProductId == productId && !x.Topping.DeletedTime.HasValue)
         {
             ApplyInclude(x => x
                 .Include(x => x.Product)
