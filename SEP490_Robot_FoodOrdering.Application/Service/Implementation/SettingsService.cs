@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using SEP490_Robot_FoodOrdering.Application.DTO.Response.SystemSettings;
@@ -497,7 +497,9 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 request.MaxTableCapacity == null &&
                 request.TableAccessTimeoutWithoutOrderMinutes == null &&
                 request.OrderCleanupAfterDays == null &&
-                request.RestaurantName == null)
+                request.RestaurantName == null &&
+                request.RestaurantAddress == null &&
+                request.RestaurantPhone == null)
             {
                 return new BaseResponseModel<bool>(
                     StatusCodes.Status400BadRequest,
@@ -517,6 +519,31 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                 if (request.RestaurantName.Length > 200)
                 {
                     return BuildValidationError("RestaurantName tối đa 200 ký tự");
+                }
+            }
+
+            if (request.RestaurantAddress != null)
+            {
+                if (request.RestaurantAddress.Length > 500)
+                {
+                    return BuildValidationError("RestaurantAddress tối đa 500 ký tự");
+                }
+            }
+
+            if (request.RestaurantPhone != null)
+            {
+                var phone = request.RestaurantPhone.Trim();
+                if (!string.IsNullOrEmpty(phone))
+                {
+                    // Kiểm tra tất cả ký tự đều là số
+                    if (!System.Text.RegularExpressions.Regex.IsMatch(phone, @"^\d+$"))
+                    {
+                        return BuildValidationError("Số điện thoại chỉ được chứa chữ số (0-9)");
+                    }
+                    if (phone.Length != 10)
+                    {
+                        return BuildValidationError("Số điện thoại phải có đúng 10 chữ số");
+                    }
                 }
             }
 
@@ -613,6 +640,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             if (request.RestaurantName != null)
             {
                 await UpsertSettingAsync(SystemSettingKeys.RestaurantName, request.RestaurantName, SettingType.String);
+            }
+
+            if (request.RestaurantAddress != null)
+            {
+                await UpsertSettingAsync(SystemSettingKeys.RestaurantAddress, request.RestaurantAddress, SettingType.String);
+            }
+
+            if (request.RestaurantPhone != null)
+            {
+                await UpsertSettingAsync(SystemSettingKeys.RestaurantPhone, request.RestaurantPhone.Trim(), SettingType.String);
             }
 
             // Ưu tiên cặp OpeningTime/ClosingTime
