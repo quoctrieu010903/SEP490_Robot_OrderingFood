@@ -1071,6 +1071,17 @@ namespace SEP490_Robot_FoodOrdering.Infrastructure.Seeder
                 Type = SettingType.Int,
                 CreatedTime = DateTime.UtcNow,
                 LastUpdatedTime = DateTime.UtcNow
+            },
+            new SystemSettings
+            {
+                Id = Guid.Parse("D4E5F6A7-B8C9-D0E1-F2A3-B4C5D6E7F8A9"),
+                Key = SystemSettingKeys.MinuteOvertime,
+                DisplayName = "Thời gian quá giờ để tự động checkout (phút)",
+                Description = "Thời gian (phút) sau khi bàn đã thanh toán và hoàn thành tất cả món, nhưng không gọi thêm món mới. Hệ thống sẽ tự động checkout và giải phóng bàn.",
+                Value = "120",
+                Type = SettingType.Int,
+                CreatedTime = DateTime.UtcNow,
+                LastUpdatedTime = DateTime.UtcNow
             }
 
 

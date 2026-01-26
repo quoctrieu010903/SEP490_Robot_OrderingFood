@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,6 +26,7 @@ namespace SEP490_Robot_FoodOrdering.Core.Constants
         public const string ClosingTime = "ClosingTime";
         public const string RestaurantAddress = "RestaurantAddress";
         public const string RestaurantPhone = "RestaurantPhoneNumber";
+        public const string MinuteOvertime = "MinuteOvertime";
 
     }
 }
