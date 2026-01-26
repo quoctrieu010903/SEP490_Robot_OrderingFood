@@ -89,11 +89,16 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var existed = await _unitOfWork.Repository<Table, Guid>().GetByIdAsync(id);
             if (existed == null)
                 throw new ErrorException(StatusCodes.Status404NotFound, ResponseCodeConstants.NOT_FOUND, "Table không tìm thấy");
+            
+            // Không cho phép xóa bàn đang phục vụ
+            if (existed.Status == TableEnums.Occupied)
+                throw new ErrorException(StatusCodes.Status400BadRequest, ResponseCodeConstants.BADREQUEST, "Không thể xóa bàn đang được phục vụ. Vui lòng checkout bàn trước khi xóa.");
+            
             existed.LastUpdatedBy = "";
             existed.LastUpdatedTime = DateTime.UtcNow;
             existed.DeletedBy = "";
             existed.DeletedTime = DateTime.UtcNow;
-            _unitOfWork.Repository<Table, Table>().Update(existed);
+            _unitOfWork.Repository<Table, Guid>().Update(existed);
             await _unitOfWork.SaveChangesAsync();
             return new BaseResponseModel(StatusCodes.Status200OK, ResponseCodeConstants.SUCCESS, "Xoá thành công");
         }
