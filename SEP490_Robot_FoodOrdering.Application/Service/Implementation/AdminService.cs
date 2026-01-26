@@ -146,7 +146,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
 
             if (productEntities.Any())
             {
-                await _unitOfWork.Repository<Product, bool>()
+                await _unitOfWork.Repository<Product, Product>()
                     .AddRangeAsync(productEntities);
                 await _unitOfWork.SaveChangesAsync();
             }
@@ -349,7 +349,7 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             // ===== 2️⃣ Lấy danh sách bàn hiện tại =====
             var existingTables = await _unitOfWork
                 .Repository<Table, Table>()
-                .GetAllAsync();
+                .GetAllWithSpecAsync(new BaseSpecification<Table>(x=>!x.DeletedTime.HasValue));
 
             int currentTableCount = existingTables.Count();
 
