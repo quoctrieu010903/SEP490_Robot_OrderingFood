@@ -16,6 +16,15 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Response.Table
 
         public string RedirectTableId { get; set; }
         public string RedirectUrl { get; set; }
-
+        
+        /// <summary>
+        /// Tọa độ X của bàn trên bản đồ nhà hàng (đơn vị: pixel)
+        /// </summary>
+        public int PositionX { get; set; }
+        
+        /// <summary>
+        /// Tọa độ Y của bàn trên bản đồ nhà hàng (đơn vị: pixel)
+        /// </summary>
+        public int PositionY { get; set; }
     }
 } 

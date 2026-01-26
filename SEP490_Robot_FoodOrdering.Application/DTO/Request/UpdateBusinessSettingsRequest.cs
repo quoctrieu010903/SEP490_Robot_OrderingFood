@@ -12,6 +12,8 @@ namespace SEP490_Robot_FoodOrdering.Application.DTO.Request
         public int? TableAccessTimeoutWithoutOrderMinutes { get; set; }
         public int? OrderCleanupAfterDays { get; set; }
         public string? RestaurantName { get; set; }
+        public string? RestaurantAddress { get; set; }
+        public string? RestaurantPhone { get; set; }
     }
 }
 
