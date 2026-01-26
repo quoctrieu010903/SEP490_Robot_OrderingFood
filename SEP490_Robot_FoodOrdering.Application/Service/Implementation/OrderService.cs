@@ -768,13 +768,31 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
             var shouldLogCancelOrRemake = false;
             TableActivityType? logActivityType = null;
             
+            // If item is already Served and new status is also Served, skip (no-op)
+            // This prevents race conditions where frontend sends duplicate serve requests
+            if (oldStatus == OrderItemStatus.Served && request.Status == OrderItemStatus.Served)
+            {
+                _logger.LogInformation(
+                    "OrderItem {OrderItemId} is already Served. Skipping duplicate serve request for Order {OrderId}",
+                    orderItemId, orderId);
+                
+                // Return the current item state without changes
+                var currentItemResponse = _mapper.Map<OrderItemResponse>(item);
+                return new BaseResponseModel<OrderItemResponse>(StatusCodes.Status200OK, "ALREADY_SERVED",
+                    currentItemResponse, null, "Order item is already served.");
+            }
+            
             if (request.Status == OrderItemStatus.Cancelled)
             {
                 await _cancelledItemService.CreateCancelledItemAsync(orderItemId, request.RemarkNote ?? string.Empty, userId);
                 shouldLogCancelOrRemake = true;
                 logActivityType = TableActivityType.CancelOrderItem;
             }
-            var isRemakeFromServed = oldStatus == OrderItemStatus.Served;
+            
+            // Only treat as remake if:
+            // 1. Item is currently Served (oldStatus == Served)
+            // 2. AND new status is NOT Served (e.g., trying to move back to Ready/Preparing for remake)
+            var isRemakeFromServed = oldStatus == OrderItemStatus.Served && request.Status != OrderItemStatus.Served;
             if (isRemakeFromServed)
             {
                 request.Status = OrderItemStatus.Preparing;
