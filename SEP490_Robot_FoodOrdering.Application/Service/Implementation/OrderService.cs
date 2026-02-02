@@ -398,7 +398,10 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                     };
                     existingOrder.OrderItems.Add(orderItem);
                     newlyAddedOrderItems.Add(orderItem); // Track for notifications
-                    addedTotal += productSize.Price;
+                    
+                    // Tính giá cho từng item riêng biệt
+                    decimal itemTotal = productSize.Price;
+                    
                     foreach (var toppingId in itemReq.ToppingIds)
                     {
                         var productTopping = await _unitOfWork.Repository<ProductTopping, Guid>()
@@ -423,10 +426,13 @@ namespace SEP490_Robot_FoodOrdering.Application.Service.Implementation
                             LastUpdatedTime = DateTime.UtcNow
                         });
 
-                        addedTotal += topping.Price;
-                        
+                        itemTotal += topping.Price;
                     }
-                    orderItem.TotalPrice = addedTotal;
+                    
+                    // Gán TotalPrice riêng cho từng item
+                    orderItem.TotalPrice = itemTotal;
+                    // Cộng dồn vào addedTotal để cập nhật Order.TotalPrice
+                    addedTotal += itemTotal;
                 }
 
                 existingOrder.TotalPrice += addedTotal;
